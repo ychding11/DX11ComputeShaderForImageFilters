@@ -1,0 +1,29 @@
+DX11ComputeShaderFilter V 1.0
+===============
+
+9 Jan 2017
+by Yaochuang Ding, 
+
+
+Info
+====
+
+This project implements an simple image filter which is based on DX11 Computer
+Shader. It takes advantage of parallel of modern GPU. You may regard it as
+tiny framework and write your own image filters based on DX11 compute shader.
+Have fun and try it yourself.
+
+Source
+======
+
+The source code is ported from an [compute shader tutorial](http://www.codinglabs.net/tutorial_compute_shaders_filters.aspx).
+For details about compute shader and how it works, please read the tutorial.
+The original code contains the deprecated DXSDK APIs, so it always compiles
+failed on Windows 10 platform. What I did here is to replace the deprecated
+APIs with new ones.
+
+Controls
+========
+
+F1     : 
+F2     : 
