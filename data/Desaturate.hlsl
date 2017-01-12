@@ -29,7 +29,7 @@ void writeToPixel(int x, int y, float3 colour)
     BufferOut[index].colour = ired + igreen + iblue;
 }
 
-[numthreads(32, 16, 1)]
+[numthreads(32, 18, 1)]
 void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 {
 	float3 pixel = readPixel(dispatchThreadID.x, dispatchThreadID.y);
