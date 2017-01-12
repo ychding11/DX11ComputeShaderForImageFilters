@@ -5,8 +5,8 @@
 
 HINSTANCE		g_hInst = NULL;
 HWND			g_hWnd = NULL;
-int				width = 1024;
-int				height = 336*2;
+int				width = 1920;
+int				height = 1080 * 2;
 DXApplication	application;
 
 LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
