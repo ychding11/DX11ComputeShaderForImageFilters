@@ -50,6 +50,7 @@ Temporary Items
 *.pdb
 *.db
 *.opendb
+*.user
 Debug/
 .vs/
 
