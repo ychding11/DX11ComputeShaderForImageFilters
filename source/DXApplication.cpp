@@ -67,8 +67,9 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	}
 	if( FAILED( hr ) ) return false;
 
-	// Create a render target view
+	// Create a render target view from swap chain's back buffer.
 	ID3D11Texture2D* pBackBuffer = NULL;
+	// access one of swap chain's back buffer.[0-based buffer index, interface type which manipulates buffer, output param]
 	hr = m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), ( LPVOID* )&pBackBuffer );
 	if( FAILED( hr ) ) return false;
 	hr = m_pd3dDevice->CreateRenderTargetView( pBackBuffer, NULL, &m_pRenderTargetView );
@@ -137,7 +138,8 @@ bool DXApplication::runComputeShader( LPCWSTR shaderFilename )
 	if(m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_destTexture) != S_OK) return false;
 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	// Map destTexture into context.
+	// Map destTexture into context.(get a pointer to data in gpu and denies gpu's access)
+	// [resources, subresource id,specify cpu's write and read permissions for resource, specify what cpu does when gpu is busy, ]
 	if(m_pImmediateContext->Map(m_destTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource) != S_OK) return false;
 
 	byte* gpuDestBufferCopy = getCopyOfGPUDestBuffer();
@@ -179,9 +181,11 @@ void DXApplication::render()
 
 	m_pImmediateContext->VSSetShader( m_pVertexShader, NULL, 0 );
 	m_pImmediateContext->PSSetShader( m_pPixelShader, NULL, 0 );
+	// set resources to pixel stage.[start idex of the resource slot(0 based), number of shader resources to set, resources to set]
 	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcTextureView );
 	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_destTextureView );
 	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
+	// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
 	m_pImmediateContext->Draw( 4, 0 );
 
 	m_pSwapChain->Present( 0, 0 );
@@ -262,6 +266,8 @@ bool DXApplication::loadFullScreenQuad()
 	}
 
 	// Define the input layout
+	// [semantic name, semantic index for elements with semantic name, data type of element data, input assembler index, offset between elements,
+	//  input slot class, number of instance to draw]
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -269,6 +275,8 @@ bool DXApplication::loadFullScreenQuad()
 	};
 
 	m_pVertexLayout = NULL;
+	// Create an input-layout object to describe the input-buffer data for the input-assembler stage.
+	// [layout description array, number of input data type, compiled shader, size of compiled shader, output]
 	hr = m_pd3dDevice->CreateInputLayout( layout, 2, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &m_pVertexLayout );
 	pVSBlob->Release();
 	if( FAILED( hr ) )
@@ -310,7 +318,7 @@ bool DXApplication::loadFullScreenQuad()
 	ZeroMemory( &bd, sizeof(bd) );
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.ByteWidth = sizeof( SimpleVertex ) * 4;
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; //specify to bind the buffer to input-assembler stage.
 	bd.CPUAccessFlags = 0;
 	D3D11_SUBRESOURCE_DATA InitData;
 	ZeroMemory( &InitData, sizeof(InitData) );
@@ -324,9 +332,10 @@ bool DXApplication::loadFullScreenQuad()
 		return false;
 	}
 
-	// Set vertex buffer
 	UINT stride = sizeof( SimpleVertex );
 	UINT offset = 0;
+	// Bind vertex buffer to input-assembler stage.
+	// [start slot index, number of vertex buffer, vertex buffer array, stride array for each vertex buffer, offset array]
 	m_pImmediateContext->IASetVertexBuffers( 0, 1, &m_pVertexBuffer, &stride, &offset );
 	// Set primitive topology
 	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
@@ -371,12 +380,12 @@ bool DXApplication::loadTexture(LPCWSTR filename, ID3D11Texture2D** texture)
 			return false;
 		}
 
-		desc.Usage = D3D11_USAGE_STAGING;
+		desc.Usage = D3D11_USAGE_STAGING; // support copy data from GPU to CPU
 		desc.BindFlags = 0;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		ID3D11Texture2D* tempTexture;
 		if(m_pd3dDevice->CreateTexture2D(&desc, NULL, &tempTexture) != S_OK) return false;
-		m_pImmediateContext->CopyResource(tempTexture, *texture);
+		m_pImmediateContext->CopyResource(tempTexture, *texture); // copy resource by GPU.
 
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		if(m_pImmediateContext->Map(tempTexture, 0, D3D11_MAP_READ, 0, &mappedResource) != S_OK) return false;
@@ -506,7 +515,8 @@ byte* DXApplication::getCopyOfGPUDestBuffer()
 	UINT byteSize = desc.ByteWidth;
 
 	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-	desc.Usage = D3D11_USAGE_STAGING;
+	// Resources usage. https://msdn.microsoft.com/en-us/library/windows/desktop/ff476259(v=vs.85).aspx
+	desc.Usage = D3D11_USAGE_STAGING; // Support data copy from GPU to CPU.
 	desc.BindFlags = 0;
 	desc.MiscFlags = 0;
 
@@ -515,11 +525,10 @@ byte* DXApplication::getCopyOfGPUDestBuffer()
 		m_pImmediateContext->CopyResource( debugbuf, m_destDataGPUBuffer );
 
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		if(m_pImmediateContext->Map(debugbuf, 0, D3D11_MAP_READ, 0, &mappedResource) != S_OK)
-			return false;
+		if(m_pImmediateContext->Map(debugbuf, 0, D3D11_MAP_READ, 0, &mappedResource) != S_OK) return false;
 
 		byte* outBuff = new byte[byteSize];
-		memcpy(outBuff, mappedResource.pData, byteSize);
+		memcpy(outBuff, mappedResource.pData, byteSize); // copy from GPU meory into CPU memory.
 
 		m_pImmediateContext->Unmap(debugbuf, 0);
 
