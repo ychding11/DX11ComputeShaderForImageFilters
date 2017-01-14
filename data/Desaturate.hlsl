@@ -9,7 +9,7 @@ RWStructuredBuffer<Pixel> BufferOut : register(u0);
 float3 readPixel(int x, int y)
 {
 	float3 output;
-	uint index = (x + y * 1024);
+	uint index = (x + y * 1920);
 	
 	output.x = (float)(((Buffer0[index].colour ) & 0x000000ff)      ) / 255.0f; 
 	output.y = (float)(((Buffer0[index].colour ) & 0x0000ff00) >> 8 ) / 255.0f;
@@ -20,7 +20,7 @@ float3 readPixel(int x, int y)
 
 void writeToPixel(int x, int y, float3 colour)
 {
-	uint index = (x + y * 1024);
+	uint index = (x + y * 1920);
 	
 	int ired   = (int)(clamp(colour.r,0,1) * 255);
 	int igreen = (int)(clamp(colour.g,0,1) * 255) << 8;

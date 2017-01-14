@@ -22,7 +22,7 @@ float4 readPixel(int x, int y)
 float4 readOutputPixel(int x, int y)
 {
 	float4 output;
-	uint index = (x + y * 1024);
+	uint index = (x + y * 1920);
 	
 	output.x = (float)(((BufferOut[index].colour ) & 0x000000ff)      ) / 255.0f; 
 	output.y = (float)(((BufferOut[index].colour ) & 0x0000ff00) >> 8 ) / 255.0f;
@@ -34,7 +34,7 @@ float4 readOutputPixel(int x, int y)
 
 void writeToPixel(int x, int y, float4 colour)
 {
-	uint index = (x + y * 1024);
+	uint index = (x + y * 1920);
 	
 	int ired   = (int)(clamp(colour.r,0,1) * 255);
 	int igreen = (int)(clamp(colour.g,0,1) * 255) << 8;
@@ -44,7 +44,7 @@ void writeToPixel(int x, int y, float4 colour)
     BufferOut[index].colour = ired + igreen + iblue + ialpha;
 }
 
-[numthreads(32, 16, 1)]
+[numthreads(32, 18, 1)]
 void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 {
 	int x = dispatchThreadID.x;
@@ -61,8 +61,8 @@ void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 	{
 		for( float alpha = 0; alpha<360; alpha+=1 )
 		{
-			int clampedX = clamp(x + cos(alpha)*15, 0, 1024);
-			int clampedY = clamp(y + sin(alpha)*15, 0, 336);
+			int clampedX = clamp(x + cos(alpha)*15, 0, 1920);
+			int clampedY = clamp(y + sin(alpha)*15, 0, 1080);
 			writeToPixel( clampedX, clampedY, float4(0.2,0,0.2,1.0) );
 		}
 	}
