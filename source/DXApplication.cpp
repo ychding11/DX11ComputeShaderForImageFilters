@@ -13,7 +13,7 @@ template <class T> void SafeRelease(T **ppT)
 }
 
 /**
-*	Initialize our DX application
+*	Initialize our DX application with windows size.
 */
 bool DXApplication::initialize(HWND hWnd, int width, int height) 
 {
@@ -40,6 +40,9 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	};
 	UINT numFeatureLevels = ARRAYSIZE( featureLevels );
 
+	D3D_DRIVER_TYPE         driverType = D3D_DRIVER_TYPE_NULL;
+	D3D_FEATURE_LEVEL       featureLevel = D3D_FEATURE_LEVEL_11_0;
+
 	DXGI_SWAP_CHAIN_DESC sd;
 	ZeroMemory( &sd, sizeof( sd ) );
 	sd.BufferCount = 1;
@@ -53,9 +56,6 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	sd.SampleDesc.Count = 1;
 	sd.SampleDesc.Quality = 0;
 	sd.Windowed = TRUE;
-
-	D3D_DRIVER_TYPE         driverType = D3D_DRIVER_TYPE_NULL;
-	D3D_FEATURE_LEVEL       featureLevel = D3D_FEATURE_LEVEL_11_0;
 
 	for( UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++ )
 	{
@@ -75,21 +75,26 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	ID3D11Texture2D* pBackBuffer = NULL;
 	// access one of swap chain's back buffer.[0-based buffer index, interface type which manipulates buffer, output param]
 	hr = m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), ( LPVOID* )&pBackBuffer );
-	if( FAILED( hr ) ) return false;
+	if (FAILED(hr))
+	{
+		printf("- Cet Back buffer from swap chain failed.\n");
+		return false;
+	}
 	hr = m_pd3dDevice->CreateRenderTargetView( pBackBuffer, NULL, &m_pRenderTargetView );
 	pBackBuffer->Release();
-	if( FAILED( hr ) ) return false;
-
-	m_pImmediateContext->OMSetRenderTargets( 1, &m_pRenderTargetView, NULL );
+	if (FAILED(hr))
+	{
+		printf("- Create render target from Back buffer failed.\n");
+		return false;
+	}
+	m_pImmediateContext->OMSetRenderTargets( 1, &m_pRenderTargetView, NULL ); // setup render target into context.
 
 	// Setup the viewport
 	D3D11_VIEWPORT vp;
 	vp.Width  = (FLOAT)width;
 	vp.Height = (FLOAT)height;
-	vp.MinDepth = 0.0f;
-	vp.MaxDepth = 1.0f;
-	vp.TopLeftX = 0;
-	vp.TopLeftY = 0;
+	vp.MinDepth = 0.0f; vp.MaxDepth = 1.0f;
+	vp.TopLeftX = 0; vp.TopLeftY = 0;
 	m_pImmediateContext->RSSetViewports( 1, &vp );
 
 	// load texture and upate image size.
@@ -112,7 +117,7 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	InitData.SysMemPitch = 0;
 	InitData.SysMemSlicePitch = 0;
 
-	hr = m_pd3dDevice->CreateBuffer(&constant_buffer_desc, &InitData, &g_pConstBuffer);
+	hr = m_pd3dDevice->CreateBuffer(&constant_buffer_desc, &InitData, &g_pConstBuffer); // create const buffer.
 	if (FAILED(hr))
 	{
 		OutputDebugStringA("- Create Constant Buffer failed. \n");
@@ -274,8 +279,8 @@ bool DXApplication::loadFullScreenQuad()
 #endif
 	
 	ID3DBlob* pErrorBlob;
-	// Compile the vertex shader
 	ID3DBlob* pVSBlob = NULL;
+	// Compile the vertex shader from file.
 	if( FAILED(D3DCompileFromFile(L"./data/fullQuad.fx", NULL, NULL, "VS", "vs_4_0", dwShaderFlags, 0, &pVSBlob, &pErrorBlob) ) )
 	{
 		if( pErrorBlob != NULL )
@@ -285,34 +290,13 @@ bool DXApplication::loadFullScreenQuad()
 		}
 		return false;
 	}
-	if( pErrorBlob ) 
-		pErrorBlob->Release();
+	if( pErrorBlob ) pErrorBlob->Release();
 
 	// Create the vertex shader
 	hr = m_pd3dDevice->CreateVertexShader( pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &m_pVertexShader );
 	if( FAILED( hr ) )
 	{	
-		OutputDebugStringA( "Failed to create vertex shader" );
-		return false;
-	}
-
-	// Define the input layout
-	// [semantic name, semantic index for elements with semantic name, data type of element data, input assembler index, offset between elements,
-	//  input slot class, number of instance to draw]
-	D3D11_INPUT_ELEMENT_DESC layout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-
-	m_pVertexLayout = NULL;
-	// Create an input-layout object to describe the input-buffer data for the input-assembler stage.
-	// [layout description array, number of input data type, compiled shader, size of compiled shader, output]
-	hr = m_pd3dDevice->CreateInputLayout( layout, 2, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &m_pVertexLayout );
-	pVSBlob->Release();
-	if( FAILED( hr ) )
-	{	
-		OutputDebugStringA( "Failed to create input layout" );
+		printf( "- Failed to create vertex shader.\n" );
 		return false;
 	}
 
@@ -333,7 +317,7 @@ bool DXApplication::loadFullScreenQuad()
 	pPSBlob->Release();
 	if( FAILED( hr ) )
 	{	
-		OutputDebugStringA( "Failed to create pixel shader" );
+		printf( "- Failed to create pixel shader. \n" );
 		return false;
 	}
 
@@ -345,12 +329,13 @@ bool DXApplication::loadFullScreenQuad()
 		{  XMFLOAT3( 1.0f,-1.0f, 0.5f ), XMFLOAT2( 1.0f, 1.0f ) },
 		{  XMFLOAT3( 1.0f, 1.0f, 0.5f ), XMFLOAT2( 1.0f, 0.0f ) }
 	};
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory( &bd, sizeof(bd) );
+	D3D11_BUFFER_DESC bd; ZeroMemory( &bd, sizeof(bd) );
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof( SimpleVertex ) * 4;
+	bd.ByteWidth = sizeof( vertices);
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; //specify to bind the buffer to input-assembler stage.
 	bd.CPUAccessFlags = 0;
+
+	// set buffer init data.
 	D3D11_SUBRESOURCE_DATA InitData;
 	ZeroMemory( &InitData, sizeof(InitData) );
 	InitData.pSysMem = vertices;
@@ -359,7 +344,27 @@ bool DXApplication::loadFullScreenQuad()
 	hr = m_pd3dDevice->CreateBuffer( &bd, &InitData, &m_pVertexBuffer );
 	if( FAILED( hr ) )
 	{	
-		OutputDebugStringA( "Failed to create vertex buffer" );
+		printf( "- Failed to create vertex buffer.\n" );
+		return false;
+	}
+
+	// Define the input layout
+	// [semantic name, semantic index for elements with semantic name, data type of element data, input assembler index, offset between elements,
+	//  input slot class, number of instance to draw]
+	D3D11_INPUT_ELEMENT_DESC layout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+	//m_pVertexLayout = NULL;
+	// Create an input-layout object to describe the input-buffer data for the input-assembler stage.
+	// [layout description array, number of input data type, compiled shader, size of compiled shader, output]
+	hr = m_pd3dDevice->CreateInputLayout(layout, 2, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &m_pVertexLayout);
+	pVSBlob->Release();
+	if (FAILED(hr))
+	{
+		printf("- Failed to create input layout.\n");
 		return false;
 	}
 
@@ -368,10 +373,8 @@ bool DXApplication::loadFullScreenQuad()
 	// Bind vertex buffer to input-assembler stage.
 	// [start slot index, number of vertex buffer, vertex buffer array, stride array for each vertex buffer, offset array]
 	m_pImmediateContext->IASetVertexBuffers( 0, 1, &m_pVertexBuffer, &stride, &offset );
-	// Set primitive topology
-	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
-	// Set the input layout
-	m_pImmediateContext->IASetInputLayout( m_pVertexLayout );
+	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP ); // Set primitive topology
+	m_pImmediateContext->IASetInputLayout( m_pVertexLayout ); // Set the input layout
 
 	// Create the sample state
 	D3D11_SAMPLER_DESC sampDesc;
@@ -384,14 +387,16 @@ bool DXApplication::loadFullScreenQuad()
 	sampDesc.MinLOD = 0;
 	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	hr = m_pd3dDevice->CreateSamplerState( &sampDesc, &m_pSamplerLinear );
-	if( FAILED( hr )) return false;
+	if (FAILED(hr))
+	{
+		printf("- Failed to create texture sampler.\n");
+		return false;
+	}
 	return true;
 }
 
 /**
-*	Load a texture from disc and set it so that we can extract the data into a buffer for the compute shader to use.
-*   To make everything more clear we also save a copy of the texture data in main memory. We will copy from this buffer
-*	the data that we need to feed into the GPU for the compute shader.
+*	Load a texture from disc and check its format. 
 */
 bool DXApplication::copyTexture()
 {

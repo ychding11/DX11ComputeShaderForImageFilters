@@ -40,6 +40,7 @@ public:
 		, m_destDataGPUBuffer(NULL)
 		, m_destDataGPUBufferView(NULL)
 		, m_computeShader(NULL)
+		, m_pVertexLayout(NULL)
 		, g_pConstBuffer(NULL)
 		, m_imageWidth(0)
 		, m_imageHeight(0)
