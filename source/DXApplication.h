@@ -64,9 +64,9 @@ public:
 private:
 	// Methods
 	bool	loadFullScreenQuad();
-	void	releaseFullScreenQuad()
-	{}
-	bool	loadTexture( LPCWSTR filename, ID3D11Texture2D** texture);
+	void	releaseFullScreenQuad() {}
+	bool	loadTextureAndCheckFomart(LPCWSTR filename, ID3D11Texture2D** texture);
+	bool	copyTexture();
 	bool	createInputBuffer();
 	bool	createOutputBuffer();
 	bool	loadComputeShader( LPCWSTR filename, ID3D11ComputeShader** computeShader);

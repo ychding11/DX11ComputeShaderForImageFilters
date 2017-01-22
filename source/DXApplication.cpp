@@ -92,6 +92,11 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	vp.TopLeftY = 0;
 	m_pImmediateContext->RSSetViewports( 1, &vp );
 
+	// load texture and upate image size.
+	if (!loadTextureAndCheckFomart(L"data/fiesta.bmp", &m_srcTexture))
+	{
+		return false;
+	}
 	// Create the Const Buffer to transfer const parameters into shader.
 	D3D11_BUFFER_DESC constant_buffer_desc;
 	ZeroMemory(&constant_buffer_desc, sizeof(constant_buffer_desc));
@@ -101,7 +106,7 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	constant_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
 	// Fill in the subresource data.
-	CB cb = { 1920, 1080 };
+	CB cb = { m_imageWidth, m_imageHeight };
 	D3D11_SUBRESOURCE_DATA InitData;
 	InitData.pSysMem = &cb;
 	InitData.SysMemPitch = 0;
@@ -113,12 +118,12 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 		OutputDebugStringA("- Create Constant Buffer failed. \n");
 		return false;
 	}
+	updateShaderConst(m_imageWidth, m_imageHeight);
 
 	// We then load a texture as a source of data for our compute shader
 	if(!loadFullScreenQuad()) return false;
-	// Load texture into memory and create a DX object pointered by m_srcTexture
-	// and copy texture data into m_srcTextureData.
-	if(!loadTexture( L"data/fiesta.bmp", &m_srcTexture )) return false;
+	// copy texture data into m_srcTextureData.
+	if(!copyTexture()) return false;
 	if(!createInputBuffer()) return false;
 	if(!createOutputBuffer()) return false;
 	if(!runComputeShader( L"data/Desaturate.hlsl")) return false;
@@ -388,33 +393,16 @@ bool DXApplication::loadFullScreenQuad()
 *   To make everything more clear we also save a copy of the texture data in main memory. We will copy from this buffer
 *	the data that we need to feed into the GPU for the compute shader.
 */
-bool DXApplication::loadTexture(LPCWSTR filename, ID3D11Texture2D** texture)
+bool DXApplication::copyTexture()
 {
-	//https://github.com/Microsoft/DirectXTK/wiki/WICTextureLoader
-	if(SUCCEEDED(CreateWICTextureFromFile(m_pd3dDevice, filename, (ID3D11Resource **)texture, &m_srcTextureView)))
-	{
-		//https://msdn.microsoft.com/en-us/library/windows/desktop/ff476519(v=vs.85).aspx
-		//m_pd3dDevice->CreateShaderResourceView(NULL, NULL, &m_srcTextureView);
-
-		// To keep it simple, we limit the textures we load to RGBA 8bits per channel
-		// So check the image file format here.
 		D3D11_TEXTURE2D_DESC desc;
-		(*texture)->GetDesc(&desc);
-		if(desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
-		{
-			OutputDebugStringA( "- Texture format is not qualified.\n" );
-			return false;
-		}
-		m_imageWidth = desc.Width;
-		m_imageHeight = desc.Height;
-		updateShaderConst(m_imageWidth, m_imageHeight);
-
+		m_srcTexture->GetDesc(&desc);
 		desc.Usage = D3D11_USAGE_STAGING; // support copy data from GPU to CPU
 		desc.BindFlags = 0;
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		ID3D11Texture2D* tempTexture;
 		if(m_pd3dDevice->CreateTexture2D(&desc, NULL, &tempTexture) != S_OK) return false;
-		m_pImmediateContext->CopyResource(tempTexture, *texture); // copy resource by GPU.
+		m_pImmediateContext->CopyResource(tempTexture, m_srcTexture); // copy resource by GPU.
 
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		if(m_pImmediateContext->Map(tempTexture, 0, D3D11_MAP_READ, 0, &mappedResource) != S_OK) return false;
@@ -424,9 +412,42 @@ bool DXApplication::loadTexture(LPCWSTR filename, ID3D11Texture2D** texture)
 		memcpy(m_srcTextureData, mappedResource.pData, m_textureDataSize);
 		m_pImmediateContext->Unmap(tempTexture, 0);
 		return true;
+}
+
+
+/**
+*	Load a texture from disc and set it so that we can extract the data into a buffer for the compute shader to use.
+*   To make everything more clear we also save a copy of the texture data in main memory. We will copy from this buffer
+*	the data that we need to feed into the GPU for the compute shader.
+*/
+bool DXApplication::loadTextureAndCheckFomart(LPCWSTR filename, ID3D11Texture2D** texture)
+{
+	//https://github.com/Microsoft/DirectXTK/wiki/WICTextureLoader
+	if (SUCCEEDED(CreateWICTextureFromFile(m_pd3dDevice, filename, (ID3D11Resource **)texture, &m_srcTextureView)))
+	{
+		//https://msdn.microsoft.com/en-us/library/windows/desktop/ff476519(v=vs.85).aspx
+
+		// To keep it simple, limit the textures we only load to RGBA 8bits per channel
+		// So check the image file format here.
+		D3D11_TEXTURE2D_DESC desc;
+		(*texture)->GetDesc(&desc);
+		if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
+		{
+			OutputDebugStringA("- Texture format is not qualified.\n");
+			return false;
+		}
+		// update image size. 
+		m_imageWidth  = desc.Width;
+		m_imageHeight = desc.Height;
+		//updateShaderConst(m_imageWidth, m_imageHeight);
+		printf("- Texture loaded, size=%dx%d.\n", m_imageWidth, m_imageHeight);
+		return true;
 	}
 	else
+	{
+		printf("- Texture load failed.\n");
 		return false;
+	}
 }
 
 /**
