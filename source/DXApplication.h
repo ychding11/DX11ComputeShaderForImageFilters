@@ -71,7 +71,7 @@ private:
 	bool	createInputBuffer();
 	bool	createOutputBuffer();
 	bool	loadComputeShader( LPCWSTR filename, ID3D11ComputeShader** computeShader);
-	byte*	getCopyOfGPUDestBuffer();
+	byte*	getCPUCopyOfGPUDestBuffer();
 
 	// Fields
 	int							m_windowWidth;

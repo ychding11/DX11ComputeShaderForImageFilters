@@ -144,7 +144,7 @@ bool DXApplication::runComputeShader( LPCWSTR shaderFilename )
 	ID3D11UnorderedAccessView* ppUAViewNULL[1] = { NULL };
 	ID3D11ShaderResourceView*  ppSRVNULL[2] = { NULL, NULL };
 
-	// We load and compile the shader and create a compute shader DX object. If failed, return.
+	// Load and compile the shader and create a compute shader DX object. If failed, return.
 	if(!loadComputeShader( shaderFilename, &m_computeShader ))
 		return false;
 
@@ -177,9 +177,10 @@ bool DXApplication::runComputeShader( LPCWSTR shaderFilename )
 	// [resources, subresource id,specify cpu's write and read permissions for resource, specify what cpu does when gpu is busy, ]
 	if(m_pImmediateContext->Map(m_destTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource) != S_OK) return false;
 
-	byte* gpuDestBufferCopy = getCopyOfGPUDestBuffer();
+	byte* gpuDestBufferCopy = getCPUCopyOfGPUDestBuffer();
 	memcpy(mappedResource.pData, gpuDestBufferCopy, m_textureDataSize);
 	m_pImmediateContext->Unmap(m_destTexture, 0);// Unmap destTexture from Context.
+	delete []gpuDestBufferCopy; // deallocate cpu Copy.
 
 	// Create a view of the output texture
 	D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc; 
@@ -555,6 +556,7 @@ bool DXApplication::loadComputeShader(LPCWSTR filename, ID3D11ComputeShader** co
 		if ( pErrorBlob ) OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
 		if(pErrorBlob) pErrorBlob->Release();
 		if(pBlob) pBlob->Release();
+		printf("- Create compute shader from file failed.\n");
 		return false;
 	}
 	else
@@ -569,25 +571,21 @@ bool DXApplication::loadComputeShader(LPCWSTR filename, ID3D11ComputeShader** co
 /**
 *	Get a copy of the GPU dest buffer.
 */
-byte* DXApplication::getCopyOfGPUDestBuffer()
+byte* DXApplication::getCPUCopyOfGPUDestBuffer()
 {
-	ID3D11Buffer* debugbuf = NULL;
-
-	D3D11_BUFFER_DESC desc;
-	ZeroMemory( &desc, sizeof(desc) );
+	D3D11_BUFFER_DESC desc; ZeroMemory( &desc, sizeof(desc) );
 	m_destDataGPUBuffer->GetDesc( &desc );
-
-	UINT byteSize = desc.ByteWidth;
-
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 	// Resources usage. https://msdn.microsoft.com/en-us/library/windows/desktop/ff476259(v=vs.85).aspx
 	desc.Usage = D3D11_USAGE_STAGING; // Support data copy from GPU to CPU.
+	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 	desc.BindFlags = 0;
 	desc.MiscFlags = 0;
 
+	UINT byteSize = desc.ByteWidth;
+	ID3D11Buffer* debugbuf = NULL;
 	if ( SUCCEEDED(m_pd3dDevice->CreateBuffer(&desc, NULL, &debugbuf)) )
 	{
-		m_pImmediateContext->CopyResource( debugbuf, m_destDataGPUBuffer );
+		m_pImmediateContext->CopyResource( debugbuf, m_destDataGPUBuffer ); // Copy resource by GPU
 
 		D3D11_MAPPED_SUBRESOURCE mappedResource;
 		if(m_pImmediateContext->Map(debugbuf, 0, D3D11_MAP_READ, 0, &mappedResource) != S_OK) return false;
@@ -596,10 +594,9 @@ byte* DXApplication::getCopyOfGPUDestBuffer()
 		memcpy(outBuff, mappedResource.pData, byteSize); // copy from GPU meory into CPU memory.
 
 		m_pImmediateContext->Unmap(debugbuf, 0);
-
 		debugbuf->Release();
-
-		return outBuff;
+		return outBuff; // return CPU copy of GPU resource.
 	}
+	printf("- Create CPU copy of GPU resources failed.");
 	return NULL;
 }
