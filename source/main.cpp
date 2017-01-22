@@ -58,8 +58,7 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 	if( !RegisterClassEx( &wcex ) )
 		return E_FAIL;
 
-	// Create window
-	g_hInst = hInstance;
+	// Create window g_hInst = hInstance;
 	RECT rc = { 0, 0, width, height };
 	AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
 	g_hWnd = CreateWindow( L"TutorialWindowClass", L"Compute Shader - Filters",
@@ -79,8 +78,11 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 	if( FAILED( InitWindow( hInstance, nCmdShow ) ) )
 		return 0;
 
-	if(!application.initialize(g_hWnd, width, height))
+	if (!application.initialize(g_hWnd, width, height))
+	{
+		MessageBox(NULL,L"Initialize failed, exit application.", L"Warning", MB_ICONWARNING);
 		return 0;
+	}
 
 	// Main message loop
 	MSG msg = {0};
