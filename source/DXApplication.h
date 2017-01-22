@@ -6,11 +6,20 @@
 #include <d3dx11.h>
 #endif
 
+#include <cstdio>
+
 // code migration. https://msdn.microsoft.com/en-us/library/windows/desktop/ee418730(v=vs.85).aspx
 //#include <xnamath.h> //has been replaced
 #include <DirectXMath.h>
 
 using namespace DirectX;
+
+// Constant Buffer Layout
+struct CB
+{
+	UINT iWidth;
+	UINT iHeight;
+};
 
 /**
 *	This class contains all the system stuff that we need to render with OpenGL
@@ -31,6 +40,9 @@ public:
 		, m_destDataGPUBuffer(NULL)
 		, m_destDataGPUBufferView(NULL)
 		, m_computeShader(NULL)
+		, g_pConstBuffer(NULL)
+		, m_imageWidth(0)
+		, m_imageHeight(0)
 	{}
 
 	// Methods
@@ -39,6 +51,15 @@ public:
 	void	update();
 	void	render();
 	void	release();
+
+	// we prefer it as an inline implementation
+	void    updateShaderConst(UINT iWidth, UINT iHeight)
+	{
+		CB cb = { iWidth, iHeight };
+		//m_pImmediateContext->UpdateSubresource(g_pConstBuffer, 0, nullptr, &cb, 0, 0);
+		m_pImmediateContext->CSSetConstantBuffers(0, 1, &g_pConstBuffer);
+		printf("- Update const buffer %d %d.\n", iWidth, iHeight);
+	}
 
 private:
 	// Methods
@@ -54,6 +75,8 @@ private:
 	// Fields
 	int							m_windowWidth;
 	int							m_windowHeight;
+	int							m_imageWidth;
+	int							m_imageHeight;
 
 	ID3D11Device*				m_pd3dDevice;
 	ID3D11DeviceContext*		m_pImmediateContext;
@@ -78,6 +101,6 @@ private:
 	ID3D11ShaderResourceView*	m_destTextureView;
 	ID3D11Buffer*				m_destDataGPUBuffer;
 	ID3D11UnorderedAccessView*	m_destDataGPUBufferView;
-
+	ID3D11Buffer*               g_pConstBuffer;
 	ID3D11ComputeShader*		m_computeShader;
 };

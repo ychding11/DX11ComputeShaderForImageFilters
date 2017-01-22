@@ -65,7 +65,11 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 		if( SUCCEEDED( hr ) )
 			break;
 	}
-	if( FAILED( hr ) ) return false;
+	if (FAILED(hr))
+	{
+		printf("- Create DX Device and swap chain failed.\n");
+		return false;
+	}
 
 	// Create a render target view from swap chain's back buffer.
 	ID3D11Texture2D* pBackBuffer = NULL;
@@ -87,6 +91,28 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	vp.TopLeftX = 0;
 	vp.TopLeftY = 0;
 	m_pImmediateContext->RSSetViewports( 1, &vp );
+
+	// Create the Const Buffer to transfer const parameters into shader.
+	D3D11_BUFFER_DESC constant_buffer_desc;
+	ZeroMemory(&constant_buffer_desc, sizeof(constant_buffer_desc));
+	constant_buffer_desc.ByteWidth = ((sizeof(CB) + 15) / 16) * 16; // Caution! size needs to be multiple of 16.
+	constant_buffer_desc.Usage = D3D11_USAGE_DYNAMIC;
+	constant_buffer_desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	constant_buffer_desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	// Fill in the subresource data.
+	CB cb = { 1920, 1080 };
+	D3D11_SUBRESOURCE_DATA InitData;
+	InitData.pSysMem = &cb;
+	InitData.SysMemPitch = 0;
+	InitData.SysMemSlicePitch = 0;
+
+	hr = m_pd3dDevice->CreateBuffer(&constant_buffer_desc, &InitData, &g_pConstBuffer);
+	if (FAILED(hr))
+	{
+		OutputDebugStringA("- Create Constant Buffer failed. \n");
+		return false;
+	}
 
 	// We then load a texture as a source of data for our compute shader
 	if(!loadFullScreenQuad()) return false;
@@ -376,9 +402,12 @@ bool DXApplication::loadTexture(LPCWSTR filename, ID3D11Texture2D** texture)
 		(*texture)->GetDesc(&desc);
 		if(desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
 		{
-			OutputDebugStringA( "We want to read a simple RGBA texture 8 bits per channel but the required texture has a different format." );
+			OutputDebugStringA( "- Texture format is not qualified.\n" );
 			return false;
 		}
+		m_imageWidth = desc.Width;
+		m_imageHeight = desc.Height;
+		updateShaderConst(m_imageWidth, m_imageHeight);
 
 		desc.Usage = D3D11_USAGE_STAGING; // support copy data from GPU to CPU
 		desc.BindFlags = 0;
