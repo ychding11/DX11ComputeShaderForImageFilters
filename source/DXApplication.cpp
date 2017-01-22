@@ -160,17 +160,19 @@ bool DXApplication::runComputeShader( LPCWSTR shaderFilename )
 	m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewNULL, NULL );
 	m_pImmediateContext->CSSetShaderResources( 0, 2, ppSRVNULL );
 
-	// Create dest Texture from src texture's description.
-	// Copy the result into the destination texture
-	D3D11_TEXTURE2D_DESC desc;
-	m_srcTexture->GetDesc(&desc);
-	desc.Usage = D3D11_USAGE_DYNAMIC;
-	desc.MipLevels = 1;
-	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	if (!m_destTexture)
+	{
+		// Create dest Texture from src texture's description.
+		// Copy the result into the destination texture
+		D3D11_TEXTURE2D_DESC desc;
+		m_srcTexture->GetDesc(&desc);
+		desc.Usage = D3D11_USAGE_DYNAMIC;
+		desc.MipLevels = 1;
+		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-	if(m_destTexture) m_destTexture->Release();
-	if(m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_destTexture) != S_OK) return false;
+		if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_destTexture) != S_OK) return false;
+	}
 
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	// Map destTexture into context.(get a pointer to data in gpu and denies gpu's access)
