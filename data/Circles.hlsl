@@ -1,3 +1,12 @@
+//--------------------------------------------------------------------------------------
+// Constant Buffers
+//--------------------------------------------------------------------------------------
+cbuffer CB : register( b0 )
+{
+    unsigned int g_iWidth;
+    unsigned int g_iHeight;
+};
+
 struct Pixel
 {
     int colour;
@@ -9,7 +18,7 @@ RWStructuredBuffer<Pixel> BufferOut : register(u0);
 float4 readPixel(int x, int y)
 {
 	float4 output;
-	uint index = (x + y * 1024);
+	uint index = (x + y * g_iWidth);
 	
 	output.x = (float)(((Buffer0[index].colour ) & 0x000000ff)      ) / 255.0f; 
 	output.y = (float)(((Buffer0[index].colour ) & 0x0000ff00) >> 8 ) / 255.0f;
@@ -22,7 +31,7 @@ float4 readPixel(int x, int y)
 float4 readOutputPixel(int x, int y)
 {
 	float4 output;
-	uint index = (x + y * 1920);
+	uint index = (x + y * g_iWidth);
 	
 	output.x = (float)(((BufferOut[index].colour ) & 0x000000ff)      ) / 255.0f; 
 	output.y = (float)(((BufferOut[index].colour ) & 0x0000ff00) >> 8 ) / 255.0f;
@@ -34,7 +43,7 @@ float4 readOutputPixel(int x, int y)
 
 void writeToPixel(int x, int y, float4 colour)
 {
-	uint index = (x + y * 1920);
+	uint index = (x + y * g_iWidth);
 	
 	int ired   = (int)(clamp(colour.r,0,1) * 255);
 	int igreen = (int)(clamp(colour.g,0,1) * 255) << 8;
@@ -61,7 +70,7 @@ void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 	{
 		for( float alpha = 0; alpha<360; alpha+=1 )
 		{
-			int clampedX = clamp(x + cos(alpha)*15, 0, 1920);
+			int clampedX = clamp(x + cos(alpha)*15, 0, g_iWidth);
 			int clampedY = clamp(y + sin(alpha)*15, 0, 1080);
 			writeToPixel( clampedX, clampedY, float4(0.2,0,0.2,1.0) );
 		}
