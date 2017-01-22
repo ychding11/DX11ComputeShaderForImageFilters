@@ -24,8 +24,12 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 	case WM_KEYUP:
 		if(wParam == 112)
 			application.runComputeShader(L"data/Desaturate.hlsl");
-		if(wParam == 113)
+		else if(wParam == 113)
 			application.runComputeShader(L"data/Circles.hlsl");
+		else if (tolower((int)wParam) == 'q')
+		{
+			PostQuitMessage( 0 );
+		}
 		break;
 
 	case WM_DESTROY:
