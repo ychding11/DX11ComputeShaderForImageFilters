@@ -42,6 +42,8 @@ public:
 		, m_computeShader(NULL)
 		, m_pVertexLayout(NULL)
 		, g_pConstBuffer(NULL)
+		, m_dstDataBufferGPUCopy(NULL)
+		, m_dstDataBufferCPUCopy(NULL)
 		, m_imageWidth(0)
 		, m_imageHeight(0)
 	{}
@@ -104,4 +106,6 @@ private:
 	ID3D11UnorderedAccessView*	m_destDataGPUBufferView;
 	ID3D11Buffer*               g_pConstBuffer;
 	ID3D11ComputeShader*		m_computeShader;
+	ID3D11Buffer*				m_dstDataBufferGPUCopy;
+	byte*						m_dstDataBufferCPUCopy;
 };

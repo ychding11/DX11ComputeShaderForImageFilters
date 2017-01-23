@@ -162,8 +162,8 @@ bool DXApplication::runComputeShader( LPCWSTR shaderFilename )
 
 	if (!m_destTexture)
 	{
-		// Create dest Texture from src texture's description.
-		// Copy the result into the destination texture
+		// Create dest texture from src texture's description.
+		// Copy compute shader result into the texture for rendering.
 		D3D11_TEXTURE2D_DESC desc;
 		m_srcTexture->GetDesc(&desc);
 		desc.Usage = D3D11_USAGE_DYNAMIC;
@@ -174,15 +174,18 @@ bool DXApplication::runComputeShader( LPCWSTR shaderFilename )
 		if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_destTexture) != S_OK) return false;
 	}
 
+	byte* gpuDestBufferCopy = getCPUCopyOfGPUDestBuffer(); // get compute result's CPU buffer.
+
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
 	// Map destTexture into context.(get a pointer to data in gpu and denies gpu's access)
 	// [resources, subresource id,specify cpu's write and read permissions for resource, specify what cpu does when gpu is busy, ]
-	if(m_pImmediateContext->Map(m_destTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource) != S_OK) return false;
-
-	byte* gpuDestBufferCopy = getCPUCopyOfGPUDestBuffer();
+	if (m_pImmediateContext->Map(m_destTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource) != S_OK)
+	{
+		printf("- Map dst texture into CPU memory, failed.\n");
+		return false;
+	}
 	memcpy(mappedResource.pData, gpuDestBufferCopy, m_textureDataSize);
 	m_pImmediateContext->Unmap(m_destTexture, 0);// Unmap destTexture from Context.
-	delete []gpuDestBufferCopy; // deallocate cpu Copy.
 
 	// Create a view of the output texture
 	D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc; 
@@ -575,30 +578,33 @@ bool DXApplication::loadComputeShader(LPCWSTR filename, ID3D11ComputeShader** co
 */
 byte* DXApplication::getCPUCopyOfGPUDestBuffer()
 {
-	D3D11_BUFFER_DESC desc; ZeroMemory( &desc, sizeof(desc) );
-	m_destDataGPUBuffer->GetDesc( &desc );
-	// Resources usage. https://msdn.microsoft.com/en-us/library/windows/desktop/ff476259(v=vs.85).aspx
-	desc.Usage = D3D11_USAGE_STAGING; // Support data copy from GPU to CPU.
-	desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-	desc.BindFlags = 0;
-	desc.MiscFlags = 0;
-
-	UINT byteSize = desc.ByteWidth;
-	ID3D11Buffer* debugbuf = NULL;
-	if ( SUCCEEDED(m_pd3dDevice->CreateBuffer(&desc, NULL, &debugbuf)) )
+	if (!m_dstDataBufferGPUCopy)
 	{
-		m_pImmediateContext->CopyResource( debugbuf, m_destDataGPUBuffer ); // Copy resource by GPU
-
-		D3D11_MAPPED_SUBRESOURCE mappedResource;
-		if(m_pImmediateContext->Map(debugbuf, 0, D3D11_MAP_READ, 0, &mappedResource) != S_OK) return false;
-
-		byte* outBuff = new byte[byteSize];
-		memcpy(outBuff, mappedResource.pData, byteSize); // copy from GPU meory into CPU memory.
-
-		m_pImmediateContext->Unmap(debugbuf, 0);
-		debugbuf->Release();
-		return outBuff; // return CPU copy of GPU resource.
+		D3D11_BUFFER_DESC desc; ZeroMemory(&desc, sizeof(desc));
+		m_destDataGPUBuffer->GetDesc(&desc);
+		// Resources usage. https://msdn.microsoft.com/en-us/library/windows/desktop/ff476259(v=vs.85).aspx
+		desc.Usage = D3D11_USAGE_STAGING; // Support data copy from GPU to CPU.
+		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		desc.BindFlags = 0;
+		desc.MiscFlags = 0;
+		if ( FAILED(m_pd3dDevice->CreateBuffer(&desc, NULL, &m_dstDataBufferGPUCopy)))
+		{
+			printf("- Create copy of Compute shader output buffer failed.\n");
+			return NULL;
+		}
+		if (!m_dstDataBufferCPUCopy)
+		{
+			m_dstDataBufferCPUCopy = new byte[m_textureDataSize];
+			if (!m_dstDataBufferCPUCopy)
+				printf("- Allocaate dst data buffer cpu copy failed.\n");
+		}
 	}
-	printf("- Create CPU copy of GPU resources failed.");
-	return NULL;
+	m_pImmediateContext->CopyResource(m_dstDataBufferGPUCopy, m_destDataGPUBuffer ); // Copy resource by GPU
+	D3D11_MAPPED_SUBRESOURCE mappedResource;
+	if(m_pImmediateContext->Map(m_dstDataBufferGPUCopy, 0, D3D11_MAP_READ, 0, &mappedResource) != S_OK) return false;
+
+	memcpy(m_dstDataBufferCPUCopy, mappedResource.pData, m_textureDataSize); // copy from GPU meory into CPU memory.
+
+	m_pImmediateContext->Unmap(m_dstDataBufferGPUCopy, 0);
+	return m_dstDataBufferCPUCopy; // return CPU copy of GPU resource.
 }
