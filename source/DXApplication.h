@@ -41,7 +41,7 @@ public:
 		, m_destDataGPUBufferView(NULL)
 		, m_computeShader(NULL)
 		, m_pVertexLayout(NULL)
-		, g_pConstBuffer(NULL)
+		, m_GPUConstBuffer(NULL)
 		, m_dstDataBufferGPUCopy(NULL)
 		, m_dstDataBufferCPUCopy(NULL)
 		, m_imageWidth(0)
@@ -55,21 +55,11 @@ public:
 	void	render();
 	void	release();
 
-	// we prefer it as an inline implementation
-	void    updateShaderConst(UINT iWidth, UINT iHeight)
-	{
-		CB cb = { iWidth, iHeight };
-		//m_pImmediateContext->UpdateSubresource(g_pConstBuffer, 0, nullptr, &cb, 0, 0);
-		m_pImmediateContext->CSSetConstantBuffers(0, 1, &g_pConstBuffer);
-		printf("- Update const buffer %d %d.\n", iWidth, iHeight);
-	}
-
 private:
 	// Methods
-	bool	loadFullScreenQuad();
+	bool	initGraphics();
 	void	releaseFullScreenQuad() {}
 	bool	loadTextureAndCheckFomart(LPCWSTR filename, ID3D11Texture2D** texture);
-	bool	copyTexture();
 	bool	createInputBuffer();
 	bool	createOutputBuffer();
 	bool	loadComputeShader( LPCWSTR filename, ID3D11ComputeShader** computeShader);
@@ -104,7 +94,7 @@ private:
 	ID3D11ShaderResourceView*	m_destTextureView;
 	ID3D11Buffer*				m_destDataGPUBuffer;
 	ID3D11UnorderedAccessView*	m_destDataGPUBufferView;
-	ID3D11Buffer*               g_pConstBuffer;
+	ID3D11Buffer*               m_GPUConstBuffer;
 	ID3D11ComputeShader*		m_computeShader;
 	ID3D11Buffer*				m_dstDataBufferGPUCopy;
 	byte*						m_dstDataBufferCPUCopy;
