@@ -117,8 +117,8 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 bool DXApplication::runComputeShader( LPCWSTR shaderFilename ) 
 {
 	// Some service variables
-	ID3D11UnorderedAccessView* ppUAViewNULL[1] = { NULL };
-	ID3D11ShaderResourceView*  ppSRVNULL[2] = { NULL, NULL };
+	ID3D11UnorderedAccessView *ppUAViewNULL[1] = { NULL };
+	ID3D11ShaderResourceView  *ppSRVNULL[2] = { NULL, NULL };
 
 	// Load and compile the shader and create a compute shader DX object. If failed, return.
 	if(!loadComputeShader( shaderFilename, &m_computeShader ))
@@ -191,7 +191,6 @@ void DXApplication::render()
 	float ClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f };
 	m_pImmediateContext->ClearRenderTargetView( m_pRenderTargetView, ClearColor );
 
-	// set resources to pixel stage.[start idex of the resource slot(0 based), number of shader resources to set, resources to set]
 	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcTextureView );
 	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_destTextureView );
 	// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
