@@ -76,13 +76,13 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	vp.MinDepth = 0.0f; vp.MaxDepth = 1.0f;
 	vp.TopLeftX = 0; vp.TopLeftY = 0;
 	m_pImmediateContext->RSSetViewports( 1, &vp );
-	if(!initGraphics()) return false;
-
 	// load texture and upate image size.
 	if (!loadTextureAndCheckFomart(L"data/fiesta.bmp", &m_srcTexture))
 	{
 		return false;
 	}
+	if(!initGraphics()) return false;
+
 	// Create the Const Buffer to transfer const parameters into shader.
 	D3D11_BUFFER_DESC descConstBuffer;
 	ZeroMemory(&descConstBuffer, sizeof(descConstBuffer));
@@ -117,70 +117,27 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 bool DXApplication::runComputeShader( LPCWSTR shaderFilename ) 
 {
 	// Some service variables
-	ID3D11UnorderedAccessView *ppUAViewNULL[1] = { NULL };
-	ID3D11ShaderResourceView  *ppSRVNULL[2] = { NULL, NULL };
+	ID3D11UnorderedAccessView *ppUAViewNULL[2] = { NULL, NULL };
+	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
 
-	// Load and compile the shader and create a compute shader DX object. If failed, return.
 	if(!loadComputeShader( shaderFilename, &m_computeShader ))
 		return false;
 	
-	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );// Set up the shader and run
-	m_pImmediateContext->CSSetShaderResources( 0, 1, &m_srcDataGPUBufferView );// Set Compute Shader Input.
-	m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, &m_destDataGPUBufferView, NULL );// Set Compute Shader Output
+	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
+    m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
+    m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
 	
-	// So Dispatch returns immediately ?
-	m_pImmediateContext->Dispatch( 60, 60, 1 );// Run Compute Shader
+	m_pImmediateContext->Dispatch( 60, 60, 1 );// So Dispatch returns immediately?
+    //m_pImmediateContext->CopyResource(tempCSInputTexture, tempCSOutputTexture); // copy resource by GPU
+	//m_pImmediateContext->Dispatch( 60, 60, 1 );// So Dispatch returns immediately?
 
 	m_pImmediateContext->CSSetShader( NULL, NULL, 0 );
 	m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewNULL, NULL );
-	m_pImmediateContext->CSSetShaderResources( 0, 2, ppSRVNULL );
+	m_pImmediateContext->CSSetShaderResources( 0, 1, ppSRVNULL );
 
-	byte* gpuDestBufferCopy = getCPUCopyOfGPUDestBuffer(); // get compute result's CPU buffer.
-
-	// Create dest texture from src texture's description.
-	// Copy compute shader result into the texture for rendering.
-	if (!m_destTexture)
-	{
-		D3D11_TEXTURE2D_DESC desc;
-		m_srcTexture->GetDesc(&desc);
-		desc.Usage = D3D11_USAGE_DYNAMIC;
-		desc.MipLevels = 1;
-		desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-		desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-		if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_destTexture) != S_OK) return false;
-	}
-
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	// Map destTexture into context.(get a pointer to data in gpu and denies gpu's access)
-	// [resources, subresource id,specify cpu's write and read permissions for resource, specify what cpu does when gpu is busy, ]
-	if (m_pImmediateContext->Map(m_destTexture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource) != S_OK)
-	{
-		printf("- Map dst texture into CPU memory, failed.\n");
-		return false;
-	}
-	memcpy(mappedResource.pData, gpuDestBufferCopy, m_textureDataSize);
-	m_pImmediateContext->Unmap(m_destTexture, 0);// Unmap destTexture from Context.
-
-	// Create a view of the output texture
-	D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc; 
-	ZeroMemory(&viewDesc, sizeof(viewDesc));
-	viewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; 
-	viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
-	viewDesc.Texture2D.MipLevels = 1;
-	viewDesc.Texture2D.MostDetailedMip = 0;
-	if( FAILED( m_pd3dDevice->CreateShaderResourceView( m_destTexture, &viewDesc, &m_destTextureView) ) )
-	{	
-		printf( "- Failed to create pixel shader texture resource view.\n" );
-		return false;
-	}
+    // update dest texture
+    m_pImmediateContext->CopyResource(m_destTexture, tempCSOutputTexture); // copy resource by GPU
 	return true;
-}
-
-/**
-*	Update
-*/
-void DXApplication::update() 
-{
 }
 
 /**
@@ -210,13 +167,9 @@ void DXApplication::release()
 
 	SafeRelease(&m_destTexture);
 	SafeRelease(&m_destTextureView);
-	SafeRelease(&m_destDataGPUBuffer);
-	SafeRelease(&m_destDataGPUBufferView);
 
 	SafeRelease(&m_srcTexture);
 	SafeRelease(&m_srcTextureView);
-	SafeRelease(&m_srcDataGPUBuffer);
-	SafeRelease(&m_srcDataGPUBufferView);
 
 	SafeRelease(&m_pVertexShader);
 	SafeRelease(&m_pPixelShader);
@@ -373,7 +326,29 @@ bool DXApplication::initGraphics()
 	m_pImmediateContext->IASetVertexBuffers( 0, 1, &m_pVertexBuffer, &stride, &offset );
 	m_pImmediateContext->IASetInputLayout( m_pVertexLayout ); // Set the input layout
 	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP ); // Set primitive topology
-
+    {
+        D3D11_TEXTURE2D_DESC desc;
+        m_srcTexture->GetDesc(&desc);
+        desc.Usage = D3D11_USAGE_DYNAMIC;
+        desc.MipLevels = 1;
+        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+        if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_destTexture) != S_OK) return false;
+    }
+    {
+        // Create a view of the output texture
+        D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
+        ZeroMemory(&viewDesc, sizeof(viewDesc));
+        viewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
+        viewDesc.Texture2D.MipLevels = 1;
+        viewDesc.Texture2D.MostDetailedMip = 0;
+        if (FAILED(m_pd3dDevice->CreateShaderResourceView(m_destTexture, &viewDesc, &m_destTextureView)))
+        {
+            printf("- Failed to create pixel shader texture resource view.\n");
+            return false;
+        }
+    }
 	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
 	m_pImmediateContext->VSSetShader( m_pVertexShader, NULL, 0 );
 	m_pImmediateContext->PSSetShader( m_pPixelShader, NULL, 0 );
@@ -387,15 +362,12 @@ bool DXApplication::initGraphics()
 *	Load a texture from disc and set it so that we can extract the data into a buffer for the compute shader to use.
 *   To make everything more clear we also save a copy of the texture data in main memory. We will copy from this buffer
 *	the data that we need to feed into the GPU for the compute shader.
+	//https://github.com/Microsoft/DirectXTK/wiki/WICTextureLoader
 */
 bool DXApplication::loadTextureAndCheckFomart(LPCWSTR filename, ID3D11Texture2D** texture)
 {
-	//https://github.com/Microsoft/DirectXTK/wiki/WICTextureLoader
 	if (SUCCEEDED(CreateWICTextureFromFile(m_pd3dDevice, filename, (ID3D11Resource **)texture, &m_srcTextureView)))
 	{
-		//https://msdn.microsoft.com/en-us/library/windows/desktop/ff476519(v=vs.85).aspx
-		// To keep it simple, limit the textures we only load to RGBA 8bits per channel
-		// So check the image file format here.
 		D3D11_TEXTURE2D_DESC desc;
 		(*texture)->GetDesc(&desc);
 		if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
@@ -406,6 +378,7 @@ bool DXApplication::loadTextureAndCheckFomart(LPCWSTR filename, ID3D11Texture2D*
 		// update image size. 
 		m_imageWidth  = desc.Width;
 		m_imageHeight = desc.Height;
+        m_textureDataSize = m_imageWidth * m_imageHeight * 4;
 		printf("- Texture loaded, size=%dx%d.\n", m_imageWidth, m_imageHeight);
 		return true;
 	}
@@ -423,49 +396,20 @@ bool DXApplication::createInputBuffer()
 {
 	D3D11_TEXTURE2D_DESC desc;
 	m_srcTexture->GetDesc(&desc);
-	desc.Usage = D3D11_USAGE_STAGING; // support copy data from GPU to CPU
-	desc.BindFlags = 0; desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
-	ID3D11Texture2D* tempInputTexture;
-	if(m_pd3dDevice->CreateTexture2D(&desc, NULL, &tempInputTexture) != S_OK) return false;
-	m_pImmediateContext->CopyResource(tempInputTexture, m_srcTexture); // copy resource by GPU.
-
-	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	if(m_pImmediateContext->Map(tempInputTexture, 0, D3D11_MAP_READ, 0, &mappedResource) != S_OK) return false;
-	m_textureDataSize =  mappedResource.RowPitch * desc.Height;
-	if(m_srcTextureData) delete [] m_srcTextureData;
-	m_srcTextureData = new byte[m_textureDataSize];
-	memcpy(m_srcTextureData, mappedResource.pData, m_textureDataSize);
-	m_pImmediateContext->Unmap(tempInputTexture, 0);
-
-	// Create buffer in GPU memory
-	D3D11_BUFFER_DESC descGPUBuffer;
-	ZeroMemory( &descGPUBuffer, sizeof(descGPUBuffer) );
-	// https://msdn.microsoft.com/zh-CN/library/ff476085(v=vs.85).aspx
-	// Identify how to bind the resources to render pipeline.
-	descGPUBuffer.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-	descGPUBuffer.ByteWidth = m_textureDataSize;
-	descGPUBuffer.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	descGPUBuffer.StructureByteStride = 4;	// We assume the data is in the RGBA format, 8 bits per channel
-
-	// GPU buffer initial data.
-	D3D11_SUBRESOURCE_DATA InitData;
-	InitData.pSysMem = m_srcTextureData;
-	if(FAILED(m_pd3dDevice->CreateBuffer( &descGPUBuffer, &InitData, &m_srcDataGPUBuffer ))) return false;
-
-	// Create shader resource view.
-	// [This view is a raw buffer](https://msdn.microsoft.com/ZH-CN/library/ff728736.aspx)
-	// https://msdn.microsoft.com/zh-cn/library/ff476900.aspx#Raw_Buffer_Views
-	D3D11_SHADER_RESOURCE_VIEW_DESC descView;
-	ZeroMemory( &descView, sizeof(descView) );
-	descView.ViewDimension = D3D11_SRV_DIMENSION_BUFFEREX;
-	descView.BufferEx.FirstElement = 0;
-	descView.Format = DXGI_FORMAT_UNKNOWN;
-	descView.BufferEx.NumElements = descGPUBuffer.ByteWidth / descGPUBuffer.StructureByteStride;
-	if (FAILED(m_pd3dDevice->CreateShaderResourceView(m_srcDataGPUBuffer, &descView, &m_srcDataGPUBufferView)))
-	{
-		printf("- Create Shader Resource View failed.\n");
-		return false;
-	}
+    if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSInputTexture) != S_OK) return false;
+    m_pImmediateContext->CopyResource(tempCSInputTexture, m_srcTexture); // copy resource by GPU.
+    // Create a view of the output texture
+    D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
+    ZeroMemory(&viewDesc, sizeof(viewDesc));
+    viewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
+    viewDesc.Texture2D.MipLevels = 1;
+    viewDesc.Texture2D.MostDetailedMip = 0;
+    if (FAILED(m_pd3dDevice->CreateShaderResourceView(tempCSInputTexture, &viewDesc, &tempCSInputTextureView)))
+    {
+        printf("- Failed to create compute shader texture resource view.\n");
+        return false;
+    }
 	return true;
 }
 
@@ -475,31 +419,20 @@ bool DXApplication::createInputBuffer()
 */
 bool DXApplication::createOutputBuffer()
 {
-	// The compute shader needs to output to some buffer so create a GPU buffer for that.
-	D3D11_BUFFER_DESC descGPUBuffer;
-	ZeroMemory( &descGPUBuffer, sizeof(descGPUBuffer) );
-	descGPUBuffer.BindFlags = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-	descGPUBuffer.ByteWidth = m_textureDataSize;
-	descGPUBuffer.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	descGPUBuffer.StructureByteStride = 4;	// We assume the output data is in the RGBA format, 8 bits per channel
-	if (FAILED(m_pd3dDevice->CreateBuffer(&descGPUBuffer, NULL, &m_destDataGPUBuffer)))
-	{
-		printf("- Create Compute Shader output buffer failed.");
-		return false;
-	}
-
-	// The view we need for the output is an unordered access view. This is to allow the compute shader to write anywhere in the buffer.
+    D3D11_TEXTURE2D_DESC desc;
+    m_srcTexture->GetDesc(&desc);
+    desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
+    if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSOutputTexture) != S_OK) return false;
 	D3D11_UNORDERED_ACCESS_VIEW_DESC descView;
-	ZeroMemory( &descView, sizeof(descView) );
-	descView.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-	descView.Buffer.FirstElement = 0;
-	descView.Format = DXGI_FORMAT_UNKNOWN;      // Format must be must be DXGI_FORMAT_UNKNOWN, when creating a View of a Structured Buffer
-	descView.Buffer.NumElements = descGPUBuffer.ByteWidth / descGPUBuffer.StructureByteStride; 
-	if(FAILED(m_pd3dDevice->CreateUnorderedAccessView( m_destDataGPUBuffer, &descView, &m_destDataGPUBufferView )))
-	{
-		printf("- Create Compute Shader output buffer view failed.");
-		return false;
-	}
+    ZeroMemory(&descView, sizeof(descView));
+    descView.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    descView.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+    descView.Texture2D = { 0 };
+    if (FAILED(m_pd3dDevice->CreateUnorderedAccessView(tempCSOutputTexture, &descView, &tempCSOutputTextureView)))
+    {
+        printf("- Create Compute Shader output buffer view failed.");
+        return false;
+    }
 	return true;
 }
 
@@ -541,6 +474,7 @@ bool DXApplication::loadComputeShader(LPCWSTR filename, ID3D11ComputeShader** co
  */
 byte* DXApplication::getCPUCopyOfGPUDestBuffer()
 {
+#if 0 
 	if (!m_dstDataBufferGPUCopy)
 	{
 		D3D11_BUFFER_DESC desc;
@@ -568,4 +502,6 @@ byte* DXApplication::getCPUCopyOfGPUDestBuffer()
 	memcpy(m_dstDataBufferCPUCopy, mappedResource.pData, m_textureDataSize); // copy from GPU meory into CPU memory.
 	m_pImmediateContext->Unmap(m_dstDataBufferGPUCopy, 0);
 	return m_dstDataBufferCPUCopy; // return CPU copy of GPU resource.
+#endif
+    return 0;
 }

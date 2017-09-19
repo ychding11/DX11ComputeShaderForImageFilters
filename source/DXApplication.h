@@ -34,11 +34,7 @@ public:
 		, m_pRenderTargetView(NULL)
 		, m_srcTexture(NULL)
 		, m_srcTextureData(NULL)
-		, m_srcDataGPUBuffer(NULL)
-		, m_srcDataGPUBufferView(NULL)
 		, m_destTexture(NULL)
-		, m_destDataGPUBuffer(NULL)
-		, m_destDataGPUBufferView(NULL)
 		, m_computeShader(NULL)
 		, m_pVertexLayout(NULL)
 		, m_GPUConstBuffer(NULL)
@@ -51,7 +47,7 @@ public:
 	// Methods
 	bool	initialize(HWND hwnd, int w, int h);
 	bool	runComputeShader( LPCWSTR shaderFilename );
-	void	update();
+    void	update() {}
 	void	render();
 	void	release();
 
@@ -87,15 +83,15 @@ private:
 	ID3D11Texture2D*			m_srcTexture;
 	ID3D11ShaderResourceView*	m_srcTextureView;
 	byte*						m_srcTextureData;
-	ID3D11Buffer*				m_srcDataGPUBuffer;
-	ID3D11ShaderResourceView*	m_srcDataGPUBufferView;
 
 	ID3D11Texture2D*			m_destTexture;
 	ID3D11ShaderResourceView*	m_destTextureView;
-	ID3D11Buffer*				m_destDataGPUBuffer;
-	ID3D11UnorderedAccessView*	m_destDataGPUBufferView;
 	ID3D11Buffer*               m_GPUConstBuffer;
 	ID3D11ComputeShader*		m_computeShader;
 	ID3D11Buffer*				m_dstDataBufferGPUCopy;
 	byte*						m_dstDataBufferCPUCopy;
+    ID3D11Texture2D*            tempCSInputTexture;
+    ID3D11ShaderResourceView*   tempCSInputTextureView;
+    ID3D11Texture2D*            tempCSOutputTexture;
+    ID3D11UnorderedAccessView*   tempCSOutputTextureView;
 };
