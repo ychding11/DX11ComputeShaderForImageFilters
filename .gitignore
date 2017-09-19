@@ -51,6 +51,8 @@ Temporary Items
 *.db
 *.opendb
 *.user
+*.sdf
+*.suo
 Debug/
 .vs/
 
