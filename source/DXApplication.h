@@ -47,6 +47,7 @@ public:
 	// Methods
 	bool	initialize(HWND hwnd, int w, int h);
 	bool	runComputeShader( LPCWSTR shaderFilename );
+	void	runGaussianFilter( LPCWSTR shaderFilename );
     void	update() {}
 	void	render();
 	void	release();
@@ -58,7 +59,7 @@ private:
 	bool	loadTextureAndCheckFomart(LPCWSTR filename, ID3D11Texture2D** texture);
 	bool	createInputBuffer();
 	bool	createOutputBuffer();
-	bool	loadComputeShader( LPCWSTR filename, ID3D11ComputeShader** computeShader);
+    bool	loadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
 	byte*	getCPUCopyOfGPUDestBuffer();
 
 	// Fields

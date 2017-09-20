@@ -107,7 +107,8 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 
 	if(!createInputBuffer()) return false;
 	if(!createOutputBuffer()) return false;
-	if(!runComputeShader( L"data/Desaturate.hlsl")) return false;
+	//if(!runComputeShader( L"data/Desaturate.hlsl")) return false;
+	runGaussianFilter( L"data/filters.hlsl");
 	return true;
 }
 
@@ -120,8 +121,7 @@ bool DXApplication::runComputeShader( LPCWSTR shaderFilename )
 	ID3D11UnorderedAccessView *ppUAViewNULL[2] = { NULL, NULL };
 	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
 
-	if(!loadComputeShader( shaderFilename, &m_computeShader ))
-		return false;
+	if(!loadComputeShader( shaderFilename,"CSMain", &m_computeShader )) return false;
 	
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
@@ -140,6 +140,34 @@ bool DXApplication::runComputeShader( LPCWSTR shaderFilename )
 	return true;
 }
 
+void DXApplication::runGaussianFilter( LPCWSTR shaderFilename ) 
+{
+	// Some service variables
+	ID3D11UnorderedAccessView *ppUAViewNULL[2] = { NULL, NULL };
+	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
+
+    // x direction
+	if(!loadComputeShader( shaderFilename,"mainX", &m_computeShader )) return;
+	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
+    m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
+    m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
+	m_pImmediateContext->Dispatch( 2, m_imageHeight, 1 );// So Dispatch returns immediately?
+
+    m_pImmediateContext->CopyResource(tempCSInputTexture, tempCSOutputTexture); // copy resource by GPU
+
+    //y direction
+	if(!loadComputeShader( shaderFilename,"mainY", &m_computeShader )) return;
+	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
+	m_pImmediateContext->Dispatch( m_imageWidth, 2, 1 );// So Dispatch returns immediately?
+
+    //clear
+	m_pImmediateContext->CSSetShader( NULL, NULL, 0 );
+	m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewNULL, NULL );
+	m_pImmediateContext->CSSetShaderResources( 0, 1, ppSRVNULL );
+
+    // update dest texture
+    m_pImmediateContext->CopyResource(m_destTexture, tempCSOutputTexture); // copy resource by GPU
+}
 /**
 *	Render the scene
 */
@@ -439,7 +467,7 @@ bool DXApplication::createOutputBuffer()
 /**
 *	Load a compute shader from the specified file always using CSMain as entry point
 */
-bool DXApplication::loadComputeShader(LPCWSTR filename, ID3D11ComputeShader** computeShader)
+bool DXApplication::loadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader)
 {
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 
@@ -450,7 +478,7 @@ bool DXApplication::loadComputeShader(LPCWSTR filename, ID3D11ComputeShader** co
 	LPCSTR pTarget = ( m_pd3dDevice->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ) ? "cs_5_0" : "cs_4_0";
 	ID3DBlob* pErrorBlob = NULL;
 	ID3DBlob* pBlob = NULL;
-	HRESULT hr = D3DCompileFromFile( filename, NULL, NULL, "CSMain", pTarget, dwShaderFlags, NULL, &pBlob, &pErrorBlob);
+	HRESULT hr = D3DCompileFromFile( filename, NULL, NULL, entrypoint, pTarget, dwShaderFlags, NULL, &pBlob, &pErrorBlob);
 	if ( FAILED(hr) )
 	{
 		if ( pErrorBlob ) OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
