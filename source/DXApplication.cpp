@@ -77,7 +77,7 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	vp.TopLeftX = 0; vp.TopLeftY = 0;
 	m_pImmediateContext->RSSetViewports( 1, &vp );
 	// load texture and upate image size.
-	if (!loadTextureAndCheckFomart(L"data/fiesta.bmp", &m_srcTexture))
+	if (!loadTextureAndCheckFomart(L"data/metal-bunny.png", &m_srcTexture))
 	{
 		return false;
 	}
@@ -151,14 +151,14 @@ void DXApplication::runGaussianFilter( LPCWSTR shaderFilename )
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
-	m_pImmediateContext->Dispatch( 2, m_imageHeight, 1 );// So Dispatch returns immediately?
+	m_pImmediateContext->Dispatch( 1, m_imageHeight, 1 );// So Dispatch returns immediately?
 
     m_pImmediateContext->CopyResource(tempCSInputTexture, tempCSOutputTexture); // copy resource by GPU
 
     //y direction
 	if(!loadComputeShader( shaderFilename,"mainY", &m_computeShader )) return;
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
-	m_pImmediateContext->Dispatch( m_imageWidth, 2, 1 );// So Dispatch returns immediately?
+	m_pImmediateContext->Dispatch( m_imageWidth, 1, 1 );// So Dispatch returns immediately?
 
     //clear
 	m_pImmediateContext->CSSetShader( NULL, NULL, 0 );

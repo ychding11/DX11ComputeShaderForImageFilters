@@ -8,8 +8,8 @@ cbuffer CB : register( b0 )
     unsigned int iDimX;
 };
 
-#define THREAD_GROUP_SIZE_X 960
-#define THREAD_GROUP_SIZE_Y 540
+#define THREAD_GROUP_SIZE_X 400
+#define THREAD_GROUP_SIZE_Y 400
 
 Texture2D<float4>   InputMap : register(t0);
 RWTexture2D<float4> OutputMap : register(u0);
@@ -37,11 +37,11 @@ void mainX( uint3 dispatchThreadID : SV_DispatchThreadID )
     OutputMap[dispatchThreadID.xy] = Color;
 }
 
-[numthreads(THREAD_GROUP_SIZE_Y, 1, 1)]
+[numthreads(1,THREAD_GROUP_SIZE_Y, 1)]
 void mainY( uint3 dispatchThreadID : SV_DispatchThreadID )
 {
     float4 data = InputMap.Load(dispatchThreadID);
-    sharedData[dispatchThreadID.x] = data;
+    sharedData[dispatchThreadID.y] = data;
 		
 	GroupMemoryBarrierWithGroupSync();
 	
