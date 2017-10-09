@@ -51,6 +51,8 @@ public:
     void	update() {}
 	void	render();
 	void	release();
+    int     imageHeight() const { return m_imageHeight; }
+    int     imageWidth()  const { return m_imageWidth; }
 
 private:
 	// Methods
@@ -63,8 +65,6 @@ private:
 	byte*	getCPUCopyOfGPUDestBuffer();
 
 	// Fields
-	int							m_windowWidth;
-	int							m_windowHeight;
 	int							m_imageWidth;
 	int							m_imageHeight;
 
