@@ -24,9 +24,10 @@ APIs with new ones.
 
 Problems
 ========
-1. adjust window size according to input image.
-2. thread group dimension  is hard-code now.
+1. adjust window size according to input image. Done
+2. thread group dimension is hard-code now.
 3. big image issue.
+4. add new control to ajust filter parameters.
 
 Controls
 ========
