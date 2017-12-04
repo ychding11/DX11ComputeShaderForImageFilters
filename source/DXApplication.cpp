@@ -178,8 +178,8 @@ void DXApplication::render()
 
 	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcTextureView );
 	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_destTextureView );
-	// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
-	m_pImmediateContext->Draw( 4, 0 );
+	m_pImmediateContext->Draw( 4, 0 ); // Draw(vertex count, vertex offset in vertex buffer)
+
 	m_pSwapChain->Present( 0, 0 );
 }
 
@@ -271,8 +271,6 @@ bool DXApplication::initGraphics()
 		XMFLOAT3 Pos;
 		XMFLOAT2 Tex;
 	};
-
-	// Create vertex buffer
 	SimpleVertex vertices[] =
 	{
 		{  XMFLOAT3(-1.0f,-1.0f, 0.5f ), XMFLOAT2( 0.0f, 1.0f ) },
@@ -287,10 +285,10 @@ bool DXApplication::initGraphics()
 
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory( &bd, sizeof(bd) );
-	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof( vertices);
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; //specify to bind the buffer to input-assembler stage.
 	bd.CPUAccessFlags = 0;
+	bd.Usage     = D3D11_USAGE_DEFAULT;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; //bind the buffer to input-assembler stage.
+	bd.ByteWidth = sizeof( vertices);
 	hr = m_pd3dDevice->CreateBuffer( &bd, &InitData, &m_pVertexBuffer );
 	if( FAILED( hr ) )
 	{	
@@ -299,13 +297,12 @@ bool DXApplication::initGraphics()
 	}
 
 	// Define the input layout
-	// [semantic name, semantic index for elements with semantic name, data type of element data, input assembler index, offset between elements, input slot class, number of instance to draw]
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
-	// Create an input-layout object to describe the input-buffer data for the input-assembler stage.
+
 	// [layout description array, number of input data type, compiled shader, size of compiled shader, output]
 	hr = m_pd3dDevice->CreateInputLayout(layout, 2, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &m_pVertexLayout);
 	pVSBlob->Release();
@@ -315,8 +312,13 @@ bool DXApplication::initGraphics()
 		return false;
 	}
 
+	UINT offset = 0, stride = sizeof( SimpleVertex );
+	m_pImmediateContext->IASetVertexBuffers( 0, 1, &m_pVertexBuffer, &stride, &offset );
+	m_pImmediateContext->IASetInputLayout( m_pVertexLayout ); // Set the input layout
+	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP ); // Set primitive topology
+
 	// Create a render target view from swap chain's back buffer.
-	// access one of swap chain's back buffer.[0-based buffer index, interface type which manipulates buffer, output param]
+	// access  swap chain's back buffer.[0-based buffer index, interface to manipulate buffer, output param]
 	ID3D11Texture2D* pBackBuffer = NULL;
 	hr = m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), ( LPVOID* )&pBackBuffer );
 	if (FAILED(hr))
@@ -348,12 +350,6 @@ bool DXApplication::initGraphics()
 		return false;
 	}
 
-	UINT offset = 0, stride = sizeof( SimpleVertex );
-	// Bind vertex buffer to input-assembler stage.
-	// [start slot index, number of vertex buffer, vertex buffer array, stride array for each vertex buffer, offset array]
-	m_pImmediateContext->IASetVertexBuffers( 0, 1, &m_pVertexBuffer, &stride, &offset );
-	m_pImmediateContext->IASetInputLayout( m_pVertexLayout ); // Set the input layout
-	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP ); // Set primitive topology
     {
         D3D11_TEXTURE2D_DESC desc;
         m_srcTexture->GetDesc(&desc);
@@ -363,6 +359,7 @@ bool DXApplication::initGraphics()
         desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
         if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_destTexture) != S_OK) return false;
     }
+
     {
         // Create a view of the output texture
         D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
@@ -377,9 +374,10 @@ bool DXApplication::initGraphics()
             return false;
         }
     }
-	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
+
 	m_pImmediateContext->VSSetShader( m_pVertexShader, NULL, 0 );
 	m_pImmediateContext->PSSetShader( m_pPixelShader, NULL, 0 );
+	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
 	m_pImmediateContext->OMSetRenderTargets( 1, &m_pRenderTargetView, NULL ); // setup render target into context.
 	return true;
 }
