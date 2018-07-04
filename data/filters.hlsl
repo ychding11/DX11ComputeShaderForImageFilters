@@ -8,7 +8,7 @@ cbuffer CB : register( b0 )
     unsigned int iDimX;
 };
 
-#define THREAD_GROUP_SIZE_X 960
+#define THREAD_GROUP_SIZE_X 960 
 #define THREAD_GROUP_SIZE_Y 540
 
 Texture2D<float4>   InputMap : register(t0);
@@ -21,7 +21,7 @@ static const float filter[7] = {
 
 groupshared float4 sharedData[THREAD_GROUP_SIZE_X];
 
-[numthreads(THREAD_GROUP_SIZE_X, 1, 1)]
+[numthreads(iWidth, 1, 1)]
 void mainX( uint3 dispatchThreadID : SV_DispatchThreadID )
 {
     float4 data = InputMap.Load(dispatchThreadID);
@@ -37,15 +37,15 @@ void mainX( uint3 dispatchThreadID : SV_DispatchThreadID )
     OutputMap[dispatchThreadID.xy] = Color;
 }
 
-[numthreads(THREAD_GROUP_SIZE_Y, 1, 1)]
+[numthreads(1, iHeight, 1)]
 void mainY( uint3 dispatchThreadID : SV_DispatchThreadID )
 {
     float4 data = InputMap.Load(dispatchThreadID);
-    sharedData[dispatchThreadID.x] = data;
+    sharedData[dispatchThreadID.y] = data;
 		
 	GroupMemoryBarrierWithGroupSync();
 	
-    int3 texturelocation = dispatchThreadID - int3(3, 0, 0);
+    int3 texturelocation = dispatchThreadID - int3(0, 3, 0);
     float4 Color = float4(0.0, 0.0, 0.0, 0.0);
     for (int i = 0; i < 7; i++)
         Color += sharedData[texturelocation.y + i] * filter[i];

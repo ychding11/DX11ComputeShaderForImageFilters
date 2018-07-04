@@ -9,7 +9,7 @@
 #include <cstdio>
 
 // code migration. https://msdn.microsoft.com/en-us/library/windows/desktop/ee418730(v=vs.85).aspx
-//#include <xnamath.h> //has been replaced
+// #include <xnamath.h> //has been replaced
 #include <DirectXMath.h>
 
 using namespace DirectX;
@@ -21,18 +21,15 @@ struct CB
 	UINT iHeight;
 };
 
-/**
-*	This class contains all the system stuff that we need to render with OpenGL
-*/
-class DXApplication {
+class DXApplication
+{
 public:
-	// Ctor
 	DXApplication() 
 		: m_pd3dDevice(NULL)
 		, m_pImmediateContext(NULL)
 		, m_pSwapChain(NULL)
 		, m_pRenderTargetView(NULL)
-		, m_srcTexture(NULL)
+		, m_srcImageTexture(NULL)
 		, m_srcTextureData(NULL)
 		, m_destTexture(NULL)
 		, m_computeShader(NULL)
@@ -44,22 +41,23 @@ public:
 		, m_imageHeight(0)
 	{}
 
-	// Methods
 	bool	initialize(HWND hwnd, int w, int h);
-	bool	runComputeShader( LPCWSTR shaderFilename );
+	bool	RunComputeShader( LPCWSTR shaderFilename );
 	void	runGaussianFilter( LPCWSTR shaderFilename );
     void	update() {}
-	void	render();
+	void	RenderResult();
 	void	release();
 
 private:
-	// Methods
-	bool	initGraphics();
+	void	InitGraphics();
 	void	releaseFullScreenQuad() {}
-	bool	loadTextureAndCheckFomart(LPCWSTR filename, ID3D11Texture2D** texture);
-	bool	createInputBuffer();
-	bool	createOutputBuffer();
-    bool	loadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
+	void	LoadImageAsTexture(LPCWSTR filename, ID3D11Texture2D** texture);
+	void    CreateResultImageTextureAndView();
+	void    CreateCSConstBuffer();
+	void    SetupViewport(int width, int height);
+	void	CreateCSInputTextureAndView();
+	void	CreateCSOutputTextureAndView();
+    bool	LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
 	byte*	getCPUCopyOfGPUDestBuffer();
 
 	// Fields
@@ -81,12 +79,12 @@ private:
 
 	UINT						m_textureDataSize;
 
-	ID3D11Texture2D*			m_srcTexture;
-	ID3D11ShaderResourceView*	m_srcTextureView;
+	ID3D11Texture2D*			m_srcImageTexture;
+	ID3D11ShaderResourceView*	m_srcImageTextureView;
 	byte*						m_srcTextureData;
 
 	ID3D11Texture2D*			m_destTexture;
-	ID3D11ShaderResourceView*	m_destTextureView;
+	ID3D11ShaderResourceView*	m_resultImageTextureView;
 	ID3D11Buffer*               m_GPUConstBuffer;
 	ID3D11ComputeShader*		m_computeShader;
 	ID3D11Buffer*				m_dstDataBufferGPUCopy;

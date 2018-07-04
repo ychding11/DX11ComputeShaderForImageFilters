@@ -3,7 +3,8 @@
 
 
 // Safe Release Function
-template <class T> void SafeRelease(T **ppT)
+template <class T>
+void SafeRelease(T **ppT)
 {
 	if (*ppT)
 	{
@@ -13,8 +14,8 @@ template <class T> void SafeRelease(T **ppT)
 }
 
 /**
-*	Initialize our DX application with windows size.
-*/
+ *	Initialize our DX application with windows size.
+ */
 bool DXApplication::initialize(HWND hWnd, int width, int height) 
 {
 	HRESULT hr = S_OK;
@@ -39,11 +40,12 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 		D3D_FEATURE_LEVEL_10_0,
 	};
 	UINT numFeatureLevels = ARRAYSIZE( featureLevels );
+
 	D3D_DRIVER_TYPE         driverType = D3D_DRIVER_TYPE_NULL;
 	D3D_FEATURE_LEVEL       featureLevel = D3D_FEATURE_LEVEL_11_0;
 
 	DXGI_SWAP_CHAIN_DESC sd;
-	ZeroMemory( &sd, sizeof( sd ) );
+	ZeroMemory( &sd, sizeof(sd) );
 	sd.BufferCount = 1;
 	sd.BufferDesc.Width  = width;
 	sd.BufferDesc.Height = height;
@@ -56,58 +58,46 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	sd.SampleDesc.Quality = 0;
 	sd.Windowed = TRUE;
 
+	// Create Device, DeviceContext, SwapChain, FeatureLevel
 	for( UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++ )
 	{
 		driverType = driverTypes[driverTypeIndex];
-		hr = D3D11CreateDeviceAndSwapChain( NULL, driverType, NULL, createDeviceFlags, featureLevels, numFeatureLevels,
-							D3D11_SDK_VERSION, &sd, &m_pSwapChain, &m_pd3dDevice, &featureLevel, &m_pImmediateContext );
-		if( SUCCEEDED( hr ) ) break;
+		hr = D3D11CreateDeviceAndSwapChain( NULL, driverType, NULL, createDeviceFlags, featureLevels, numFeatureLevels, D3D11_SDK_VERSION, &sd, &m_pSwapChain, &m_pd3dDevice, &featureLevel, &m_pImmediateContext );
+		if( SUCCEEDED(hr) ) break;
 	}
+	if ( FAILED(hr) )
+	{
+		printf("- Create D3D Device and Swap Chain Failed.\n");
+		return false;
+	}
+
+	// Create Render Target View Object from SwapChain's Back Buffer.
+	// access one of swap chain's back buffer.[0-based buffer index, interface type which manipulates buffer, output param]
+	ID3D11Texture2D* pBackBuffer = NULL;
+	hr = m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), ( LPVOID* )&pBackBuffer );
 	if (FAILED(hr))
 	{
-		printf("- Create DX Device and swap chain failed.\n");
+		printf("- Cet Back Buffer from SwapChain Failed.\n");
 		return false;
 	}
-
-	// Setup the viewport
-	D3D11_VIEWPORT vp;
-	vp.Width  = (FLOAT)width;
-	vp.Height = (FLOAT)height;
-	vp.MinDepth = 0.0f; vp.MaxDepth = 1.0f;
-	vp.TopLeftX = 0; vp.TopLeftY = 0;
-	m_pImmediateContext->RSSetViewports( 1, &vp );
-	// load texture and upate image size.
-	if (!loadTextureAndCheckFomart(L"data/fiesta.bmp", &m_srcTexture))
-	{
-		return false;
-	}
-	if(!initGraphics()) return false;
-
-	// Create the Const Buffer to transfer const parameters into shader.
-	D3D11_BUFFER_DESC descConstBuffer;
-	ZeroMemory(&descConstBuffer, sizeof(descConstBuffer));
-	descConstBuffer.ByteWidth = ((sizeof(CB) + 15) / 16) * 16; // Caution! size needs to be multiple of 16.
-	descConstBuffer.Usage = D3D11_USAGE_DYNAMIC;
-	descConstBuffer.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	descConstBuffer.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-	// Fill in the subresource data.
-	CB cb = { m_imageWidth, m_imageHeight };
-	D3D11_SUBRESOURCE_DATA InitData;
-	InitData.pSysMem = &cb;
-	InitData.SysMemPitch = 0;
-	InitData.SysMemSlicePitch = 0;
-	hr = m_pd3dDevice->CreateBuffer(&descConstBuffer, &InitData, &m_GPUConstBuffer); // create const buffer.
+	hr = m_pd3dDevice->CreateRenderTargetView( pBackBuffer, NULL, &m_pRenderTargetView );
+	pBackBuffer->Release();
 	if (FAILED(hr))
 	{
-		printf("-  Create Constant Buffer failed. \n");
+		printf("- Create render target from Back buffer failed.\n");
 		return false;
 	}
-	m_pImmediateContext->CSSetConstantBuffers(0, 1, &m_GPUConstBuffer);
 
-	if(!createInputBuffer()) return false;
-	if(!createOutputBuffer()) return false;
-	//if(!runComputeShader( L"data/Desaturate.hlsl")) return false;
+	SetupViewport(width, height);
+	// Load texture and upate image size.
+	LoadImageAsTexture(L"data/metal-bunny.png", &m_srcImageTexture);
+    CreateResultImageTextureAndView();
+	InitGraphics();
+	CreateCSConstBuffer();
+
+	CreateCSInputTextureAndView();
+	CreateCSOutputTextureAndView();
+	//if(!RunComputeShader( L"data/Desaturate.hlsl")) return false;
 	runGaussianFilter( L"data/filters.hlsl");
 	return true;
 }
@@ -115,13 +105,13 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 /**
 *	Run a compute shader loaded from disk shader file. 
 */
-bool DXApplication::runComputeShader( LPCWSTR shaderFilename ) 
+bool DXApplication::RunComputeShader( LPCWSTR shaderFilename ) 
 {
 	// Some service variables
 	ID3D11UnorderedAccessView *ppUAViewNULL[2] = { NULL, NULL };
 	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
 
-	if(!loadComputeShader( shaderFilename,"CSMain", &m_computeShader )) return false;
+	if(!LoadComputeShader( shaderFilename,"CSMain", &m_computeShader )) return false;
 	
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
@@ -135,8 +125,8 @@ bool DXApplication::runComputeShader( LPCWSTR shaderFilename )
 	m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewNULL, NULL );
 	m_pImmediateContext->CSSetShaderResources( 0, 1, ppSRVNULL );
 
-    // update dest texture
-    m_pImmediateContext->CopyResource(m_destTexture, tempCSOutputTexture); // copy resource by GPU
+    // copy result into DestTexture
+    m_pImmediateContext->CopyResource(m_destTexture, tempCSOutputTexture);
 	return true;
 }
 
@@ -147,7 +137,7 @@ void DXApplication::runGaussianFilter( LPCWSTR shaderFilename )
 	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
 
     // x direction
-	if(!loadComputeShader( shaderFilename,"mainX", &m_computeShader )) return;
+	if(!LoadComputeShader( shaderFilename,"mainX", &m_computeShader )) return;
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
@@ -156,7 +146,7 @@ void DXApplication::runGaussianFilter( LPCWSTR shaderFilename )
     m_pImmediateContext->CopyResource(tempCSInputTexture, tempCSOutputTexture); // copy resource by GPU
 
     //y direction
-	if(!loadComputeShader( shaderFilename,"mainY", &m_computeShader )) return;
+	if(!LoadComputeShader( shaderFilename,"mainY", &m_computeShader )) return;
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
 	m_pImmediateContext->Dispatch( m_imageWidth, 2, 1 );// So Dispatch returns immediately?
 
@@ -171,15 +161,15 @@ void DXApplication::runGaussianFilter( LPCWSTR shaderFilename )
 /**
 *	Render the scene
 */
-void DXApplication::render() 
+void DXApplication::RenderResult() 
 {
 	float ClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f };
 	m_pImmediateContext->ClearRenderTargetView( m_pRenderTargetView, ClearColor );
 
-	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcTextureView );
-	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_destTextureView );
-	// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
-	m_pImmediateContext->Draw( 4, 0 );
+	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcImageTextureView );
+	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_resultImageTextureView );
+	
+	m_pImmediateContext->Draw( 4, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
 	m_pSwapChain->Present( 0, 0 );
 }
 
@@ -194,10 +184,10 @@ void DXApplication::release()
 	SafeRelease(&m_computeShader);
 
 	SafeRelease(&m_destTexture);
-	SafeRelease(&m_destTextureView);
+	SafeRelease(&m_resultImageTextureView);
 
-	SafeRelease(&m_srcTexture);
-	SafeRelease(&m_srcTextureView);
+	SafeRelease(&m_srcImageTexture);
+	SafeRelease(&m_srcImageTextureView);
 
 	SafeRelease(&m_pVertexShader);
 	SafeRelease(&m_pPixelShader);
@@ -215,7 +205,7 @@ void DXApplication::release()
 /**
  *	Load full screen quad for rendering both src and dest texture.
  */
-bool DXApplication::initGraphics()
+void DXApplication::InitGraphics()
 {
 	HRESULT hr;
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
@@ -224,48 +214,6 @@ bool DXApplication::initGraphics()
 	dwShaderFlags |= D3DCOMPILE_DEBUG;
 #endif
 	
-	ID3DBlob* pErrorBlob;
-	ID3DBlob* pVSBlob = NULL;
-
-	// Compile the vertex shader from file.
-	if( FAILED(D3DCompileFromFile(L"./data/fullQuad.fx", NULL, NULL, "VS", "vs_4_0", dwShaderFlags, 0, &pVSBlob, &pErrorBlob) ) )
-	{
-		if( pErrorBlob )
-		{
-			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
-			pErrorBlob->Release();
-		}
-		return false;
-	}
-	if( pErrorBlob ) pErrorBlob->Release();
-	// Create the vertex shader
-	hr = m_pd3dDevice->CreateVertexShader( pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &m_pVertexShader );
-	if( FAILED( hr ) )
-	{	
-		printf( "- Failed to create vertex shader.\n" );
-		return false;
-	}
-
-	// Compile the pixel shader
-	ID3DBlob* pPSBlob = NULL;
-	if( FAILED(D3DCompileFromFile(L"./data/fullQuad.fx", NULL, NULL, "PS", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob) ) )
-	{
-		if( pErrorBlob )
-		{
-			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
-			pErrorBlob->Release();
-		}
-		return false;
-	}
-	// Create the pixel shader
-	hr = m_pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShader );
-	pPSBlob->Release();
-	if( FAILED( hr ) )
-	{	
-		printf( "- Failed to create pixel shader. \n" );
-		return false;
-	}
-
 	struct SimpleVertex
 	{
 		XMFLOAT3 Pos;
@@ -289,17 +237,38 @@ bool DXApplication::initGraphics()
 	ZeroMemory( &bd, sizeof(bd) );
 	bd.Usage = D3D11_USAGE_DEFAULT;
 	bd.ByteWidth = sizeof( vertices);
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; //specify to bind the buffer to input-assembler stage.
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = 0;
 	hr = m_pd3dDevice->CreateBuffer( &bd, &InitData, &m_pVertexBuffer );
 	if( FAILED( hr ) )
 	{	
 		printf( "- Failed to create vertex buffer.\n" );
-		return false;
+		exit(1);
 	}
 
-	// Define the input layout
-	// [semantic name, semantic index for elements with semantic name, data type of element data, input assembler index, offset between elements, input slot class, number of instance to draw]
+	ID3DBlob* pErrorBlob;
+	ID3DBlob* pVSBlob = NULL;
+	// Compile vertex shader
+	if( FAILED(D3DCompileFromFile(L"./data/fullQuad.fx", NULL, NULL, "VS", "vs_4_0", dwShaderFlags, 0, &pVSBlob, &pErrorBlob) ) )
+	{
+		if( pErrorBlob )
+		{
+			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
+			pErrorBlob->Release();
+		}
+		exit(1);
+	}
+	if( pErrorBlob ) pErrorBlob->Release(); // is this check a must ?
+	// Create vertex shader object
+	hr = m_pd3dDevice->CreateVertexShader( pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &m_pVertexShader );
+	if( FAILED(hr) )
+	{	
+		printf( "- Failed to create vertex shader.\n" );
+		exit(1);
+	}
+
+	// Define vertex input layout
+	// [semantic name, semantic index for elements with semantic name, data type, input assembler index, offset between elements, input slot class, number of instance to draw]
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -311,28 +280,32 @@ bool DXApplication::initGraphics()
 	pVSBlob->Release();
 	if (FAILED(hr))
 	{
-		printf("- Failed to create input layout.\n");
-		return false;
+		printf("- Failed to create input layout object.\n");
+		exit(1);
 	}
 
-	// Create a render target view from swap chain's back buffer.
-	// access one of swap chain's back buffer.[0-based buffer index, interface type which manipulates buffer, output param]
-	ID3D11Texture2D* pBackBuffer = NULL;
-	hr = m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), ( LPVOID* )&pBackBuffer );
-	if (FAILED(hr))
+	// Compile pixel shader
+	ID3DBlob* pPSBlob = NULL;
+	if( FAILED( D3DCompileFromFile(L"./data/fullQuad.fx", NULL, NULL, "PS", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob) ) )
 	{
-		printf("- Cet Back buffer from swap chain failed.\n");
-		return false;
+		if( pErrorBlob )
+		{
+			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
+			pErrorBlob->Release();
+		}
+		exit(1);
 	}
-	hr = m_pd3dDevice->CreateRenderTargetView( pBackBuffer, NULL, &m_pRenderTargetView );
-	pBackBuffer->Release();
-	if (FAILED(hr))
-	{
-		printf("- Create render target from Back buffer failed.\n");
-		return false;
+	// Create pixel shader object
+	hr = m_pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShader );
+	pPSBlob->Release();
+	if( FAILED( hr ) )
+	{	
+		printf( "- Failed to create pixel shader. \n" );
+		exit(1);
 	}
 
-	// Create the sample state
+
+	// Create sampler state
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory( &sampDesc, sizeof(sampDesc) );
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
@@ -344,8 +317,8 @@ bool DXApplication::initGraphics()
 	hr = m_pd3dDevice->CreateSamplerState( &sampDesc, &m_pSamplerLinear );
 	if (FAILED(hr))
 	{
-		printf("- Failed to create texture sampler.\n");
-		return false;
+		printf("- Failed to Create Texture Sampler Object.\n");
+		exit(1);
 	}
 
 	UINT offset = 0, stride = sizeof( SimpleVertex );
@@ -354,37 +327,77 @@ bool DXApplication::initGraphics()
 	m_pImmediateContext->IASetVertexBuffers( 0, 1, &m_pVertexBuffer, &stride, &offset );
 	m_pImmediateContext->IASetInputLayout( m_pVertexLayout ); // Set the input layout
 	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP ); // Set primitive topology
-    {
-        D3D11_TEXTURE2D_DESC desc;
-        m_srcTexture->GetDesc(&desc);
-        desc.Usage = D3D11_USAGE_DYNAMIC;
-        desc.MipLevels = 1;
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-        desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_destTexture) != S_OK) return false;
-    }
-    {
-        // Create a view of the output texture
-        D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
-        ZeroMemory(&viewDesc, sizeof(viewDesc));
-        viewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
-        viewDesc.Texture2D.MipLevels = 1;
-        viewDesc.Texture2D.MostDetailedMip = 0;
-        if (FAILED(m_pd3dDevice->CreateShaderResourceView(m_destTexture, &viewDesc, &m_destTextureView)))
-        {
-            printf("- Failed to create pixel shader texture resource view.\n");
-            return false;
-        }
-    }
-	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
 	m_pImmediateContext->VSSetShader( m_pVertexShader, NULL, 0 );
 	m_pImmediateContext->PSSetShader( m_pPixelShader, NULL, 0 );
-	m_pImmediateContext->OMSetRenderTargets( 1, &m_pRenderTargetView, NULL ); // setup render target into context.
-	return true;
+	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
+	m_pImmediateContext->OMSetRenderTargets( 1, &m_pRenderTargetView, NULL ); // setup render target into output Merge.
 }
 
 
+void    DXApplication::CreateCSConstBuffer()
+{
+	HRESULT hr;
+	// Create the Const Buffer to transfer const parameters into shader.
+	D3D11_BUFFER_DESC descConstBuffer;
+	ZeroMemory(&descConstBuffer, sizeof(descConstBuffer));
+	descConstBuffer.ByteWidth = ((sizeof(CB) + 15) / 16) * 16; // Caution! size needs to be multiple of 16.
+	descConstBuffer.Usage = D3D11_USAGE_DYNAMIC;
+	descConstBuffer.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	descConstBuffer.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+	// Fill in the subresource data.
+	CB cb = { m_imageWidth, m_imageHeight };
+	D3D11_SUBRESOURCE_DATA InitData;
+	InitData.pSysMem = &cb;
+	InitData.SysMemPitch = 0;
+	InitData.SysMemSlicePitch = 0;
+	hr = m_pd3dDevice->CreateBuffer(&descConstBuffer, &InitData, &m_GPUConstBuffer); // create const buffer.
+	if (FAILED(hr))
+	{
+		printf("-  Create Constant Buffer Failed. \n");
+		exit(1);
+	}
+	m_pImmediateContext->CSSetConstantBuffers(0, 1, &m_GPUConstBuffer);
+}
+
+void    DXApplication::SetupViewport(int width, int height)
+{
+	// Setup viewport into Rasterizer
+	D3D11_VIEWPORT vp;
+	vp.Width  = (FLOAT)width;
+	vp.Height = (FLOAT)height;
+	vp.MinDepth = 0.0f; vp.MaxDepth = 1.0f;
+	vp.TopLeftX = 0; vp.TopLeftY = 0;
+	m_pImmediateContext->RSSetViewports( 1, &vp );
+}
+
+void   DXApplication::CreateResultImageTextureAndView()
+{
+    D3D11_TEXTURE2D_DESC desc;
+    m_srcImageTexture->GetDesc(&desc);
+    desc.Usage = D3D11_USAGE_DYNAMIC;
+    desc.MipLevels = 1;
+    desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    if ( FAILED( m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_destTexture)))
+    {
+        printf("- Failed to create result image texture and resource view.\n");
+		exit(1);
+    }
+
+    // Create a view output texture
+    D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
+    ZeroMemory(&viewDesc, sizeof(viewDesc));
+    viewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
+    viewDesc.Texture2D.MipLevels = 1;
+    viewDesc.Texture2D.MostDetailedMip = 0;
+    if (FAILED(m_pd3dDevice->CreateShaderResourceView(m_destTexture, &viewDesc, &m_resultImageTextureView)))
+    {
+        printf("- Failed to create result image texture and resource view.\n");
+		exit(1);
+    }
+}
 
 /**
 *	Load a texture from disc and set it so that we can extract the data into a buffer for the compute shader to use.
@@ -392,41 +405,44 @@ bool DXApplication::initGraphics()
 *	the data that we need to feed into the GPU for the compute shader.
 	//https://github.com/Microsoft/DirectXTK/wiki/WICTextureLoader
 */
-bool DXApplication::loadTextureAndCheckFomart(LPCWSTR filename, ID3D11Texture2D** texture)
+void DXApplication::LoadImageAsTexture(LPCWSTR filename, ID3D11Texture2D** texture)
 {
-	if (SUCCEEDED(CreateWICTextureFromFile(m_pd3dDevice, filename, (ID3D11Resource **)texture, &m_srcTextureView)))
+	if (SUCCEEDED(CreateWICTextureFromFile(m_pd3dDevice, filename, (ID3D11Resource **)texture, &m_srcImageTextureView)))
 	{
 		D3D11_TEXTURE2D_DESC desc;
 		(*texture)->GetDesc(&desc);
 		if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
 		{
 			printf("- Texture format is not qualified.\n");
-			return false;
+			exit(1);
 		}
 		// update image size. 
 		m_imageWidth  = desc.Width;
 		m_imageHeight = desc.Height;
         m_textureDataSize = m_imageWidth * m_imageHeight * 4;
 		printf("- Texture loaded, size=%dx%d.\n", m_imageWidth, m_imageHeight);
-		return true;
 	}
 	else
 	{
-		printf("- Texture load failed.\n");
-		return false;
+		printf("- Texture Load failed.\n");
+		exit(1);
 	}
 }
 
 /**
   *	Once we have the texture data in RAM we create a GPU buffer to feed the compute shader.
   */
-bool DXApplication::createInputBuffer()
+void DXApplication::CreateCSInputTextureAndView()
 {
 	D3D11_TEXTURE2D_DESC desc;
-	m_srcTexture->GetDesc(&desc);
-    if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSInputTexture) != S_OK) return false;
-    m_pImmediateContext->CopyResource(tempCSInputTexture, m_srcTexture); // copy resource by GPU.
-    // Create a view of the output texture
+	m_srcImageTexture->GetDesc(&desc);
+	if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSInputTexture) != S_OK)
+	{
+        printf("- Failed to create compute shader texture resource view.\n");
+		exit(1);
+	}
+    m_pImmediateContext->CopyResource(tempCSInputTexture, m_srcImageTexture); // copy resource by GPU.
+
     D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
     ZeroMemory(&viewDesc, sizeof(viewDesc));
     viewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -436,21 +452,25 @@ bool DXApplication::createInputBuffer()
     if (FAILED(m_pd3dDevice->CreateShaderResourceView(tempCSInputTexture, &viewDesc, &tempCSInputTextureView)))
     {
         printf("- Failed to create compute shader texture resource view.\n");
-        return false;
+		exit(1);
     }
-	return true;
 }
 
 /**
 *	We know the compute shader will output on a buffer which is as big as the texture. Therefore we need to create a
 *	GPU buffer and an unordered resource view.
 */
-bool DXApplication::createOutputBuffer()
+void DXApplication::CreateCSOutputTextureAndView()
 {
     D3D11_TEXTURE2D_DESC desc;
-    m_srcTexture->GetDesc(&desc);
+    m_srcImageTexture->GetDesc(&desc);
     desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
-    if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSOutputTexture) != S_OK) return false;
+	if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSOutputTexture) != S_OK)
+	{
+        printf("- Create Compute Shader output buffer view failed.");
+		exit(1);
+	}
+
 	D3D11_UNORDERED_ACCESS_VIEW_DESC descView;
     ZeroMemory(&descView, sizeof(descView));
     descView.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -459,15 +479,14 @@ bool DXApplication::createOutputBuffer()
     if (FAILED(m_pd3dDevice->CreateUnorderedAccessView(tempCSOutputTexture, &descView, &tempCSOutputTextureView)))
     {
         printf("- Create Compute Shader output buffer view failed.");
-        return false;
+		exit(1);
     }
-	return true;
 }
 
-/**
-*	Load a compute shader from the specified file always using CSMain as entry point
-*/
-bool DXApplication::loadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader)
+/*
+ *	Load a compute shader from  file and use CSMain as entry point
+ */
+bool DXApplication::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader)
 {
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 
@@ -482,16 +501,16 @@ bool DXApplication::loadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D1
 	if ( FAILED(hr) )
 	{
 		if ( pErrorBlob ) OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
-		if(pErrorBlob) pErrorBlob->Release();
+		if ( pErrorBlob ) pErrorBlob->Release();
 		if(pBlob) pBlob->Release();
-		printf("- Create compute shader from file failed.\n");
+		printf("- Compile Compute Shader Failed.\n");
 		return false;
 	}
 	else
 	{
 		hr = m_pd3dDevice->CreateComputeShader( pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, computeShader );
-		if(pErrorBlob) pErrorBlob->Release();
-		if(pBlob) pBlob->Release();
+		if (pErrorBlob) pErrorBlob->Release();
+		if (pBlob) pBlob->Release();
 		return hr == S_OK;
 	}
 }

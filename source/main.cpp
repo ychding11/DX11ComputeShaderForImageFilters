@@ -5,8 +5,8 @@
 
 HINSTANCE		g_hInst = NULL;
 HWND			g_hWnd = NULL;
-int				width = 1920;// 720;
-int				height = 1080; // 540 * 1;
+int				width = 400;// 1920;// 720;
+int				height = 400;// 1080; // 540 * 1;
 DXApplication	application;
 
 LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
@@ -16,28 +16,28 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 
 	switch( message )
 	{
-	case WM_PAINT:
-		hdc = BeginPaint( hWnd, &ps );
-		EndPaint( hWnd, &ps );
-		break;
-
-	case WM_KEYUP:
-		if(wParam == 112)
-			application.runComputeShader(L"data/Desaturate.hlsl");
-		else if(wParam == 113)
-			application.runComputeShader(L"data/Circles.hlsl");
-		else if (tolower((int)wParam) == 'q')
-		{
-			PostQuitMessage( 0 );
-		}
-		break;
-
-	case WM_DESTROY:
-		PostQuitMessage( 0 );
-		break;
-
-	default:
-		return DefWindowProc( hWnd, message, wParam, lParam );
+    	case WM_PAINT:
+    		hdc = BeginPaint( hWnd, &ps );
+    		EndPaint( hWnd, &ps );
+    		break;
+    
+    	case WM_KEYUP:
+    		if(wParam == 112)
+    			application.RunComputeShader(L"data/Desaturate.hlsl");
+    		else if(wParam == 113)
+    			application.RunComputeShader(L"data/Circles.hlsl");
+    		else if (tolower((int)wParam) == 'q')
+    		{
+    			PostQuitMessage( 0 );
+    		}
+    		break;
+    
+    	case WM_DESTROY:
+    		PostQuitMessage( 0 );
+    		break;
+    
+    	default:
+    		return DefWindowProc( hWnd, message, wParam, lParam );
 	}
 
 	return 0;
@@ -99,7 +99,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 		}
 		else
 		{
-			application.render();
+			application.RenderResult();
 		}
 	}
 

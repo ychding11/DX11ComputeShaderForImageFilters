@@ -9,4 +9,20 @@
     <ClInclude Include="source\DXApplication.h" />
     <ClInclude Include="source\WICTextureLoader.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Filter Include="shader">
+      <UniqueIdentifier>{eeecab26-eb3b-4985-9b1e-5d4d87d85331}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="data\Circles.hlsl">
+      <Filter>shader</Filter>
+    </FxCompile>
+    <FxCompile Include="data\Desaturate.hlsl">
+      <Filter>shader</Filter>
+    </FxCompile>
+    <FxCompile Include="data\filters.hlsl">
+      <Filter>shader</Filter>
+    </FxCompile>
+  </ItemGroup>
 </Project>
