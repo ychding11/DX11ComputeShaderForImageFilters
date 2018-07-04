@@ -31,7 +31,7 @@ public:
 		, m_pRenderTargetView(NULL)
 		, m_srcImageTexture(NULL)
 		, m_srcTextureData(NULL)
-		, m_destTexture(NULL)
+		, m_resultImageTexture(NULL)
 		, m_computeShader(NULL)
 		, m_pVertexLayout(NULL)
 		, m_GPUConstBuffer(NULL)
@@ -39,16 +39,19 @@ public:
 		, m_dstDataBufferCPUCopy(NULL)
 		, m_imageWidth(0)
 		, m_imageHeight(0)
+		, m_csShaderFilename(L"data/Desaturate.hlsl")
 	{}
 
 	bool	initialize(HWND hwnd, int w, int h);
-	bool	RunComputeShader( LPCWSTR shaderFilename );
+	void	RunComputeShader();
 	void	runGaussianFilter( LPCWSTR shaderFilename );
     void	update() {}
 	void	RenderResult();
 	void	release();
     int     imageHeight() const { return m_imageHeight; }
     int     imageWidth()  const { return m_imageWidth; }
+
+	LPCWSTR						m_csShaderFilename;
 
 private:
 	void	InitGraphics();
@@ -59,13 +62,12 @@ private:
 	void    SetupViewport(int width, int height);
 	void	CreateCSInputTextureAndView();
 	void	CreateCSOutputTextureAndView();
-    bool	LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
+    void	LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
 	byte*	getCPUCopyOfGPUDestBuffer();
 
 	// Fields
 	int							m_imageWidth;
 	int							m_imageHeight;
-
 	ID3D11Device*				m_pd3dDevice;
 	ID3D11DeviceContext*		m_pImmediateContext;
 	IDXGISwapChain*				m_pSwapChain;
@@ -83,7 +85,7 @@ private:
 	ID3D11ShaderResourceView*	m_srcImageTextureView;
 	byte*						m_srcTextureData;
 
-	ID3D11Texture2D*			m_destTexture;
+	ID3D11Texture2D*			m_resultImageTexture;
 	ID3D11ShaderResourceView*	m_resultImageTextureView;
 	ID3D11Buffer*               m_GPUConstBuffer;
 	ID3D11ComputeShader*		m_computeShader;

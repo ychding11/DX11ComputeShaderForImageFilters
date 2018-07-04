@@ -20,14 +20,24 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
     		break;
     
     	case WM_KEYUP:
-    		if(wParam == 112)
-    			application.RunComputeShader(L"data/Desaturate.hlsl");
-    		else if(wParam == 113)
-    			application.RunComputeShader(L"data/Circles.hlsl");
+			if (wParam == 112)
+			{
+				application.m_csShaderFilename = L"data/Desaturate.hlsl";
+    			application.RunComputeShader();
+			}
+			else if (wParam == 113)
+			{
+				application.m_csShaderFilename = L"data/Circles.hlsl";
+    			application.RunComputeShader();
+			}
     		else if (tolower((int)wParam) == 'q')
     		{
     			PostQuitMessage( 0 );
     		}
+			else if (tolower((int)wParam) == 'u')
+			{
+    			application.RunComputeShader();
+			}
     		break;
     
     	case WM_DESTROY:

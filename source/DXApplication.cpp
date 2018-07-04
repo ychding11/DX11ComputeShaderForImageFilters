@@ -89,45 +89,40 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	}
 
 	SetupViewport(width, height);
-	// Load texture and upate image size.
-	LoadImageAsTexture(L"data/metal-bunny.png", &m_srcImageTexture);
+	LoadImageAsTexture(L"data/metal-bunny.png", &m_srcImageTexture);// Load texture and upate image size.
     CreateResultImageTextureAndView();
 	InitGraphics();
-	CreateCSConstBuffer();
 
+	CreateCSConstBuffer();
 	CreateCSInputTextureAndView();
 	CreateCSOutputTextureAndView();
-	//if(!RunComputeShader( L"data/Desaturate.hlsl")) return false;
-	runGaussianFilter( L"data/filters.hlsl");
+	RunComputeShader( );
 	return true;
 }
 
 /**
 *	Run a compute shader loaded from disk shader file. 
 */
-bool DXApplication::RunComputeShader( LPCWSTR shaderFilename ) 
+void DXApplication::RunComputeShader( ) 
 {
 	// Some service variables
 	ID3D11UnorderedAccessView *ppUAViewNULL[2] = { NULL, NULL };
 	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
 
-	if(!LoadComputeShader( shaderFilename,"CSMain", &m_computeShader )) return false;
+	LoadComputeShader(m_csShaderFilename, "CSMain", &m_computeShader);
 	
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
 	
-	m_pImmediateContext->Dispatch( 60, 60, 1 );// So Dispatch returns immediately?
-    //m_pImmediateContext->CopyResource(tempCSInputTexture, tempCSOutputTexture); // copy resource by GPU
-	//m_pImmediateContext->Dispatch( 60, 60, 1 );// So Dispatch returns immediately?
+	m_pImmediateContext->Dispatch( (m_imageWidth + 31) / 32, (m_imageHeight + 31) / 32, 1 );// So Dispatch returns immediately?
 
 	m_pImmediateContext->CSSetShader( NULL, NULL, 0 );
 	m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewNULL, NULL );
 	m_pImmediateContext->CSSetShaderResources( 0, 1, ppSRVNULL );
 
     // copy result into DestTexture
-    m_pImmediateContext->CopyResource(m_destTexture, tempCSOutputTexture);
-	return true;
+    m_pImmediateContext->CopyResource(m_resultImageTexture, tempCSOutputTexture);
 }
 
 void DXApplication::runGaussianFilter( LPCWSTR shaderFilename ) 
@@ -137,7 +132,7 @@ void DXApplication::runGaussianFilter( LPCWSTR shaderFilename )
 	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
 
     // x direction
-	if(!LoadComputeShader( shaderFilename,"mainX", &m_computeShader )) return;
+	LoadComputeShader( shaderFilename,"mainX", &m_computeShader );
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
@@ -146,7 +141,7 @@ void DXApplication::runGaussianFilter( LPCWSTR shaderFilename )
     m_pImmediateContext->CopyResource(tempCSInputTexture, tempCSOutputTexture); // copy resource by GPU
 
     //y direction
-	if(!LoadComputeShader( shaderFilename,"mainY", &m_computeShader )) return;
+	LoadComputeShader( shaderFilename,"mainY", &m_computeShader );
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
 	m_pImmediateContext->Dispatch( m_imageWidth, 1, 1 );// So Dispatch returns immediately?
 
@@ -156,14 +151,14 @@ void DXApplication::runGaussianFilter( LPCWSTR shaderFilename )
 	m_pImmediateContext->CSSetShaderResources( 0, 1, ppSRVNULL );
 
     // update dest texture
-    m_pImmediateContext->CopyResource(m_destTexture, tempCSOutputTexture); // copy resource by GPU
+    m_pImmediateContext->CopyResource(m_resultImageTexture, tempCSOutputTexture); // copy resource by GPU
 }
 /**
 *	Render the scene
 */
 void DXApplication::RenderResult() 
 {
-	float ClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f };
+	float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
 	m_pImmediateContext->ClearRenderTargetView( m_pRenderTargetView, ClearColor );
 	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcImageTextureView );
 	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_resultImageTextureView );
@@ -181,7 +176,7 @@ void DXApplication::release()
 
 	SafeRelease(&m_computeShader);
 
-	SafeRelease(&m_destTexture);
+	SafeRelease(&m_resultImageTexture);
 	SafeRelease(&m_resultImageTextureView);
 
 	SafeRelease(&m_srcImageTexture);
@@ -378,7 +373,7 @@ void   DXApplication::CreateResultImageTextureAndView()
     desc.MipLevels = 1;
     desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    if ( FAILED( m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_destTexture)))
+    if ( FAILED( m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_resultImageTexture)))
     {
         printf("- Failed to create result image texture and resource view.\n");
 		exit(1);
@@ -391,7 +386,7 @@ void   DXApplication::CreateResultImageTextureAndView()
     viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
     viewDesc.Texture2D.MipLevels = 1;
     viewDesc.Texture2D.MostDetailedMip = 0;
-    if (FAILED(m_pd3dDevice->CreateShaderResourceView(m_destTexture, &viewDesc, &m_resultImageTextureView)))
+    if (FAILED(m_pd3dDevice->CreateShaderResourceView(m_resultImageTexture, &viewDesc, &m_resultImageTextureView)))
     {
         printf("- Failed to create result image texture and resource view.\n");
 		exit(1);
@@ -485,7 +480,7 @@ void DXApplication::CreateCSOutputTextureAndView()
 /*
  *	Load a compute shader from  file and use CSMain as entry point
  */
-bool DXApplication::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader)
+void DXApplication::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader)
 {
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 
@@ -503,14 +498,13 @@ bool DXApplication::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D1
 		if ( pErrorBlob ) pErrorBlob->Release();
 		if(pBlob) pBlob->Release();
 		printf("- Compile Compute Shader Failed.\n");
-		return false;
+		exit(2);
 	}
 	else
 	{
 		hr = m_pd3dDevice->CreateComputeShader( pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, computeShader );
 		if (pErrorBlob) pErrorBlob->Release();
 		if (pBlob) pBlob->Release();
-		return hr == S_OK;
 	}
 }
 
