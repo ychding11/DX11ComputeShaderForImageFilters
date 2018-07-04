@@ -1,9 +1,7 @@
 #include <windows.h>
 #include <d3d11.h>
-//#include <d3dx11.h>
 #include "DXApplication.h"
 
-HINSTANCE		g_hInst = NULL;
 HWND			g_hWnd = NULL;
 int				width = 400;// 1920;// 720;
 int				height = 400;// 1080; // 540 * 1;
@@ -62,7 +60,6 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 	if( !RegisterClassEx( &wcex ) )
 		return E_FAIL;
 
-	// Create window g_hInst = hInstance;
 	RECT rc = { 0, 0, width, height };
 	AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
 	g_hWnd = CreateWindow( L"TutorialWindowClass", L"Compute Shader - Filters",
@@ -80,14 +77,16 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow )
 {
 	if( FAILED( InitWindow( hInstance, nCmdShow ) ) )
-		return 0;
-
-	if (!application.initialize(g_hWnd, width, height))
 	{
-		MessageBox(NULL,L"Initialize failed, exit application.", L"Warning", MB_ICONWARNING);
+		MessageBox(NULL,L"Initialize window failed, exit.", L"Warning", MB_ICONWARNING);
 		return 0;
 	}
-
+	if (!application.initialize(g_hWnd, width, height))
+	{
+		MessageBox(NULL,L"Initialize App failed, exit!", L"Warning", MB_ICONWARNING);
+		return 0;
+	}
+    SetWindowPos(g_hWnd, 0, 0, 0, application.imageWidth(), application.imageHeight() * 2, SWP_NOMOVE );
 	// Main message loop
 	MSG msg = {0};
 	while( WM_QUIT != msg.message )

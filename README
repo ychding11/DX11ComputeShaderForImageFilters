@@ -22,6 +22,13 @@ The original code contains the deprecated DXSDK APIs, so it always compiles
 failed on Windows 10 platform. What I did here is to replace the deprecated
 APIs with new ones.
 
+Problems
+========
+1. adjust window size according to input image. Done
+2. thread group dimension is hard-code now.
+3. big image issue.
+4. add new control to ajust filter parameters.
+
 Controls
 ========
 

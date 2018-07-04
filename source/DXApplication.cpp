@@ -141,14 +141,14 @@ void DXApplication::runGaussianFilter( LPCWSTR shaderFilename )
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
-	m_pImmediateContext->Dispatch( 2, m_imageHeight, 1 );// So Dispatch returns immediately?
+	m_pImmediateContext->Dispatch( 1, m_imageHeight, 1 );// So Dispatch returns immediately?
 
     m_pImmediateContext->CopyResource(tempCSInputTexture, tempCSOutputTexture); // copy resource by GPU
 
     //y direction
 	if(!LoadComputeShader( shaderFilename,"mainY", &m_computeShader )) return;
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
-	m_pImmediateContext->Dispatch( m_imageWidth, 2, 1 );// So Dispatch returns immediately?
+	m_pImmediateContext->Dispatch( m_imageWidth, 1, 1 );// So Dispatch returns immediately?
 
     //clear
 	m_pImmediateContext->CSSetShader( NULL, NULL, 0 );
@@ -165,10 +165,8 @@ void DXApplication::RenderResult()
 {
 	float ClearColor[4] = { 0.0f, 0.125f, 0.3f, 1.0f };
 	m_pImmediateContext->ClearRenderTargetView( m_pRenderTargetView, ClearColor );
-
 	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcImageTextureView );
 	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_resultImageTextureView );
-	
 	m_pImmediateContext->Draw( 4, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
 	m_pSwapChain->Present( 0, 0 );
 }
@@ -219,8 +217,6 @@ void DXApplication::InitGraphics()
 		XMFLOAT3 Pos;
 		XMFLOAT2 Tex;
 	};
-
-	// Create vertex buffer
 	SimpleVertex vertices[] =
 	{
 		{  XMFLOAT3(-1.0f,-1.0f, 0.5f ), XMFLOAT2( 0.0f, 1.0f ) },
@@ -239,6 +235,9 @@ void DXApplication::InitGraphics()
 	bd.ByteWidth = sizeof( vertices);
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	bd.CPUAccessFlags = 0;
+	bd.Usage     = D3D11_USAGE_DEFAULT;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; //bind the buffer to input-assembler stage.
+	bd.ByteWidth = sizeof( vertices);
 	hr = m_pd3dDevice->CreateBuffer( &bd, &InitData, &m_pVertexBuffer );
 	if( FAILED( hr ) )
 	{	
@@ -274,7 +273,7 @@ void DXApplication::InitGraphics()
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
-	// Create an input-layout object to describe the input-buffer data for the input-assembler stage.
+
 	// [layout description array, number of input data type, compiled shader, size of compiled shader, output]
 	hr = m_pd3dDevice->CreateInputLayout(layout, 2, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &m_pVertexLayout);
 	pVSBlob->Release();

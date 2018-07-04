@@ -47,6 +47,8 @@ public:
     void	update() {}
 	void	RenderResult();
 	void	release();
+    int     imageHeight() const { return m_imageHeight; }
+    int     imageWidth()  const { return m_imageWidth; }
 
 private:
 	void	InitGraphics();
@@ -61,8 +63,6 @@ private:
 	byte*	getCPUCopyOfGPUDestBuffer();
 
 	// Fields
-	int							m_windowWidth;
-	int							m_windowHeight;
 	int							m_imageWidth;
 	int							m_imageHeight;
 
