@@ -96,7 +96,6 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 	CreateCSConstBuffer();
 	CreateCSInputTextureAndView();
 	CreateCSOutputTextureAndView();
-	RunComputeShader( );
 	return true;
 }
 
@@ -110,8 +109,8 @@ void DXApplication::RunComputeShader( )
 	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
 
 	LoadComputeShader(m_csShaderFilename, "CSMain", &m_computeShader);
-	
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
+
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
 	
