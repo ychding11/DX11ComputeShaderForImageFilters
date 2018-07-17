@@ -16,11 +16,15 @@ void SafeRelease(T **ppT)
 /**
  *	Initialize our DX application with windows size.
  */
-bool DXApplication::initialize(HWND hWnd, int width, int height) 
+bool DXApplication::initialize(HWND hWnd ) 
 {
 	HRESULT hr = S_OK;
-	UINT createDeviceFlags = 0;
+    RECT rc;
+    GetClientRect(hWnd, &rc);
+    unsigned int width = rc.right - rc.left;
+    unsigned int height = rc.bottom - rc.top;
 
+	UINT createDeviceFlags = 0;
 	#ifdef _DEBUG
 	createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 	#endif

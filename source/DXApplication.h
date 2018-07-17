@@ -43,7 +43,7 @@ public:
 		, m_csShaderFilename(L"data/Desaturate.hlsl")
 	{   }
 
-	bool	initialize(HWND hwnd, int w, int h);
+	bool	initialize(HWND hwnd);
 	void	RunComputeShader();
 	void	runGaussianFilter( LPCWSTR shaderFilename );
     void	update() {}
