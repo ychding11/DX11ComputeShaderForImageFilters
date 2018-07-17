@@ -1,6 +1,6 @@
-Texture2D srcTexture : register( t0 );
+Texture2D srcTexture  : register( t0 );
 Texture2D destTexture : register( t1 );
-SamplerState samLinear : register( s0 );
+SamplerState samLinear: register( s0 );
 
 struct VS_INPUT
 {
@@ -25,13 +25,12 @@ PS_INPUT VS( VS_INPUT input )
     return output;
 }
 
-//--------------------------------------------------------------------------------------
-// Pixel Shader
-//--------------------------------------------------------------------------------------
 float4 PS( PS_INPUT input) : SV_Target
 {
-	if(input.Tex.y < 0.5)
-		return srcTexture.Sample( samLinear, input.Tex * float2(1,2) );
-	else
-		return destTexture.Sample( samLinear, input.Tex * float2(1,2) );
+    return srcTexture.Sample( samLinear, input.Tex );
+}
+
+float4 psSampleResultImage( PS_INPUT input) : SV_Target
+{
+	return destTexture.Sample( samLinear, input.Tex );
 }

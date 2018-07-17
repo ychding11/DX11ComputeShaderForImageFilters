@@ -10,11 +10,11 @@
 
 // code migration. https://msdn.microsoft.com/en-us/library/windows/desktop/ee418730(v=vs.85).aspx
 // #include <xnamath.h> //has been replaced
+
 #include <DirectXMath.h>
 
 using namespace DirectX;
 
-// Constant Buffer Layout
 struct CB
 {
 	UINT iWidth;
@@ -24,6 +24,7 @@ struct CB
 class DXApplication
 {
 public:
+
 	DXApplication() 
 		: m_pd3dDevice(NULL)
 		, m_pImmediateContext(NULL)
@@ -40,7 +41,7 @@ public:
 		, m_imageWidth(0)
 		, m_imageHeight(0)
 		, m_csShaderFilename(L"data/Desaturate.hlsl")
-	{}
+	{   }
 
 	bool	initialize(HWND hwnd, int w, int h);
 	void	RunComputeShader();
@@ -51,7 +52,7 @@ public:
     int     imageHeight() const { return m_imageHeight; }
     int     imageWidth()  const { return m_imageWidth; }
 
-	LPCWSTR						m_csShaderFilename;
+	LPCWSTR	m_csShaderFilename;
 
 private:
 	void	InitGraphics();
@@ -59,7 +60,7 @@ private:
 	void	LoadImageAsTexture(LPCWSTR filename, ID3D11Texture2D** texture);
 	void    CreateResultImageTextureAndView();
 	void    CreateCSConstBuffer();
-	void    SetupViewport(int width, int height);
+	void    SetupViewport(float topLeftX, float topLeftY, int width, int height);
 	void	CreateCSInputTextureAndView();
 	void	CreateCSOutputTextureAndView();
     void	LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
@@ -75,6 +76,7 @@ private:
 
 	ID3D11VertexShader*			m_pVertexShader;
 	ID3D11PixelShader*			m_pPixelShader;
+	ID3D11PixelShader*			m_pPixelShaderResultImage;
 	ID3D11InputLayout*			m_pVertexLayout;
 	ID3D11Buffer*				m_pVertexBuffer;
 	ID3D11SamplerState*			m_pSamplerLinear;
@@ -94,5 +96,5 @@ private:
     ID3D11Texture2D*            tempCSInputTexture;
     ID3D11ShaderResourceView*   tempCSInputTextureView;
     ID3D11Texture2D*            tempCSOutputTexture;
-    ID3D11UnorderedAccessView*   tempCSOutputTextureView;
+    ID3D11UnorderedAccessView*  tempCSOutputTextureView;
 };

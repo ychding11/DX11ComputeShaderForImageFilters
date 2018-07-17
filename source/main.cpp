@@ -3,8 +3,8 @@
 #include "DXApplication.h"
 
 HWND			g_hWnd = NULL;
-int				width = 400;// 1920;// 720;
-int				height = 400;// 1080; // 540 * 1;
+int				width = 1920;
+int				height =1080;
 DXApplication	application;
 
 LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
@@ -96,8 +96,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 		MessageBox(NULL,L"Initialize App failed, exit!", L"Warning", MB_ICONWARNING);
 		return 0;
 	}
-    SetWindowPos(g_hWnd, 0, 0, 0, application.imageWidth(), application.imageHeight() * 2, SWP_NOMOVE );
-	// Main message loop
+    //SetWindowPos(g_hWnd, 0, 0, 0, application.imageWidth(), application.imageHeight() * 2, SWP_NOMOVE );
 	MSG msg = {0};
 	while( WM_QUIT != msg.message )
 	{

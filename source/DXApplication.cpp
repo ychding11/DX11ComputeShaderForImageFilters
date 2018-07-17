@@ -88,7 +88,7 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 		return false;
 	}
 
-	SetupViewport(width, height);
+	//SetupViewport(width, height);
 	LoadImageAsTexture(L"data/metal-bunny.png", &m_srcImageTexture);// Load texture and upate image size.
     CreateResultImageTextureAndView();
 	InitGraphics();
@@ -104,7 +104,6 @@ bool DXApplication::initialize(HWND hWnd, int width, int height)
 */
 void DXApplication::RunComputeShader( ) 
 {
-	// Some service variables
 	ID3D11UnorderedAccessView *ppUAViewNULL[2] = { NULL, NULL };
 	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
 
@@ -160,7 +159,13 @@ void DXApplication::RenderResult()
 	float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
 	m_pImmediateContext->ClearRenderTargetView( m_pRenderTargetView, ClearColor );
 	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcImageTextureView );
+	m_pImmediateContext->PSSetShader( m_pPixelShader, NULL, 0 );
+	SetupViewport(0.f, 0.f, m_imageWidth, m_imageHeight);
+	m_pImmediateContext->Draw( 4, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
+
 	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_resultImageTextureView );
+	SetupViewport(m_imageWidth, m_imageHeight, m_imageWidth, m_imageHeight);
+	m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
 	m_pImmediateContext->Draw( 4, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
 	m_pSwapChain->Present( 0, 0 );
 }
@@ -241,7 +246,6 @@ void DXApplication::InitGraphics()
 
 	ID3DBlob* pErrorBlob;
 	ID3DBlob* pVSBlob = NULL;
-	// Compile vertex shader
 	if( FAILED(D3DCompileFromFile(L"./data/fullQuad.fx", NULL, NULL, "VS", "vs_4_0", dwShaderFlags, 0, &pVSBlob, &pErrorBlob) ) )
 	{
 		if( pErrorBlob )
@@ -252,7 +256,6 @@ void DXApplication::InitGraphics()
 		exit(1);
 	}
 	if( pErrorBlob ) pErrorBlob->Release(); // is this check a must ?
-	// Create vertex shader object
 	hr = m_pd3dDevice->CreateVertexShader( pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &m_pVertexShader );
 	if( FAILED(hr) )
 	{	
@@ -260,15 +263,11 @@ void DXApplication::InitGraphics()
 		exit(1);
 	}
 
-	// Define vertex input layout
-	// [semantic name, semantic index for elements with semantic name, data type, input assembler index, offset between elements, input slot class, number of instance to draw]
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
-
-	// [layout description array, number of input data type, compiled shader, size of compiled shader, output]
 	hr = m_pd3dDevice->CreateInputLayout(layout, 2, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &m_pVertexLayout);
 	pVSBlob->Release();
 	if (FAILED(hr))
@@ -288,8 +287,25 @@ void DXApplication::InitGraphics()
 		}
 		exit(1);
 	}
-	// Create pixel shader object
 	hr = m_pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShader );
+	pPSBlob->Release();
+	if( FAILED( hr ) )
+	{	
+		printf( "- Failed to create pixel shader. \n" );
+		exit(1);
+	}
+
+	// Compile pixel shader
+	if( FAILED( D3DCompileFromFile(L"./data/fullQuad.fx", NULL, NULL, "psSampleResultImage", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob) ) )
+	{
+		if( pErrorBlob )
+		{
+			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
+			pErrorBlob->Release();
+		}
+		exit(1);
+	}
+	hr = m_pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShaderResultImage );
 	pPSBlob->Release();
 	if( FAILED( hr ) )
 	{	
@@ -315,22 +331,18 @@ void DXApplication::InitGraphics()
 	}
 
 	UINT offset = 0, stride = sizeof( SimpleVertex );
-	// Bind vertex buffer to input-assembler stage.
-	// [start slot index, number of vertex buffer, vertex buffer array, stride array for each vertex buffer, offset array]
 	m_pImmediateContext->IASetVertexBuffers( 0, 1, &m_pVertexBuffer, &stride, &offset );
-	m_pImmediateContext->IASetInputLayout( m_pVertexLayout ); // Set the input layout
-	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP ); // Set primitive topology
+	m_pImmediateContext->IASetInputLayout( m_pVertexLayout );
+	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
 	m_pImmediateContext->VSSetShader( m_pVertexShader, NULL, 0 );
 	m_pImmediateContext->PSSetShader( m_pPixelShader, NULL, 0 );
 	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
-	m_pImmediateContext->OMSetRenderTargets( 1, &m_pRenderTargetView, NULL ); // setup render target into output Merge.
+	m_pImmediateContext->OMSetRenderTargets( 1, &m_pRenderTargetView, NULL );
 }
 
 
 void    DXApplication::CreateCSConstBuffer()
 {
-	HRESULT hr;
-	// Create the Const Buffer to transfer const parameters into shader.
 	D3D11_BUFFER_DESC descConstBuffer;
 	ZeroMemory(&descConstBuffer, sizeof(descConstBuffer));
 	descConstBuffer.ByteWidth = ((sizeof(CB) + 15) / 16) * 16; // Caution! size needs to be multiple of 16.
@@ -344,7 +356,7 @@ void    DXApplication::CreateCSConstBuffer()
 	InitData.pSysMem = &cb;
 	InitData.SysMemPitch = 0;
 	InitData.SysMemSlicePitch = 0;
-	hr = m_pd3dDevice->CreateBuffer(&descConstBuffer, &InitData, &m_GPUConstBuffer); // create const buffer.
+	HRESULT hr = m_pd3dDevice->CreateBuffer(&descConstBuffer, &InitData, &m_GPUConstBuffer); // create const buffer.
 	if (FAILED(hr))
 	{
 		printf("-  Create Constant Buffer Failed. \n");
@@ -353,14 +365,13 @@ void    DXApplication::CreateCSConstBuffer()
 	m_pImmediateContext->CSSetConstantBuffers(0, 1, &m_GPUConstBuffer);
 }
 
-void    DXApplication::SetupViewport(int width, int height)
+void  DXApplication::SetupViewport(float topLeftX, float topLeftY, int width, int height)
 {
-	// Setup viewport into Rasterizer
 	D3D11_VIEWPORT vp;
 	vp.Width  = (FLOAT)width;
 	vp.Height = (FLOAT)height;
+	vp.TopLeftX = topLeftX; vp.TopLeftY = topLeftY;
 	vp.MinDepth = 0.0f; vp.MaxDepth = 1.0f;
-	vp.TopLeftX = 0; vp.TopLeftY = 0;
 	m_pImmediateContext->RSSetViewports( 1, &vp );
 }
 
