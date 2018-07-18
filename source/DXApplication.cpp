@@ -92,8 +92,7 @@ bool DXApplication::initialize(HWND hWnd )
 		return false;
 	}
 
-	//SetupViewport(width, height);
-	LoadImageAsTexture(L"data/metal-bunny.png", &m_srcImageTexture);// Load texture and upate image size.
+	LoadImageAsTexture();// Load texture and upate image size.
     CreateResultImageTextureAndView();
 	InitGraphics();
 
@@ -103,9 +102,6 @@ bool DXApplication::initialize(HWND hWnd )
 	return true;
 }
 
-/**
-*	Run a compute shader loaded from disk shader file. 
-*/
 void DXApplication::RunComputeShader( ) 
 {
 	ID3D11UnorderedAccessView *ppUAViewNULL[2] = { NULL, NULL };
@@ -155,28 +151,79 @@ void DXApplication::runGaussianFilter( LPCWSTR shaderFilename )
     // update dest texture
     m_pImmediateContext->CopyResource(m_resultImageTexture, tempCSOutputTexture); // copy resource by GPU
 }
-/**
-*	Render the scene
-*/
-void DXApplication::RenderResult() 
+
+void DXApplication::Render() 
+{
+    if (mDisplayMode == DisplayMode::ONLY_RESULT)
+    {
+        RenderResultImage();
+    }
+    else if (mDisplayMode == DisplayMode::ONLY_SOURCE)
+    {
+        RenderSourceImage();
+    }
+    else if (mDisplayMode == DisplayMode::SOURCE_RESULT)
+    {
+        RenderMultiViewport();
+    }
+    else
+    {
+        float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
+        m_pImmediateContext->ClearRenderTargetView( m_pRenderTargetView, ClearColor );
+        m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcImageTextureView );
+        m_pImmediateContext->PSSetShader( m_pPixelShader, NULL, 0 );
+        SetupViewport(0.f, 0.f, m_imageWidth, m_imageHeight);
+        m_pImmediateContext->Draw( 4, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
+
+        m_pImmediateContext->PSSetShaderResources( 1, 1, &m_resultImageTextureView );
+        SetupViewport(m_imageWidth, m_imageHeight, m_imageWidth, m_imageHeight);
+        m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
+        m_pImmediateContext->Draw( 4, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
+
+        m_pSwapChain->Present( 0, 0 );
+    }
+}
+
+void DXApplication::RenderMultiViewport()
 {
 	float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
 	m_pImmediateContext->ClearRenderTargetView( m_pRenderTargetView, ClearColor );
 	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcImageTextureView );
 	m_pImmediateContext->PSSetShader( m_pPixelShader, NULL, 0 );
 	SetupViewport(0.f, 0.f, m_imageWidth, m_imageHeight);
-	m_pImmediateContext->Draw( 4, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
+	m_pImmediateContext->Draw( 4, 0 );
 
 	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_resultImageTextureView );
 	SetupViewport(m_imageWidth, m_imageHeight, m_imageWidth, m_imageHeight);
 	m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
-	m_pImmediateContext->Draw( 4, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
+	m_pImmediateContext->Draw( 4, 0 );
+
 	m_pSwapChain->Present( 0, 0 );
 }
 
-/**
-*	Release all the DX resources we have allocated
-*/
+void	DXApplication::RenderSourceImage()
+{
+	float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
+	m_pImmediateContext->ClearRenderTargetView( m_pRenderTargetView, ClearColor );
+	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcImageTextureView );
+	m_pImmediateContext->PSSetShader( m_pPixelShader, NULL, 0 );
+	SetupViewport(0.f, 0.f, m_imageWidth, m_imageHeight);
+	m_pImmediateContext->Draw( 4, 0 );
+	m_pSwapChain->Present( 0, 0 );
+}
+
+void	DXApplication::RenderResultImage()
+{
+	float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
+	m_pImmediateContext->ClearRenderTargetView( m_pRenderTargetView, ClearColor );
+	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_resultImageTextureView );
+	SetupViewport(0.f, 0.f, m_imageWidth, m_imageHeight);
+	m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
+	m_pImmediateContext->Draw( 4, 0 );
+
+	m_pSwapChain->Present( 0, 0 );
+}
+
 void DXApplication::release() 
 {
 	if(m_srcTextureData) delete [] m_srcTextureData;
@@ -407,18 +454,15 @@ void   DXApplication::CreateResultImageTextureAndView()
     }
 }
 
-/**
-*	Load a texture from disc and set it so that we can extract the data into a buffer for the compute shader to use.
-*   To make everything more clear we also save a copy of the texture data in main memory. We will copy from this buffer
-*	the data that we need to feed into the GPU for the compute shader.
-	//https://github.com/Microsoft/DirectXTK/wiki/WICTextureLoader
-*/
-void DXApplication::LoadImageAsTexture(LPCWSTR filename, ID3D11Texture2D** texture)
+/*
+ * https://github.com/Microsoft/DirectXTK/wiki/WICTextureLoader
+ */
+void DXApplication::LoadImageAsTexture()
 {
-	if (SUCCEEDED(CreateWICTextureFromFile(m_pd3dDevice, filename, (ID3D11Resource **)texture, &m_srcImageTextureView)))
+	if (SUCCEEDED(CreateWICTextureFromFile(m_pd3dDevice, m_imageFilename, (ID3D11Resource **)&m_srcImageTexture, &m_srcImageTextureView)))
 	{
 		D3D11_TEXTURE2D_DESC desc;
-		(*texture)->GetDesc(&desc);
+		m_srcImageTexture->GetDesc(&desc);
 		if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
 		{
 			printf("- Texture format is not qualified.\n");
@@ -502,9 +546,9 @@ void DXApplication::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D1
 	dwShaderFlags |= D3DCOMPILE_DEBUG;
 #endif
 
-	LPCSTR pTarget = ( m_pd3dDevice->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ) ? "cs_5_0" : "cs_4_0";
 	ID3DBlob* pErrorBlob = NULL;
 	ID3DBlob* pBlob = NULL;
+	LPCSTR pTarget = ( m_pd3dDevice->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ) ? "cs_5_0" : "cs_4_0";
 	HRESULT hr = D3DCompileFromFile( filename, NULL, NULL, entrypoint, pTarget, dwShaderFlags, NULL, &pBlob, &pErrorBlob);
 	if ( FAILED(hr) )
 	{

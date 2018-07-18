@@ -13,31 +13,42 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 	switch( message )
 	{
     	case WM_PAINT:
+        {
     		hdc = BeginPaint( hWnd, &ps );
     		EndPaint( hWnd, &ps );
     		break;
-    
+        }
     	case WM_KEYUP:
-			if (wParam == 112)
+        {
+            char key = tolower((int)wParam);
+			if (wParam == VK_F1)
 			{
 				application.m_csShaderFilename = L"data/Desaturate.hlsl";
     			application.RunComputeShader();
 			}
-			else if (wParam == 113)
+			else if (wParam == VK_F2)
 			{
 				application.m_csShaderFilename = L"data/Circles.hlsl";
     			application.RunComputeShader();
 			}
-    		else if (tolower((int)wParam) == 'q')
+			else if (wParam == VK_ESCAPE)
+			{
+                SendMessage(hWnd, WM_CLOSE, 0, 0);
+			}
+    		else if ( key == 'q' )
     		{
     			PostQuitMessage( 0 );
     		}
-			else if (tolower((int)wParam) == 'u')
+			else if ( key == 'u' )
 			{
     			application.RunComputeShader();
 			}
+    		else if ( key == 'd' )
+    		{
+                application.mDisplayMode = DisplayMode( (1 + application.mDisplayMode) % DisplayMode::ALL_MODE );
+    		}
     		break;
-    
+        }
     	case WM_DESTROY:
     		PostQuitMessage( 0 );
     		break;
@@ -104,7 +115,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 		}
 		else
 		{
-			application.RenderResult();
+			application.Render();
 		}
 	}
 

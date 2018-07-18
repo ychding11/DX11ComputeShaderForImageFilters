@@ -17,13 +17,24 @@ using namespace DirectX;
 
 struct CB
 {
-	UINT iWidth;
-	UINT iHeight;
+	int iWidth;
+	int iHeight;
+};
+
+enum DisplayMode
+{
+    ONLY_SOURCE   = 0,
+    ONLY_RESULT   = 1,
+    SOURCE_RESULT = 2,
+    ALL_MODE      = 3,
 };
 
 class DXApplication
 {
 public:
+    DisplayMode mDisplayMode;
+	LPCWSTR	    m_csShaderFilename;
+	LPCWSTR	    m_imageFilename;
 
 	DXApplication() 
 		: m_pd3dDevice(NULL)
@@ -41,29 +52,32 @@ public:
 		, m_imageWidth(0)
 		, m_imageHeight(0)
 		, m_csShaderFilename(L"data/Desaturate.hlsl")
+        , m_imageFilename (L"data/metal-bunny.png")
+        , mDisplayMode(DisplayMode::SOURCE_RESULT )
 	{   }
 
 	bool	initialize(HWND hwnd);
 	void	RunComputeShader();
 	void	runGaussianFilter( LPCWSTR shaderFilename );
-    void	update() {}
-	void	RenderResult();
+	void	Render();
 	void	release();
     int     imageHeight() const { return m_imageHeight; }
     int     imageWidth()  const { return m_imageWidth; }
 
-	LPCWSTR	m_csShaderFilename;
 
 private:
 	void	InitGraphics();
 	void	releaseFullScreenQuad() {}
-	void	LoadImageAsTexture(LPCWSTR filename, ID3D11Texture2D** texture);
+	void	LoadImageAsTexture();
 	void    CreateResultImageTextureAndView();
 	void    CreateCSConstBuffer();
 	void    SetupViewport(float topLeftX, float topLeftY, int width, int height);
 	void	CreateCSInputTextureAndView();
 	void	CreateCSOutputTextureAndView();
     void	LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
+	void	RenderMultiViewport();
+	void	RenderSourceImage();
+	void	RenderResultImage();
 	byte*	getCPUCopyOfGPUDestBuffer();
 
 	// Fields

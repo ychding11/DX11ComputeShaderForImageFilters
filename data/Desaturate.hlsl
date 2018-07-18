@@ -15,5 +15,5 @@ RWTexture2D<float4> OutputMap : register(u0);
 void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 {
     float4 data = InputMap.Load(dispatchThreadID);
-    OutputMap[dispatchThreadID.xy] = data * 0.318;
+    OutputMap[dispatchThreadID.xy] = data.b * 1.4;
 }
