@@ -1,4 +1,5 @@
 
+SamplerState samLinear: register( s0 );
 //--------------------------------------------------------------------------------------
 // Constant Buffers
 //--------------------------------------------------------------------------------------
@@ -14,6 +15,15 @@ RWTexture2D<float4> OutputMap : register(u0);
 [numthreads(32, 32, 1)]
 void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 {
-    float4 data = InputMap.Load(dispatchThreadID);
-    OutputMap[dispatchThreadID.xy] = data.b * 1.4;
+    uint3 uv1 = uint3(dispatchThreadID.xy + 1, 0);
+    uint3 uv2 = uint3(dispatchThreadID.xy - 1, 0);
+    float4 data = InputMap.Load(uv1) - InputMap.Load(uv2);
+    data.rgb = ( (data.r + data.g + data.b ) / 3.f )* 2.7f;
+    OutputMap[dispatchThreadID.xy] = data;
+}
+void temp1( uint3 dispatchThreadID : SV_DispatchThreadID )
+{
+    uint3 uv = dispatchThreadID.xyz;
+    float4 data = InputMap.Load(uv);
+    OutputMap[dispatchThreadID.xy] = data * (float(dispatchThreadID.x) / float(g_iWidth) );
 }

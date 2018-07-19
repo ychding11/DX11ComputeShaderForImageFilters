@@ -108,8 +108,11 @@ void DXApplication::RunComputeShader( )
 	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
 
 	LoadComputeShader(m_csShaderFilename, "CSMain", &m_computeShader);
+    if (m_computeShader == NULL)
+    {
+        return;
+    }
 	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
-
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
 	
@@ -119,37 +122,7 @@ void DXApplication::RunComputeShader( )
 	m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewNULL, NULL );
 	m_pImmediateContext->CSSetShaderResources( 0, 1, ppSRVNULL );
 
-    // copy result into DestTexture
     m_pImmediateContext->CopyResource(m_resultImageTexture, tempCSOutputTexture);
-}
-
-void DXApplication::runGaussianFilter( LPCWSTR shaderFilename ) 
-{
-	// Some service variables
-	ID3D11UnorderedAccessView *ppUAViewNULL[2] = { NULL, NULL };
-	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
-
-    // x direction
-	LoadComputeShader( shaderFilename,"mainX", &m_computeShader );
-	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
-    m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
-    m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
-	m_pImmediateContext->Dispatch( 1, m_imageHeight, 1 );// So Dispatch returns immediately?
-
-    m_pImmediateContext->CopyResource(tempCSInputTexture, tempCSOutputTexture); // copy resource by GPU
-
-    //y direction
-	LoadComputeShader( shaderFilename,"mainY", &m_computeShader );
-	m_pImmediateContext->CSSetShader( m_computeShader, NULL, 0 );
-	m_pImmediateContext->Dispatch( m_imageWidth, 1, 1 );// So Dispatch returns immediately?
-
-    //clear
-	m_pImmediateContext->CSSetShader( NULL, NULL, 0 );
-	m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewNULL, NULL );
-	m_pImmediateContext->CSSetShaderResources( 0, 1, ppSRVNULL );
-
-    // update dest texture
-    m_pImmediateContext->CopyResource(m_resultImageTexture, tempCSOutputTexture); // copy resource by GPU
 }
 
 void DXApplication::Render() 
@@ -388,6 +361,7 @@ void DXApplication::InitGraphics()
 	m_pImmediateContext->VSSetShader( m_pVertexShader, NULL, 0 );
 	m_pImmediateContext->PSSetShader( m_pPixelShader, NULL, 0 );
 	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
+    m_pImmediateContext->CSSetSamplers( 0, 1, &m_pSamplerLinear );
 	m_pImmediateContext->OMSetRenderTargets( 1, &m_pRenderTargetView, NULL );
 }
 
@@ -501,7 +475,8 @@ void DXApplication::CreateCSInputTextureAndView()
     viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
     viewDesc.Texture2D.MipLevels = 1;
     viewDesc.Texture2D.MostDetailedMip = 0;
-    if (FAILED(m_pd3dDevice->CreateShaderResourceView(tempCSInputTexture, &viewDesc, &tempCSInputTextureView)))
+    //if (FAILED(m_pd3dDevice->CreateShaderResourceView(tempCSInputTexture, &viewDesc, &tempCSInputTextureView)))
+    if (FAILED(m_pd3dDevice->CreateShaderResourceView(m_srcImageTexture, &viewDesc, &tempCSInputTextureView)))
     {
         printf("- Failed to create compute shader texture resource view.\n");
 		exit(1);
@@ -548,7 +523,7 @@ void DXApplication::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D1
 
 	ID3DBlob* pErrorBlob = NULL;
 	ID3DBlob* pBlob = NULL;
-	LPCSTR pTarget = ( m_pd3dDevice->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ) ? "cs_5_0" : "cs_4_0";
+    LPCSTR pTarget = ( m_pd3dDevice->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ) ? "cs_5_0" : "cs_4_0";
 	HRESULT hr = D3DCompileFromFile( filename, NULL, NULL, entrypoint, pTarget, dwShaderFlags, NULL, &pBlob, &pErrorBlob);
 	if ( FAILED(hr) )
 	{

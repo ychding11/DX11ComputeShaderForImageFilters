@@ -58,7 +58,6 @@ public:
 
 	bool	initialize(HWND hwnd);
 	void	RunComputeShader();
-	void	runGaussianFilter( LPCWSTR shaderFilename );
 	void	Render();
 	void	release();
     int     imageHeight() const { return m_imageHeight; }
