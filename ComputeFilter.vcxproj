@@ -66,11 +66,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="source\DXApplication.cpp" />
+    <ClCompile Include="source\EffectManager.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\WICTextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\DXApplication.h" />
+    <ClInclude Include="source\EffectManager.h" />
     <ClInclude Include="source\WICTextureLoader.h" />
   </ItemGroup>
   <ItemGroup>
@@ -88,7 +90,7 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
     </FxCompile>
-    <None Include="data\test.hlsl">
+    <None Include="data\effect1.hlsl">
       <FileType>Document</FileType>
     </None>
     <None Include="data\fullQuad.fx">

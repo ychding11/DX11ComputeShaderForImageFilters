@@ -27,12 +27,18 @@
     <ClCompile Include="source\WICTextureLoader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="source\EffectManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\DXApplication.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="source\WICTextureLoader.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="source\EffectManager.h">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -51,7 +57,7 @@
     <None Include="data\fullQuad.fx">
       <Filter>Shader</Filter>
     </None>
-    <None Include="data\test.hlsl">
+    <None Include="data\effect1.hlsl">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>

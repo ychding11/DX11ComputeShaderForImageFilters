@@ -1,6 +1,8 @@
 #include <windows.h>
 #include <d3d11.h>
 #include "DXApplication.h"
+#include "EffectManager.h"
+
 
 HWND			g_hWnd = NULL;
 DXApplication	application;
@@ -104,7 +106,6 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 		MessageBox(NULL,L"Initialize App failed, exit!", L"Warning", MB_ICONWARNING);
 		return 0;
 	}
-
 	MSG msg = {0};
 	while( WM_QUIT != msg.message )
 	{

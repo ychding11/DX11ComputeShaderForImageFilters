@@ -1,6 +1,7 @@
 #include "DXApplication.h"
 #include "WICTextureLoader.h"
 
+#include "EffectManager.h"
 
 // Safe Release Function
 template <class T>
@@ -99,6 +100,8 @@ bool DXApplication::initialize(HWND hWnd )
 	CreateCSConstBuffer();
 	CreateCSInputTextureAndView();
 	CreateCSOutputTextureAndView();
+
+    EffectManager::GetEffectManager(m_pd3dDevice)->GetEffect();;
 	return true;
 }
 
