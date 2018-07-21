@@ -17,6 +17,7 @@ class EffectManager
 {
     std::vector<std::string> mFileList;
     std::map<std::string, EffectPtr> mEffects;
+    std::map<std::string, EffectPtr>::iterator  mCurrentEffect;
     ID3D11Device* mpd3dDevice;
 
     EffectManager(ID3D11Device* device)
@@ -36,6 +37,9 @@ public:
     void BuildEffects();
 
     EffectPtr* GetEffect();
+
+    EffectPtr NextEffect();
+    EffectPtr PrevEffect();
 
 private:
     /*

@@ -1,13 +1,16 @@
 #include "EffectManager.h"
+#include "Logger.h"
+
 #include <io.h>
 #include <iostream>
 
 EffectPtr* EffectManager::GetEffect()
 {
     for (auto it = mEffects.begin(); it != mEffects.end(); ++it)
-        std::cout << it->first << " <=> " << it->second << '\n';
+        Logger::getLogger() << it->first << " <=> " << it->second << '\n';
     return NULL;
 }
+
 static wchar_t* CharPtrToLPCWSTR(const char* charArray)
 {
     wchar_t* wString = new wchar_t[4096];
@@ -36,6 +39,18 @@ static void getFiles(std::string path, std::vector<std::string>& files)
     }
 }
 
+EffectPtr EffectManager::NextEffect()
+{
+    auto ret =  mCurrentEffect == mEffects.end() ? --mCurrentEffect : mCurrentEffect++;
+    return ret->second;
+
+}
+EffectPtr EffectManager::PrevEffect()
+{
+    auto ret =  mCurrentEffect == mEffects.begin() ? mCurrentEffect : --mCurrentEffect;
+    return ret->second;
+}
+
 int EffectManager::LoadEffectFileList(std::string dir)
 {
     getFiles(dir, mFileList);
@@ -50,17 +65,18 @@ void EffectManager::BuildEffects()
         std::string filename = mFileList[i];
         LPCWSTR wfilename = CharPtrToLPCWSTR(filename.c_str());
         EffectPtr ptrEffect;
+        Logger::getLogger() << "- Build Compute Shader:" << filename << '\n';
         LoadComputeShader(wfilename, "CSMain", &ptrEffect);
         delete[] wfilename;
 
         auto ret = mEffects.insert( std::pair<std::string, EffectPtr>(filename, ptrEffect) );
         if (ret.second == false)
         {
-            printf("- already exist.\n");
+            Logger::getLogger() << "- Effect exist:" << filename << '\n';
         }
     }
+    mCurrentEffect = mEffects.begin();
 }
-
 
 
 /*
@@ -83,7 +99,7 @@ void EffectManager::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D1
         if (pErrorBlob) OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
         if (pErrorBlob) pErrorBlob->Release();
         if (pBlob) pBlob->Release();
-        printf("- Compile Compute Shader Failed.\n");
+        Logger::getLogger() << "- Compile Compute Shader Failed." << filename << '\n';
     }
     else
     {

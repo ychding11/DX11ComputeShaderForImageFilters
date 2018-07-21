@@ -1,11 +1,12 @@
 #include <windows.h>
-#include <d3d11.h>
-#include "DXApplication.h"
+#include <d3d11.h>                                 
+#include "DX11EffectViewer.h"
 #include "EffectManager.h"
+#include "Logger.h"
 
 
 HWND			g_hWnd = NULL;
-DXApplication	application;
+DX11EffectViewer	application;
 
 LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 {
@@ -25,13 +26,15 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
             char key = tolower((int)wParam);
 			if (wParam == VK_F1)
 			{
-				application.m_csShaderFilename = L"data/Desaturate.hlsl";
-    			application.RunComputeShader();
+				//application.m_csShaderFilename = L"data/Desaturate.hlsl";
+    			//application.RunComputeShader();
+                application.NextEffect();
 			}
 			else if (wParam == VK_F2)
 			{
-				application.m_csShaderFilename = L"data/Circles.hlsl";
-    			application.RunComputeShader();
+				//application.m_csShaderFilename = L"data/Circles.hlsl";
+    			//application.RunComputeShader();
+                application.PrevEffect();
 			}
 			else if (wParam == VK_ESCAPE)
 			{
@@ -119,6 +122,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 			application.Render();
 		}
 	}
-
+    
+    Logger::flushLogger();
 	return ( int )msg.wParam;
 }
