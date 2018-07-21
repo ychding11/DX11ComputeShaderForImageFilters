@@ -48,6 +48,7 @@
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxguid.lib;winmm.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -65,14 +66,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="source\DXApplication.cpp" />
+    <ClCompile Include="source\DX11EffectViewer.cpp" />
     <ClCompile Include="source\EffectManager.cpp" />
+    <ClCompile Include="source\Logger.cpp" />
     <ClCompile Include="source\main.cpp" />
     <ClCompile Include="source\WICTextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="source\DXApplication.h" />
+    <ClInclude Include="source\DX11EffectViewer.h" />
     <ClInclude Include="source\EffectManager.h" />
+    <ClInclude Include="source\Logger.h" />
     <ClInclude Include="source\WICTextureLoader.h" />
   </ItemGroup>
   <ItemGroup>
