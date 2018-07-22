@@ -4,11 +4,10 @@
 #include <io.h>
 #include <iostream>
 
-EffectPtr* EffectManager::GetEffect()
+void EffectManager::CheckEffect()
 {
     for (auto it = mEffects.begin(); it != mEffects.end(); ++it)
-        Logger::getLogger() << it->first << " <=> " << it->second << '\n';
-    return NULL;
+        Logger::getLogger() << it->first << " <===> " << it->second << '\n';
 }
 
 static wchar_t* CharPtrToLPCWSTR(const char* charArray)

@@ -2,6 +2,7 @@
 #include "WICTextureLoader.h"
 
 #include "EffectManager.h"
+#include "Logger.h"
 
 // Safe Release Function
 template <class T>
@@ -17,7 +18,7 @@ void SafeRelease(T **ppT)
 /**
  *	Initialize our DX application with windows size.
  */
-bool DX11EffectViewer::initialize(HWND hWnd ) 
+bool DX11EffectViewer::Initialize(HWND hWnd ) 
 {
 	HRESULT hr = S_OK;
     RECT rc;
@@ -72,7 +73,7 @@ bool DX11EffectViewer::initialize(HWND hWnd )
 	}
 	if ( FAILED(hr) )
 	{
-		printf("- Create D3D Device and Swap Chain Failed.\n");
+        Logger::getLogger() << "- Create D3D Device and Swap Chain Failed." << "\n";
 		return false;
 	}
 
@@ -82,14 +83,14 @@ bool DX11EffectViewer::initialize(HWND hWnd )
 	hr = m_pSwapChain->GetBuffer( 0, __uuidof( ID3D11Texture2D ), ( LPVOID* )&pBackBuffer );
 	if (FAILED(hr))
 	{
-		printf("- Cet Back Buffer from SwapChain Failed.\n");
+        Logger::getLogger() << "- Get Back Buffer from SwapChain Failed." << "\n";
 		return false;
 	}
 	hr = m_pd3dDevice->CreateRenderTargetView( pBackBuffer, NULL, &m_pRenderTargetView );
 	pBackBuffer->Release();
 	if (FAILED(hr))
 	{
-		printf("- Create render target from Back buffer failed.\n");
+        Logger::getLogger() << "- Create render target from Back buffer failed.\n" << "\n";
 		return false;
 	}
 
@@ -101,7 +102,8 @@ bool DX11EffectViewer::initialize(HWND hWnd )
 	CreateCSInputTextureAndView();
 	CreateCSOutputTextureAndView();
 
-    EffectManager::GetEffectManager(m_pd3dDevice)->GetEffect();;
+    EffectManager::GetEffectManager(m_pd3dDevice)->CheckEffect();;
+    Logger::getLogger() << "- DX11EffectViewer Initialized OK. \n" << "\n";
 	return true;
 }
 
@@ -285,7 +287,7 @@ void DX11EffectViewer::InitGraphics()
 	hr = m_pd3dDevice->CreateBuffer( &bd, &InitData, &m_pVertexBuffer );
 	if( FAILED( hr ) )
 	{	
-		printf( "- Failed to create vertex buffer.\n" );
+        Logger::getLogger() << "- Failed to create vertex buffer.\n" << "\n";
 		exit(1);
 	}
 
@@ -298,13 +300,14 @@ void DX11EffectViewer::InitGraphics()
 			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
 			pErrorBlob->Release();
 		}
+        Logger::getLogger() << "- Failed to compile vertex shader: /data/fullQuad.fx\n" << "\n";
 		exit(1);
 	}
 	if( pErrorBlob ) pErrorBlob->Release(); // is this check a must ?
 	hr = m_pd3dDevice->CreateVertexShader( pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &m_pVertexShader );
 	if( FAILED(hr) )
 	{	
-		printf( "- Failed to create vertex shader.\n" );
+        Logger::getLogger() << "- Failed to create vertex shader object." << "\n";
 		exit(1);
 	}
 

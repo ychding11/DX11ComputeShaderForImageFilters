@@ -59,8 +59,8 @@ public:
         , mDisplayMode(DisplayMode::SOURCE_RESULT )
 	{   }
 
-	bool	initialize(HWND hwnd);
-	void	RunComputeShader();
+	bool	Initialize(HWND hwnd);
+
 
     void    NextEffect()
     {
@@ -72,8 +72,15 @@ public:
         ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->PrevEffect());
     }
 
+    void    UpdateEffects()
+    {
+        EffectManager::GetEffectManager(m_pd3dDevice)->BuildEffects();
+    }
+
+	void	RunComputeShader();
 	void	Render();
 	void	release();
+
     int     imageHeight() const { return m_imageHeight; }
     int     imageWidth()  const { return m_imageWidth; }
 

@@ -31,12 +31,22 @@
  */
 #include "Logger.h"
 #include <fstream>
+#include <regex>
+
+
+static std::string LogName()
+{
+    std::string str = get_time();
+    std::regex reg(" |:");
+    return std::regex_replace(str, reg, "_");
+}
 
 static std::filebuf fb;
+static std::string logFile = LogName() + "_log.txt";
 
 Logger& Logger::getLogger()
 {
-    static std::filebuf* ptrFb =  fb.open("1111.txt", std::ios::out);
+    static std::filebuf* ptrFb =  fb.open(logFile, std::ios::out);
     static Logger* ptrLoger = new  Logger(ptrFb);
     return *ptrLoger;
 }

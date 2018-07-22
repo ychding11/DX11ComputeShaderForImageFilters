@@ -36,9 +36,10 @@ public:
 
     void BuildEffects();
 
-    EffectPtr* GetEffect();
+    void CheckEffect();
 
     EffectPtr NextEffect();
+
     EffectPtr PrevEffect();
 
 private:

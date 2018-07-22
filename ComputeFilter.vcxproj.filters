@@ -16,6 +16,9 @@
     <Filter Include="Shader">
       <UniqueIdentifier>{0a7fc545-4813-42fb-81ef-48cb7dce9a11}</UniqueIdentifier>
     </Filter>
+    <Filter Include="effects">
+      <UniqueIdentifier>{12a5f101-0684-43f2-9a7f-331c7d0e6013}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
@@ -65,6 +68,15 @@
     </None>
     <None Include="data\effect1.hlsl">
       <Filter>Shader</Filter>
+    </None>
+    <None Include="effect\effect1.hlsl">
+      <Filter>effects</Filter>
+    </None>
+    <None Include="effect\Desaturate.hlsl">
+      <Filter>effects</Filter>
+    </None>
+    <None Include="effect\Circles.hlsl">
+      <Filter>effects</Filter>
     </None>
   </ItemGroup>
 </Project>

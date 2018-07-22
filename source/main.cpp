@@ -46,7 +46,8 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
     		}
 			else if ( key == 'u' )
 			{
-    			application.RunComputeShader();
+    			//application.RunComputeShader();
+                application.UpdateEffects();
 			}
     		else if ( key == 'd' )
     		{
@@ -104,7 +105,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 		MessageBox(NULL,L"Initialize window failed, exit.", L"Warning", MB_ICONWARNING);
 		return 0;
 	}
-	if (!application.initialize(g_hWnd))
+	if (!application.Initialize(g_hWnd))
 	{
 		MessageBox(NULL,L"Initialize App failed, exit!", L"Warning", MB_ICONWARNING);
 		return 0;
