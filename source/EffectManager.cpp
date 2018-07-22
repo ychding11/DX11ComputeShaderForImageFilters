@@ -41,12 +41,14 @@ static void getFiles(std::string path, std::vector<std::string>& files)
 EffectPtr EffectManager::NextEffect()
 {
     auto ret =  mCurrentEffect == mEffects.end() ? --mCurrentEffect : mCurrentEffect++;
+    Logger::getLogger() << "- Next Effect: " << ret->first << "\n";
     return ret->second;
 
 }
 EffectPtr EffectManager::PrevEffect()
 {
     auto ret =  mCurrentEffect == mEffects.begin() ? mCurrentEffect : --mCurrentEffect;
+    Logger::getLogger() << "- Prev Effect: " << ret->first << "\n";
     return ret->second;
 }
 

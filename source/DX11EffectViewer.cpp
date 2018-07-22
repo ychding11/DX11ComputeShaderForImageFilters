@@ -320,7 +320,7 @@ void DX11EffectViewer::InitGraphics()
 	pVSBlob->Release();
 	if (FAILED(hr))
 	{
-		printf("- Failed to create input layout object.\n");
+        Logger::getLogger() << "- Failed to layout object\n" << "\n";
 		exit(1);
 	}
 
@@ -333,13 +333,14 @@ void DX11EffectViewer::InitGraphics()
 			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
 			pErrorBlob->Release();
 		}
+        Logger::getLogger() << "- Failed to compile pixel shader: /data/fullQuad.fx\n" << "\n";
 		exit(1);
 	}
 	hr = m_pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShader );
 	pPSBlob->Release();
 	if( FAILED( hr ) )
 	{	
-		printf( "- Failed to create pixel shader. \n" );
+        Logger::getLogger() << "- Failed to create pixel shader object." << "\n";
 		exit(1);
 	}
 
@@ -351,13 +352,14 @@ void DX11EffectViewer::InitGraphics()
 			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
 			pErrorBlob->Release();
 		}
+        Logger::getLogger() << "- Failed to compile pixel shader: /data/fullQuad.fx\n" << "\n";
 		exit(1);
 	}
 	hr = m_pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShaderResultImage );
 	pPSBlob->Release();
 	if( FAILED( hr ) )
 	{	
-		printf( "- Failed to create pixel shader. \n" );
+        Logger::getLogger() << "- Failed to create pixel shader object." << "\n";
 		exit(1);
 	}
 
