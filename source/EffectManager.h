@@ -42,6 +42,15 @@ public:
 
     EffectPtr PrevEffect();
 
+    std::string CurrentEffectName()
+    {
+        if (mCurrentEffect != mEffects.end())
+            return mCurrentEffect->first;
+        else
+            return "None Effect";
+
+    }
+
 private:
     /*
      *	Load a compute shader from  file and use CSMain as entry point
@@ -49,6 +58,8 @@ private:
     void LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
 
     int LoadEffectFileList(std::string dir);
+
+    void ClearEffects(void);
 
     
 };

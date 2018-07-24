@@ -112,6 +112,7 @@ void  DX11EffectViewer::ActiveEffect(ID3D11ComputeShader* computeShader)
 	ID3D11UnorderedAccessView *ppUAViewNULL[2] = { NULL, NULL };
 	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
 
+    if (computeShader == NULL) return;
 	m_pImmediateContext->CSSetShader( computeShader, NULL, 0 );
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
@@ -172,7 +173,7 @@ void DX11EffectViewer::Render()
         m_pImmediateContext->Draw( 4, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
 
         m_pImmediateContext->PSSetShaderResources( 1, 1, &m_resultImageTextureView );
-        SetupViewport(m_imageWidth, m_imageHeight, m_imageWidth, m_imageHeight);
+        SetupViewport(m_imageWidth + 1.f, 0.f, m_imageWidth, m_imageHeight);
         m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
         m_pImmediateContext->Draw( 4, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
 
@@ -190,7 +191,7 @@ void DX11EffectViewer::RenderMultiViewport()
 	m_pImmediateContext->Draw( 4, 0 );
 
 	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_resultImageTextureView );
-	SetupViewport(m_imageWidth, m_imageHeight, m_imageWidth, m_imageHeight);
+	SetupViewport(m_imageWidth + 1.f, 0.f, m_imageWidth, m_imageHeight);
 	m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
 	m_pImmediateContext->Draw( 4, 0 );
 
@@ -376,7 +377,7 @@ void DX11EffectViewer::InitGraphics()
 	hr = m_pd3dDevice->CreateSamplerState( &sampDesc, &m_pSamplerLinear );
 	if (FAILED(hr))
 	{
-		printf("- Failed to Create Texture Sampler Object.\n");
+        Logger::getLogger() << "- Failed to Create Texture Sampler Object.\n" << "\n";
 		exit(1);
 	}
 
@@ -389,6 +390,8 @@ void DX11EffectViewer::InitGraphics()
 	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
     m_pImmediateContext->CSSetSamplers( 0, 1, &m_pSamplerLinear );
 	m_pImmediateContext->OMSetRenderTargets( 1, &m_pRenderTargetView, NULL );
+
+    Logger::getLogger() << "- InitGraphics OK.\n" << "\n";
 }
 
 
@@ -410,7 +413,7 @@ void    DX11EffectViewer::CreateCSConstBuffer()
 	HRESULT hr = m_pd3dDevice->CreateBuffer(&descConstBuffer, &InitData, &m_GPUConstBuffer); // create const buffer.
 	if (FAILED(hr))
 	{
-		printf("-  Create Constant Buffer Failed. \n");
+        Logger::getLogger() << "-  Create Parameter Constant Buffer Failed. \n" << "\n";
 		exit(1);
 	}
 	m_pImmediateContext->CSSetConstantBuffers(0, 1, &m_GPUConstBuffer);
@@ -436,7 +439,7 @@ void   DX11EffectViewer::CreateResultImageTextureAndView()
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     if ( FAILED( m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_resultImageTexture)))
     {
-        printf("- Failed to create result image texture and resource view.\n");
+        Logger::getLogger() << "-  Failed to create result image texture.\n" << "\n";
 		exit(1);
     }
 
@@ -449,7 +452,7 @@ void   DX11EffectViewer::CreateResultImageTextureAndView()
     viewDesc.Texture2D.MostDetailedMip = 0;
     if (FAILED(m_pd3dDevice->CreateShaderResourceView(m_resultImageTexture, &viewDesc, &m_resultImageTextureView)))
     {
-        printf("- Failed to create result image texture and resource view.\n");
+        Logger::getLogger() << "-  Failed to create result image texture resource view.\n" << "\n";
 		exit(1);
     }
 }
@@ -465,23 +468,23 @@ void DX11EffectViewer::LoadImageAsTexture()
 		m_srcImageTexture->GetDesc(&desc);
 		if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
 		{
-			printf("- Texture format is not qualified.\n");
+            Logger::getLogger() << "-  Texture format of input image is not qualified: DXGI_FORMAT_R8G8B8A8_UNORM\n" << "\n";
 			exit(1);
 		}
 		// update image size. 
 		m_imageWidth  = desc.Width;
 		m_imageHeight = desc.Height;
         m_textureDataSize = m_imageWidth * m_imageHeight * 4;
-		printf("- Texture loaded, size=%dx%d.\n", m_imageWidth, m_imageHeight);
+        Logger::getLogger() << "-  Size of input image: " << m_imageWidth << " x " << m_imageHeight << "\n";
 	}
 	else
 	{
-		printf("- Texture Load failed.\n");
+        Logger::getLogger() << "-  Texture Load failed! \n" << "\n";
 		exit(1);
 	}
 }
 
-/**
+ /*
   *	Once we have the texture data in RAM we create a GPU buffer to feed the compute shader.
   */
 void DX11EffectViewer::CreateCSInputTextureAndView()

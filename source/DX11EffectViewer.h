@@ -55,7 +55,8 @@ public:
 		, m_imageWidth(0)
 		, m_imageHeight(0)
 		, m_csShaderFilename(L"data/Desaturate.hlsl")
-        , m_imageFilename (L"data/metal-bunny.png")
+        //, m_imageFilename (L"data/metal-bunny.png")
+        , m_imageFilename (L"data/test.jpg")
         , mDisplayMode(DisplayMode::SOURCE_RESULT )
 	{   }
 
@@ -75,6 +76,11 @@ public:
     void    UpdateEffects()
     {
         EffectManager::GetEffectManager(m_pd3dDevice)->BuildEffects();
+    }
+
+    std::string    CurrentEffectName()
+    {
+        return EffectManager::GetEffectManager(m_pd3dDevice)->CurrentEffectName();
     }
 
 	void	RunComputeShader();

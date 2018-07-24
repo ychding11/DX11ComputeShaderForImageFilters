@@ -29,12 +29,14 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 				//application.m_csShaderFilename = L"data/Desaturate.hlsl";
     			//application.RunComputeShader();
                 application.NextEffect();
+                SetWindowTextA(g_hWnd, application.CurrentEffectName().c_str());
 			}
 			else if (wParam == VK_F2)
 			{
 				//application.m_csShaderFilename = L"data/Circles.hlsl";
     			//application.RunComputeShader();
                 application.PrevEffect();
+                SetWindowTextA(g_hWnd, application.CurrentEffectName().c_str());
 			}
 			else if (wParam == VK_ESCAPE)
 			{
@@ -66,6 +68,9 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 	return 0;
 }
 
+#define CLASS_NAME  L"TutorialWindowClass"
+#define WINDOW_NAME L"Compute Shader - Filters"
+
 HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 {
 	// Register class
@@ -80,7 +85,7 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 	wcex.hCursor = LoadCursor( NULL, IDC_ARROW );
 	wcex.hbrBackground = ( HBRUSH )( COLOR_WINDOW + 1 );
 	wcex.lpszMenuName = NULL;
-	wcex.lpszClassName = L"TutorialWindowClass";
+	wcex.lpszClassName = CLASS_NAME;
 	wcex.hIconSm = NULL;
 	if( !RegisterClassEx( &wcex ) )
 		return E_FAIL;
@@ -90,8 +95,7 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 
 	RECT rc = { 0, 0, width, height };
 	AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
-	g_hWnd = CreateWindow( L"TutorialWindowClass", L"Compute Shader - Filters",
-		                    WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, NULL, NULL, hInstance, NULL );
+	g_hWnd = CreateWindow( CLASS_NAME, WINDOW_NAME, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, NULL, NULL, hInstance, NULL );
 	if( !g_hWnd ) return E_FAIL;
 
 	ShowWindow( g_hWnd, nCmdShow );
@@ -102,12 +106,12 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 {
 	if( FAILED( InitWindow( hInstance, nCmdShow ) ) )
 	{
-		MessageBox(NULL,L"Initialize window failed, exit.", L"Warning", MB_ICONWARNING);
+        Logger::getLogger() << "Initialize window failed, exit." << "\n";
 		return 0;
 	}
 	if (!application.Initialize(g_hWnd))
 	{
-		MessageBox(NULL,L"Initialize App failed, exit!", L"Warning", MB_ICONWARNING);
+        Logger::getLogger() << "Initialize App failed, exit!" << "\n";
 		return 0;
 	}
 	MSG msg = {0};

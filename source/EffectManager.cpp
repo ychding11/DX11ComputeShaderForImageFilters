@@ -58,14 +58,27 @@ int EffectManager::LoadEffectFileList(std::string dir)
     return mFileList.size();
 }
 
+
+void EffectManager::ClearEffects(void)
+{
+    for (auto it = mEffects.begin(); it != mEffects.end(); ++it)
+    {
+        if (it->second) it->second->Release();
+    }
+    mEffects.clear();
+    mCurrentEffect = mEffects.end();
+    assert(mEffects.size() == 0);
+}
+
 void EffectManager::BuildEffects()
 {
     int n = LoadEffectFileList("C:\\Users\\ding\\Documents\\GitHub\\DX11ComputeShaderForImageFilters\\effect");
+    ClearEffects();
     for (int i = 0; i < n; ++i)
     {
         std::string filename = mFileList[i];
         LPCWSTR wfilename = CharPtrToLPCWSTR(filename.c_str());
-        EffectPtr ptrEffect;
+        EffectPtr ptrEffect = NULL;
         Logger::getLogger() << "- Build Compute Shader:" << filename << '\n';
         LoadComputeShader(wfilename, "CSMain", &ptrEffect);
         delete[] wfilename;
