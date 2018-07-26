@@ -63,14 +63,14 @@ public:
 	bool	Initialize(HWND hwnd);
 
 
-    void    NextEffect()
+    void    NextEffect(std::string &name)
     {
-        ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->NextEffect());
+        ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->NextEffect(name));
     }
 
-    void    PrevEffect()
+    void    PrevEffect(std::string &name)
     {
-        ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->PrevEffect());
+        ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->PrevEffect(name));
     }
 
     void    UpdateEffects()

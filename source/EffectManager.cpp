@@ -38,17 +38,19 @@ static void getFiles(std::string path, std::vector<std::string>& files)
     }
 }
 
-EffectPtr EffectManager::NextEffect()
+EffectPtr EffectManager::NextEffect(std::string &name)
 {
     auto ret =  mCurrentEffect == mEffects.end() ? --mCurrentEffect : mCurrentEffect++;
-    Logger::getLogger() << "- Next Effect: " << ret->first << "\n";
+    Logger::getLogger() << "- Next Effect: " << ret->first << "\n"<<std::endl;
+    name = ret->first;
     return ret->second;
 
 }
-EffectPtr EffectManager::PrevEffect()
+EffectPtr EffectManager::PrevEffect(std::string &name)
 {
     auto ret =  mCurrentEffect == mEffects.begin() ? mCurrentEffect : --mCurrentEffect;
     Logger::getLogger() << "- Prev Effect: " << ret->first << "\n";
+    name = ret->first;
     return ret->second;
 }
 

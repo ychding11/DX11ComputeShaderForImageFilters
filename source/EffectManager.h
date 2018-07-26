@@ -43,9 +43,9 @@ public:
 
     void CheckEffect();
 
-    EffectPtr NextEffect();
+    EffectPtr NextEffect(std::string &name);
 
-    EffectPtr PrevEffect();
+    EffectPtr PrevEffect(std::string &name);
 
     std::string CurrentEffectName() const
     {

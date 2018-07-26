@@ -26,13 +26,15 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
             char key = tolower((int)wParam);
 			if (wParam == VK_F1)
 			{
-                application.NextEffect();
-                SetWindowTextA(g_hWnd, application.CurrentEffectName().c_str());
+                std::string name;
+                application.NextEffect(name);
+                SetWindowTextA(g_hWnd, name.c_str());
 			}
 			else if (wParam == VK_F2)
 			{
-                application.PrevEffect();
-                SetWindowTextA(g_hWnd, application.CurrentEffectName().c_str());
+                std::string name;
+                application.PrevEffect(name);
+                SetWindowTextA(g_hWnd, name.c_str());
 			}
 			else if (wParam == VK_ESCAPE)
 			{
@@ -44,8 +46,10 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
     		}
 			else if ( key == 'u' )
 			{
+                std::string name;
                 application.UpdateEffects();
-                application.NextEffect();
+                application.NextEffect(name);
+                SetWindowTextA(g_hWnd, name.c_str());
 			}
     		else if ( key == 'd' )
     		{
