@@ -27,10 +27,15 @@ class EffectManager
     }
 
 public:
+    
+    ~EffectManager()
+    {
+        ClearEffects();
+    }
+
     static EffectManager* GetEffectManager(ID3D11Device* device)
     {
-        static EffectManager* mgr = NULL;
-        if (mgr == NULL) mgr = new EffectManager(device);
+        static EffectManager* mgr = new EffectManager(device);
         return mgr;
     }
 
@@ -42,13 +47,12 @@ public:
 
     EffectPtr PrevEffect();
 
-    std::string CurrentEffectName()
+    std::string CurrentEffectName() const
     {
         if (mCurrentEffect != mEffects.end())
             return mCurrentEffect->first;
         else
             return "None Effect";
-
     }
 
 private:

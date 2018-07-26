@@ -26,15 +26,11 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
             char key = tolower((int)wParam);
 			if (wParam == VK_F1)
 			{
-				//application.m_csShaderFilename = L"data/Desaturate.hlsl";
-    			//application.RunComputeShader();
                 application.NextEffect();
                 SetWindowTextA(g_hWnd, application.CurrentEffectName().c_str());
 			}
 			else if (wParam == VK_F2)
 			{
-				//application.m_csShaderFilename = L"data/Circles.hlsl";
-    			//application.RunComputeShader();
                 application.PrevEffect();
                 SetWindowTextA(g_hWnd, application.CurrentEffectName().c_str());
 			}
@@ -48,8 +44,8 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
     		}
 			else if ( key == 'u' )
 			{
-    			//application.RunComputeShader();
                 application.UpdateEffects();
+                application.NextEffect();
 			}
     		else if ( key == 'd' )
     		{
