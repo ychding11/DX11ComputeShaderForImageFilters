@@ -3,6 +3,7 @@
 
 #include "EffectManager.h"
 #include "Logger.h"
+#include <io.h>
 
 // Safe Release Function
 template <class T>
@@ -15,9 +16,33 @@ void SafeRelease(T **ppT)
 	}
 }
 
-/**
- *	Initialize our DX application with windows size.
- */
+static void getFiles(std::string path, std::vector<std::string>& files)
+{
+    long   hFile = 0;
+    struct _finddata_t fileinfo;
+    std::string p;
+    if ((hFile = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo)) != -1)
+    {
+        do
+        {
+            if ((fileinfo.attrib &  _A_SUBDIR)) // subdir
+            {
+            }
+            else
+            {
+                files.push_back(p.assign(path).append("\\").append(fileinfo.name));
+            }
+        } while (_findnext(hFile, &fileinfo) == 0);
+        _findclose(hFile);
+    }
+}
+
+void   DX11EffectViewer::BuildImageList(const std::string &dir)
+{
+    getFiles(dir, mImageList);
+    mCurrentImage = mImageList.begin();
+}
+
 bool DX11EffectViewer::Initialize(HWND hWnd ) 
 {
 	HRESULT hr = S_OK;
@@ -73,7 +98,7 @@ bool DX11EffectViewer::Initialize(HWND hWnd )
 	}
 	if ( FAILED(hr) )
 	{
-        Logger::getLogger() << "- Create D3D Device and Swap Chain Failed." << "\n";
+        Logger::getLogger() << "- Create D3D Device and Swap Chain Failed." << "\n" << std::endl;
 		return false;
 	}
 
@@ -102,8 +127,10 @@ bool DX11EffectViewer::Initialize(HWND hWnd )
 	CreateCSInputTextureAndView();
 	CreateCSOutputTextureAndView();
 
+    BuildImageList("C:\\Users\\ding\\Documents\\GitHub\\DX11ComputeShaderForImageFilters\\image");
+
     EffectManager::GetEffectManager(m_pd3dDevice)->CheckEffect();;
-    Logger::getLogger() << "- DX11EffectViewer Initialized OK. \n" << "\n";
+    Logger::getLogger() << "- DX11EffectViewer Initialized OK. \n" << std::endl;
 	return true;
 }
 
@@ -394,6 +421,11 @@ void DX11EffectViewer::InitGraphics()
     Logger::getLogger() << "- InitGraphics OK.\n" << "\n";
 }
 
+void    DX11EffectViewer::UpdateCSConstBuffer()
+{
+
+	m_pImmediateContext->CSSetConstantBuffers(0, 1, &m_GPUConstBuffer);
+}
 
 void    DX11EffectViewer::CreateCSConstBuffer()
 {
@@ -457,31 +489,52 @@ void   DX11EffectViewer::CreateResultImageTextureAndView()
     }
 }
 
-/*
- * https://github.com/Microsoft/DirectXTK/wiki/WICTextureLoader
- */
+//////////////////////////////////////////////////////////////////////////////////////////////////
+//////
+////// https://github.com/Microsoft/DirectXTK/wiki/WICTextureLoader
+//////
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
 void DX11EffectViewer::LoadImageAsTexture()
 {
-	if (SUCCEEDED(CreateWICTextureFromFile(m_pd3dDevice, m_imageFilename, (ID3D11Resource **)&m_srcImageTexture, &m_srcImageTextureView)))
+    if (m_srcImageTexture)      m_srcImageTexture->Release(), m_srcImageTexture = NULL;
+    if (m_srcImageTextureView)  m_srcImageTextureView->Release(), m_srcImageTextureView = NULL;
+
+    if (SUCCEEDED(CreateWICTextureFromFile(m_pd3dDevice, m_imageFilename, (ID3D11Resource **)&m_srcImageTexture, &m_srcImageTextureView)))
 	{
 		D3D11_TEXTURE2D_DESC desc;
 		m_srcImageTexture->GetDesc(&desc);
 		if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
 		{
-            Logger::getLogger() << "-  Texture format of input image is not qualified: DXGI_FORMAT_R8G8B8A8_UNORM\n" << "\n";
+            Logger::getLogger() << "-  Texture format of input image is not qualified: DXGI_FORMAT_R8G8B8A8_UNORM\n" << std::endl;
 			exit(1);
 		}
-		// update image size. 
 		m_imageWidth  = desc.Width;
 		m_imageHeight = desc.Height;
         m_textureDataSize = m_imageWidth * m_imageHeight * 4;
-        Logger::getLogger() << "-  Size of input image: " << m_imageWidth << " x " << m_imageHeight << "\n";
+        Logger::getLogger() << "-  Size of input image: " << m_imageWidth << " x " << m_imageHeight << "\n" << std::endl;
 	}
 	else
 	{
-        Logger::getLogger() << "-  Texture Load failed! \n" << "\n";
+        Logger::getLogger() << "-  Texture Load failed! \n" << std::endl;
 		exit(1);
 	}
+}
+
+void DX11EffectViewer::CreateCSInputTextureView()
+{
+    D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
+    ZeroMemory(&viewDesc, sizeof(viewDesc));
+    viewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
+    viewDesc.Texture2D.MipLevels = 1;
+    viewDesc.Texture2D.MostDetailedMip = 0;
+    if (tempCSInputTextureView)tempCSInputTextureView->Release(), tempCSInputTextureView = NULL;
+    if (FAILED(m_pd3dDevice->CreateShaderResourceView(m_srcImageTexture, &viewDesc, &tempCSInputTextureView)))
+    {
+        Logger::getLogger() << "- Failed to create compute shader input texture resource view." << std::endl;
+		exit(1);
+    }
 }
 
  /*
@@ -493,7 +546,7 @@ void DX11EffectViewer::CreateCSInputTextureAndView()
 	m_srcImageTexture->GetDesc(&desc);
 	if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSInputTexture) != S_OK)
 	{
-        printf("- Failed to create compute shader texture resource view.\n");
+        Logger::getLogger() << "- Failed to create compute shader input texture.\n" << std::endl;
 		exit(1);
 	}
     m_pImmediateContext->CopyResource(tempCSInputTexture, m_srcImageTexture); // copy resource by GPU.
@@ -507,7 +560,7 @@ void DX11EffectViewer::CreateCSInputTextureAndView()
     //if (FAILED(m_pd3dDevice->CreateShaderResourceView(tempCSInputTexture, &viewDesc, &tempCSInputTextureView)))
     if (FAILED(m_pd3dDevice->CreateShaderResourceView(m_srcImageTexture, &viewDesc, &tempCSInputTextureView)))
     {
-        printf("- Failed to create compute shader texture resource view.\n");
+        Logger::getLogger() << "- Failed to create compute shader input texture resource view.\n" << std::endl;
 		exit(1);
     }
 }

@@ -32,6 +32,13 @@ enum DisplayMode
     ALL_MODE      = 3,
 };
 
+static wchar_t* CharPtrToLPCWSTR(const char* charArray)
+{
+    wchar_t* wString = new wchar_t[4096];
+    MultiByteToWideChar(CP_ACP, 0, charArray, -1, wString, 4096);
+    return wString;
+}
+
 class DX11EffectViewer
 {
 public:
@@ -62,7 +69,6 @@ public:
 
 	bool	Initialize(HWND hwnd);
 
-
     void    NextEffect(std::string &name)
     {
         ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->NextEffect(name));
@@ -73,6 +79,22 @@ public:
         ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->PrevEffect(name));
     }
 
+    void    NextImage(std::string &name)
+    {
+        wchar_t wString[4096];
+        auto imageItr = mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
+        //m_imageFilename = CharPtrToLPCWSTR((*imageItr).c_str());
+        MultiByteToWideChar(CP_ACP, 0, (*imageItr).c_str(), -1, wString, 4096);
+        m_imageFilename = wString;
+        LoadImageAsTexture();
+        CreateCSInputTextureView();
+        UpdateCSConstBuffer();
+        ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->NextEffect(name));
+    }
+
+    void    PrevImage(std::string &name)
+    {
+    }
     void    UpdateEffects()
     {
         EffectManager::GetEffectManager(m_pd3dDevice)->BuildEffects();
@@ -93,21 +115,28 @@ public:
 
 private:
 
+    std::vector<std::string> mImageList;
+    std::vector<std::string>::iterator mCurrentImage;
+
+    void    BuildImageList(const std::string &dir);
     void    ActiveEffect(ID3D11ComputeShader* computeShader);
+    void    UpdateCSConstBuffer();
 	void	InitGraphics();
-	void	releaseFullScreenQuad() {}
 	void	LoadImageAsTexture();
+    void    CreateCSInputTextureView();
 	void    CreateResultImageTextureAndView();
-	void    CreateCSConstBuffer();
-	void    SetupViewport(float topLeftX, float topLeftY, int width, int height);
 	void	CreateCSInputTextureAndView();
 	void	CreateCSOutputTextureAndView();
+	void    CreateCSConstBuffer();
+
+	void    SetupViewport(float topLeftX, float topLeftY, int width, int height);
     void	LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
+
 	void	RenderMultiViewport();
 	void	RenderSourceImage();
 	void	RenderResultImage();
 	byte*	getCPUCopyOfGPUDestBuffer();
-
+    
 	// Fields
 	int							m_imageWidth;
 	int							m_imageHeight;

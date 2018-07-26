@@ -10,13 +10,12 @@ DX11EffectViewer	application;
 
 LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 {
-	PAINTSTRUCT ps;
-	HDC hdc;
-
 	switch( message )
 	{
     	case WM_PAINT:
         {
+	        PAINTSTRUCT ps;
+	        HDC hdc;
     		hdc = BeginPaint( hWnd, &ps );
     		EndPaint( hWnd, &ps );
     		break;
@@ -36,14 +35,16 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
                 application.PrevEffect(name);
                 SetWindowTextA(g_hWnd, name.c_str());
 			}
+			else if (wParam == VK_F3)
+			{
+                std::string name;
+                application.NextImage(name);
+                SetWindowTextA(g_hWnd, name.c_str());
+			}
 			else if (wParam == VK_ESCAPE)
 			{
                 SendMessage(hWnd, WM_CLOSE, 0, 0);
 			}
-    		else if ( key == 'q' )
-    		{
-    			PostQuitMessage( 0 );
-    		}
 			else if ( key == 'u' )
 			{
                 std::string name;
@@ -55,16 +56,20 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
     		{
                 application.mDisplayMode = DisplayMode( (1 + application.mDisplayMode) % DisplayMode::ALL_MODE );
     		}
+    		else if ( key == 'q' )
+    		{
+    			PostQuitMessage( 0 );
+    		}
     		break;
         }
     	case WM_DESTROY:
+        {
     		PostQuitMessage( 0 );
     		break;
-    
+        }
     	default:
     		return DefWindowProc( hWnd, message, wParam, lParam );
 	}
-
 	return 0;
 }
 
@@ -114,6 +119,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
         Logger::getLogger() << "Initialize App failed, exit!" << "\n";
 		return 0;
 	}
+
 	MSG msg = {0};
 	while( WM_QUIT != msg.message )
 	{

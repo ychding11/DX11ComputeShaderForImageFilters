@@ -49,10 +49,12 @@ public:
 
     std::string CurrentEffectName() const
     {
-        if (mCurrentEffect != mEffects.end())
-            return mCurrentEffect->first;
-        else
-            return "None Effect";
+        return  (mCurrentEffect != mEffects.end()) ? mCurrentEffect->first : "None Effect";
+    }
+
+    EffectPtr CurrentEffect()
+    {
+        return mCurrentEffect->second;
     }
 
 private:
