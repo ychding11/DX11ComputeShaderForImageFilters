@@ -21,9 +21,6 @@ $RECYCLE.BIN/
 # Operating System Files
 # =========================
 
-# OSX
-# =========================
-
 .DS_Store
 .AppleDouble
 .LSOverride
@@ -42,8 +39,6 @@ $RECYCLE.BIN/
 # Directories potentially created on remote AFP share
 .AppleDB
 .AppleDesktop
-Network Trash Folder
-Temporary Items
 .apdisk
 *.exe
 *.ilk
@@ -54,6 +49,8 @@ Temporary Items
 *.sdf
 *.opensdf
 *.suo
+*.txt
 Debug/
+Release/
 .vs/
 
