@@ -1,36 +1,42 @@
 DX11ComputeShaderFilter V 1.0
 ===============
 
-9 Jan 2017
-by Yaochuang Ding, 
+9 Jan 2017 
 
 
-Info
+## Info
 ====
 
-This project implements an simple image filter which is based on DX11 Computer
-Shader. It takes advantage of parallel of modern GPU. You may regard it as
-tiny framework and write your own image filters based on DX11 compute shader.
-Have fun and try it yourself.
+- This project implements an DX11 Effects View which are implemented with hlsl compute shader.
+- It serves as an effect test framework.
+- It compiled OK on Window 10 with VS2015.
 
-Source
+## Demo
 ======
 
-The source code is ported from an [compute shader tutorial](http://www.codinglabs.net/tutorial_compute_shaders_filters.aspx).
-For details about compute shader and how it works, please read the tutorial.
-The original code contains the deprecated DXSDK APIs, so it always compiles
-failed on Windows 10 platform. What I did here is to replace the deprecated
-APIs with new ones.
+Wating for update...
 
-Problems
-========
-1. adjust window size according to input image. Done
-2. thread group dimension is hard-code now.
-3. big image issue.
-4. add new control to ajust filter parameters.
-
-Controls
+## Controls
 ========
 
-F1     : 
-F2     : 
+- F1     : Navigate to next effect
+- F2     : Navigate to previous effect
+- F3     : Loop to next image
+- ESC    : Exit the application
+- 'd'    : Switch between different display mode
+  - only source image
+  - only result image
+  - both source and result image
+  
+## Assumption 
+========
+1. only apply one "pixel effect" to one image at one time.
+1. just view "static effects", user is unable to adjust effect parameter.
+1. all demoed effects are one-pass effects. 
+l. only DX11 is supported. 
+
+
+## Plan 
+========
+1. much more flexible design to extend the capability of adding new feature. 
+1. try to add support to multipass-effect. 
