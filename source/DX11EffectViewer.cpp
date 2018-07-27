@@ -423,6 +423,12 @@ void DX11EffectViewer::InitGraphics()
 
 void    DX11EffectViewer::UpdateCSConstBuffer()
 {
+    D3D11_MAPPED_SUBRESOURCE MappedResource;
+    m_pImmediateContext->Map(m_GPUConstBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
+    auto pData = reinterpret_cast<CB*>(MappedResource.pData);
+    pData->iHeight = this->m_imageHeight;
+    pData->iWidth = this->m_imageWidth;
+    m_pImmediateContext->Unmap(m_GPUConstBuffer, 0);
 
 	m_pImmediateContext->CSSetConstantBuffers(0, 1, &m_GPUConstBuffer);
 }
@@ -461,8 +467,24 @@ void  DX11EffectViewer::SetupViewport(float topLeftX, float topLeftY, int width,
 	m_pImmediateContext->RSSetViewports( 1, &vp );
 }
 
+void   DX11EffectViewer::CreateCSOutputImageTextureView()
+{
+    if (m_resultImageTextureView)m_resultImageTextureView->Release(), m_resultImageTextureView = NULL;
+    D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
+    ZeroMemory(&viewDesc, sizeof(viewDesc));
+    viewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
+    viewDesc.Texture2D.MipLevels = 1;
+    viewDesc.Texture2D.MostDetailedMip = 0;
+    if (FAILED(m_pd3dDevice->CreateShaderResourceView(tempCSOutputTexture, &viewDesc, &m_resultImageTextureView)))
+    {
+        Logger::getLogger() << "-  Failed to create cs output result image texture resource view.\n" << "\n";
+		exit(1);
+    }
+}
 void   DX11EffectViewer::CreateResultImageTextureAndView()
 {
+    if (m_resultImageTexture)m_resultImageTexture->Release(), m_resultImageTexture = NULL;
     D3D11_TEXTURE2D_DESC desc;
     m_srcImageTexture->GetDesc(&desc);
     desc.Usage = D3D11_USAGE_DYNAMIC;
@@ -475,7 +497,7 @@ void   DX11EffectViewer::CreateResultImageTextureAndView()
 		exit(1);
     }
 
-    // Create a view output texture
+    if (m_resultImageTextureView)m_resultImageTextureView->Release(), m_resultImageTextureView = NULL;
     D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
     ZeroMemory(&viewDesc, sizeof(viewDesc));
     viewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -571,15 +593,17 @@ void DX11EffectViewer::CreateCSInputTextureAndView()
 */
 void DX11EffectViewer::CreateCSOutputTextureAndView()
 {
+    if (tempCSOutputTexture) tempCSOutputTexture->Release(), tempCSOutputTexture = NULL;
     D3D11_TEXTURE2D_DESC desc;
     m_srcImageTexture->GetDesc(&desc);
     desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
 	if (m_pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSOutputTexture) != S_OK)
 	{
-        printf("- Create Compute Shader output buffer view failed.");
+        Logger::getLogger() << "- Failed to create compute shader input texture.\n" << std::endl;
 		exit(1);
 	}
 
+    if (tempCSOutputTextureView)tempCSOutputTextureView->Release(), tempCSOutputTextureView = NULL;
 	D3D11_UNORDERED_ACCESS_VIEW_DESC descView;
     ZeroMemory(&descView, sizeof(descView));
     descView.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -587,7 +611,7 @@ void DX11EffectViewer::CreateCSOutputTextureAndView()
     descView.Texture2D = { 0 };
     if (FAILED(m_pd3dDevice->CreateUnorderedAccessView(tempCSOutputTexture, &descView, &tempCSOutputTextureView)))
     {
-        printf("- Create Compute Shader output buffer view failed.");
+        Logger::getLogger() << "- Failed to create compute shader output texture resource view.\n" << std::endl;
 		exit(1);
     }
 }

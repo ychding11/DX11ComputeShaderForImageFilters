@@ -83,11 +83,12 @@ public:
     {
         wchar_t wString[4096];
         auto imageItr = mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
-        //m_imageFilename = CharPtrToLPCWSTR((*imageItr).c_str());
         MultiByteToWideChar(CP_ACP, 0, (*imageItr).c_str(), -1, wString, 4096);
         m_imageFilename = wString;
         LoadImageAsTexture();
         CreateCSInputTextureView();
+        CreateCSOutputTextureAndView();
+        CreateResultImageTextureAndView();
         UpdateCSConstBuffer();
         ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->NextEffect(name));
     }
@@ -114,6 +115,8 @@ public:
 
 
 private:
+
+    void   CreateCSOutputImageTextureView();
 
     std::vector<std::string> mImageList;
     std::vector<std::string>::iterator mCurrentImage;
