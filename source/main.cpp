@@ -23,6 +23,16 @@ do{                                                   \
     }                                                 \
 } while(0)
 
+#define D3D11_CALL_CHECK(x)                           \
+do{                                                   \
+    LRESULT ret = x;                                  \
+    if((ret) != S_OK)                                 \
+    {                                                 \
+        char buf[512];                                \
+        sprintf_s(buf, 512, "- Error @%s:%d\t  %s %d\t \n",__FILE__,__LINE__, #x, (ret) );  \
+        OutputDebugStringA(buf);                      \
+    }                                                 \
+} while(0)
 
 
 LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
@@ -132,17 +142,100 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 	return S_OK;
 }
 
-int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow )
+ID3D11Device*				pd3dDevice = nullptr;
+ID3D11DeviceContext*		pImmediateContext = nullptr;
+IDXGISwapChain*				pSwapChain = nullptr;
+ID3D11RenderTargetView*		pRenderTargetView = nullptr;
+
+
+HRESULT Render(ID3D11DeviceContext*	pImmediateContext, ID3D11RenderTargetView*	pRenderTargetView )
 {
-#if  0
-	if( FAILED( InitWindow( hInstance, nCmdShow ) ) )
-	{
-        Logger::getLogger() << "Initialize window failed, exit." << "\n";
-		return 0;
-	}
+
+	return S_OK;
+}
+
+ HRESULT InitializeD3D11(HWND hWnd)
+{
+    HRESULT hr = S_OK;
+    RECT rc;
+    GetClientRect(hWnd, &rc);
+    unsigned int width = rc.right - rc.left;
+    unsigned int height = rc.bottom - rc.top;
+
+    UINT createDeviceFlags = 0;
+#ifdef _DEBUG
+    createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
+    D3D_DRIVER_TYPE driverTypes[] =
+    {
+        D3D_DRIVER_TYPE_HARDWARE,
+        D3D_DRIVER_TYPE_WARP,
+        D3D_DRIVER_TYPE_REFERENCE,
+    };
+    UINT numDriverTypes = ARRAYSIZE(driverTypes);
+
+    D3D_FEATURE_LEVEL featureLevels[] =
+    {
+        D3D_FEATURE_LEVEL_11_0,
+        D3D_FEATURE_LEVEL_10_1,
+        D3D_FEATURE_LEVEL_10_0,
+    };
+    UINT numFeatureLevels = ARRAYSIZE(featureLevels);
+
+    D3D_DRIVER_TYPE         driverType = D3D_DRIVER_TYPE_NULL;
+    D3D_FEATURE_LEVEL       featureLevel = D3D_FEATURE_LEVEL_11_0;
+
+    DXGI_SWAP_CHAIN_DESC sd;
+    ZeroMemory(&sd, sizeof(sd));
+    sd.BufferCount = 1;
+    sd.BufferDesc.Width = width;
+    sd.BufferDesc.Height = height;
+    sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    sd.BufferDesc.RefreshRate.Numerator = 60;
+    sd.BufferDesc.RefreshRate.Denominator = 1;
+    sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    sd.OutputWindow = hWnd;
+    sd.SampleDesc.Count = 1;
+    sd.SampleDesc.Quality = 0;
+    sd.Windowed = TRUE;
+
+    // Create Device, DeviceContext, SwapChain, FeatureLevel
+    for (UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++)
+    {
+        driverType = driverTypes[driverTypeIndex];
+        hr = D3D11CreateDeviceAndSwapChain(NULL, driverType, NULL, createDeviceFlags, featureLevels, numFeatureLevels, D3D11_SDK_VERSION, &sd, &pSwapChain, &pd3dDevice, &featureLevel, &pImmediateContext);
+        if (SUCCEEDED(hr)) break;
+    }
+    if (FAILED(hr))
+    {
+        MessageBox(NULL, L"Create D3D Device and Swap Chain Failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+        return S_FALSE;
+    }
+
+    // Create Render Target View Object from SwapChain's Back Buffer.
+    // access one of swap chain's back buffer.[0-based buffer index, interface type which manipulates buffer, output param]
+    ID3D11Texture2D* pBackBuffer = NULL;
+    hr = pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
+    if (FAILED(hr))
+    {
+        MessageBox(NULL, L"Get Back Buffer from SwapChain Failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+        return S_FALSE;
+    }
+    hr = pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &pRenderTargetView);
+    pBackBuffer->Release();
+    if (FAILED(hr))
+    {
+        MessageBox(NULL, L"Create render target from Back buffer failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+        return S_FALSE;
+    }
+	return S_OK;
+}
+
+int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow )
+{
     WIN_CALL_CHECK(InitWindow(hInstance, nCmdShow));
+    //D3D11_CALL_CHECK(InitializeD3D11(g_hWnd));
 
 	if (!application.Initialize(g_hWnd))
 	{
