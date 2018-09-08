@@ -206,7 +206,7 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
     }
 
     // Create Render Target View Object from SwapChain's Back Buffer.
-    // access one of swap chain's back buffer.[0-based buffer index, interface type which manipulates buffer, output param]
+    // Access one of swap chain's back buffer.[0-based buffer index, interface type which manipulates buffer, output param]
     ID3D11Texture2D* pBackBuffer = NULL;
     hr = pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
     if (FAILED(hr))
@@ -230,7 +230,6 @@ HRESULT Render(ID3D11DeviceContext*	pImmediateContext, ID3D11RenderTargetView*	p
 	pImmediateContext->OMSetRenderTargets( 1, &pRenderTargetView, NULL );
     pImmediateContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
     application.Render(pImmediateContext);
-
 	pSwapChain->Present( 0, 0 );
 	return S_OK;
 }

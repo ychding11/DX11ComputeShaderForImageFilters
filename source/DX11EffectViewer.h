@@ -49,10 +49,7 @@ public:
 	DX11EffectViewer() 
 		: m_pd3dDevice(NULL)
 		, m_pImmediateContext(NULL)
-		, m_pSwapChain(NULL)
-		, m_pRenderTargetView(NULL)
 		, m_srcImageTexture(NULL)
-		, m_srcTextureData(NULL)
 		, m_resultImageTexture(NULL)
 		, m_computeShader(NULL)
 		, m_pVertexLayout(NULL)
@@ -66,8 +63,6 @@ public:
         , m_imageFilename (L"data/test.jpg")
         , mDisplayMode(DisplayMode::SOURCE_RESULT )
 	{   }
-
-	bool	Initialize(HWND hwnd);
 
     void    NextEffect(std::string &name)
     {
@@ -106,7 +101,6 @@ public:
         return EffectManager::GetEffectManager(m_pd3dDevice)->CurrentEffectName();
     }
 
-	void	RunComputeShader();
 	void	Render(ID3D11DeviceContext* pImmediateContext );
 	void	Destory();
 
@@ -118,14 +112,13 @@ public:
 
 private:
 
-    void   CreateCSOutputImageTextureView();
-
     std::vector<std::string> mImageList;
     std::vector<std::string>::iterator mCurrentImage;
 
     void    BuildImageList(const std::string &dir);
     void    ActiveEffect(ID3D11ComputeShader* computeShader);
     void    UpdateCSConstBuffer();
+
 	void	InitGraphics(ID3D11Device* pd3dDevice);
 	void	LoadImageAsTexture(ID3D11Device* pd3dDevice);
     void    CreateCSInputTextureView(ID3D11Device* pd3dDevice);
@@ -140,6 +133,7 @@ private:
 	void	RenderMultiViewport();
 	void	RenderSourceImage();
 	void	RenderResultImage();
+
 	byte*	getCPUCopyOfGPUDestBuffer();
     
 	// Fields
@@ -148,11 +142,9 @@ private:
 
 	ID3D11Device*				m_pd3dDevice;
 	ID3D11DeviceContext*		m_pImmediateContext;
-	IDXGISwapChain*				m_pSwapChain;
-	ID3D11RenderTargetView*		m_pRenderTargetView;
 
 	ID3D11VertexShader*			m_pVertexShader;
-	ID3D11PixelShader*			m_pPixelShader;
+	ID3D11PixelShader*			m_pPixelShaderSrcImage;
 	ID3D11PixelShader*			m_pPixelShaderResultImage;
 	ID3D11InputLayout*			m_pVertexLayout;
 	ID3D11Buffer*				m_pVertexBuffer;
@@ -162,16 +154,19 @@ private:
 
 	ID3D11Texture2D*			m_srcImageTexture;
 	ID3D11ShaderResourceView*	m_srcImageTextureView;
-	byte*						m_srcTextureData;
-
 	ID3D11Texture2D*			m_resultImageTexture;
 	ID3D11ShaderResourceView*	m_resultImageTextureView;
+
 	ID3D11Buffer*               m_GPUConstBuffer;
 	ID3D11ComputeShader*		m_computeShader;
-	ID3D11Buffer*				m_dstDataBufferGPUCopy;
-	byte*						m_dstDataBufferCPUCopy;
+
     ID3D11Texture2D*            tempCSInputTexture;
     ID3D11ShaderResourceView*   tempCSInputTextureView;
     ID3D11Texture2D*            tempCSOutputTexture;
     ID3D11UnorderedAccessView*  tempCSOutputTextureView;
+
+    //Maybe removed
+	ID3D11Buffer*				m_dstDataBufferGPUCopy;
+	byte*						m_dstDataBufferCPUCopy;
+
 };
