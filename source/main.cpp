@@ -8,6 +8,23 @@
 HWND			g_hWnd = NULL;
 DX11EffectViewer	application;
 
+#define CHECK_WIN_CALL_FAIL  0xffff
+
+#define WIN_CALL_CHECK(x)                             \
+do{                                                   \
+    LRESULT ret = x;                                  \
+    if((ret) != S_OK)                                 \
+    {                                                 \
+        char buf[512];                                \
+        sprintf_s(buf, 512, "- Error @%s:%d\t  %s %d\t \n",__FILE__,__LINE__, #x, (ret) );  \
+        OutputDebugStringA(buf);                      \
+        system("pause");                              \
+        return CHECK_WIN_CALL_FAIL;                   \
+    }                                                 \
+} while(0)
+
+
+
 LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 {
 	switch( message )
@@ -93,7 +110,10 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 	wcex.lpszClassName = CLASS_NAME;
 	wcex.hIconSm = NULL;
 	if( !RegisterClassEx( &wcex ) )
-		return E_FAIL;
+    {
+        MessageBox(NULL, L"Window Registration Failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+        return E_FAIL;
+    }
 
     int width  = (LONG)::GetSystemMetrics(SM_CXSCREEN);
     int height = (LONG)::GetSystemMetrics(SM_CYSCREEN);
@@ -101,7 +121,12 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 	RECT rc = { 0, 0, width, height };
 	AdjustWindowRect( &rc, WS_OVERLAPPEDWINDOW, FALSE );
 	g_hWnd = CreateWindow( CLASS_NAME, WINDOW_NAME, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, rc.right - rc.left, rc.bottom - rc.top, NULL, NULL, hInstance, NULL );
-	if( !g_hWnd ) return E_FAIL;
+    if (g_hWnd == NULL)
+    {
+        MessageBox(NULL, L"Window Creation Failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
+        return E_FAIL;
+    }
+
 
 	ShowWindow( g_hWnd, nCmdShow );
 	return S_OK;
@@ -109,11 +134,16 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 
 int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow )
 {
+#if  0
 	if( FAILED( InitWindow( hInstance, nCmdShow ) ) )
 	{
         Logger::getLogger() << "Initialize window failed, exit." << "\n";
 		return 0;
 	}
+#endif
+
+    WIN_CALL_CHECK(InitWindow(hInstance, nCmdShow));
+
 	if (!application.Initialize(g_hWnd))
 	{
         Logger::getLogger() << "Initialize App failed, exit!" << "\n";
