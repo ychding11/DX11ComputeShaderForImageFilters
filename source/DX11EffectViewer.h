@@ -41,6 +41,13 @@ static wchar_t* CharPtrToLPCWSTR(const char* charArray)
 
 class DX11EffectViewer
 {
+
+	struct SimpleVertex
+	{
+		XMFLOAT3 Pos;
+		XMFLOAT2 Tex;
+	};
+
 public:
     DisplayMode mDisplayMode;
 	LPCWSTR	    m_csShaderFilename;

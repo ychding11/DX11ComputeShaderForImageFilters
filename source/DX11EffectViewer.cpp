@@ -74,6 +74,7 @@ void  DX11EffectViewer::ActiveEffect(ID3D11ComputeShader* computeShader)
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
 	m_pImmediateContext->CSSetConstantBuffers(0, 1, &m_GPUConstBuffer);
+    m_pImmediateContext->CSSetSamplers( 0, 1, &m_pSamplerLinear );
 	
 	m_pImmediateContext->Dispatch( (m_imageWidth + 31) / 32, (m_imageHeight + 31) / 32, 1 );// So Dispatch returns immediately?
 
@@ -88,6 +89,14 @@ void  DX11EffectViewer::ActiveEffect(ID3D11ComputeShader* computeShader)
 void DX11EffectViewer::Render(ID3D11DeviceContext* pImmediateContext ) 
 {
     assert(pImmediateContext == m_pImmediateContext);
+
+	UINT offset = 0, stride = sizeof( SimpleVertex );
+	m_pImmediateContext->IASetVertexBuffers( 0, 1, &m_pVertexBuffer, &stride, &offset );
+	m_pImmediateContext->IASetInputLayout( m_pVertexLayout );
+	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
+	m_pImmediateContext->VSSetShader( m_pVertexShader, NULL, 0 );
+	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
+
     if (mDisplayMode == DisplayMode::ONLY_RESULT)
     {
         RenderResultImage();
@@ -177,11 +186,6 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 	dwShaderFlags |= D3DCOMPILE_DEBUG;
 #endif
 	
-	struct SimpleVertex
-	{
-		XMFLOAT3 Pos;
-		XMFLOAT2 Tex;
-	};
 	SimpleVertex vertices[] =
 	{
 		{  XMFLOAT3(-1.0f,-1.0f, 0.5f ), XMFLOAT2( 0.0f, 1.0f ) },
@@ -282,7 +286,6 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 		exit(1);
 	}
 
-
 	// Create sampler state
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory( &sampDesc, sizeof(sampDesc) );
@@ -299,14 +302,6 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 		exit(1);
 	}
 
-	UINT offset = 0, stride = sizeof( SimpleVertex );
-	m_pImmediateContext->IASetVertexBuffers( 0, 1, &m_pVertexBuffer, &stride, &offset );
-	m_pImmediateContext->IASetInputLayout( m_pVertexLayout );
-	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
-	m_pImmediateContext->VSSetShader( m_pVertexShader, NULL, 0 );
-	m_pImmediateContext->PSSetShader( m_pPixelShaderSrcImage, NULL, 0 );
-	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
-    m_pImmediateContext->CSSetSamplers( 0, 1, &m_pSamplerLinear );
 
     Logger::getLogger() << "- InitGraphics OK.\n" << "\n";
 }
