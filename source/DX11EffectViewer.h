@@ -85,10 +85,10 @@ public:
         auto imageItr = mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
         MultiByteToWideChar(CP_ACP, 0, (*imageItr).c_str(), -1, wString, 4096);
         m_imageFilename = wString;
-        LoadImageAsTexture();
-        CreateCSInputTextureView();
-        CreateCSOutputTextureAndView();
-        CreateResultImageTextureAndView();
+        LoadImageAsTexture(m_pd3dDevice);
+        CreateCSInputTextureView(m_pd3dDevice);
+        CreateCSOutputTextureAndView(m_pd3dDevice);
+        CreateResultImageTextureAndView(m_pd3dDevice);
         UpdateCSConstBuffer();
         ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->NextEffect(name));
     }
@@ -107,8 +107,10 @@ public:
     }
 
 	void	RunComputeShader();
-	void	Render();
-	void	release();
+	void	Render(ID3D11DeviceContext* pImmediateContext );
+	void	Destory();
+
+	int     initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pImmediateContext);
 
     int     imageHeight() const { return m_imageHeight; }
     int     imageWidth()  const { return m_imageWidth; }
@@ -124,13 +126,13 @@ private:
     void    BuildImageList(const std::string &dir);
     void    ActiveEffect(ID3D11ComputeShader* computeShader);
     void    UpdateCSConstBuffer();
-	void	InitGraphics();
-	void	LoadImageAsTexture();
-    void    CreateCSInputTextureView();
-	void    CreateResultImageTextureAndView();
-	void	CreateCSInputTextureAndView();
-	void	CreateCSOutputTextureAndView();
-	void    CreateCSConstBuffer();
+	void	InitGraphics(ID3D11Device* pd3dDevice);
+	void	LoadImageAsTexture(ID3D11Device* pd3dDevice);
+    void    CreateCSInputTextureView(ID3D11Device* pd3dDevice);
+	void    CreateResultImageTextureAndView(ID3D11Device* pd3dDevice);
+	void	CreateCSInputTextureAndView(ID3D11Device* pd3dDevice);
+	void	CreateCSOutputTextureAndView(ID3D11Device* pd3dDevice);
+	void    CreateCSConstBuffer(ID3D11Device* pd3dDevice);
 
 	void    SetupViewport(float topLeftX, float topLeftY, int width, int height);
     void	LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
@@ -143,6 +145,7 @@ private:
 	// Fields
 	int							m_imageWidth;
 	int							m_imageHeight;
+
 	ID3D11Device*				m_pd3dDevice;
 	ID3D11DeviceContext*		m_pImmediateContext;
 	IDXGISwapChain*				m_pSwapChain;

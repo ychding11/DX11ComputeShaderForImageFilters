@@ -7,6 +7,12 @@
 
 HWND			g_hWnd = NULL;
 DX11EffectViewer	application;
+ID3D11Device*				pd3dDevice = nullptr;
+ID3D11DeviceContext*		pImmediateContext = nullptr;
+IDXGISwapChain*				pSwapChain = nullptr;
+ID3D11RenderTargetView*		pRenderTargetView = nullptr;
+
+
 
 #define CHECK_WIN_CALL_FAIL  0xffff
 
@@ -136,21 +142,7 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
         MessageBox(NULL, L"Window Creation Failed!", L"Error!", MB_ICONEXCLAMATION | MB_OK);
         return E_FAIL;
     }
-
-
 	ShowWindow( g_hWnd, nCmdShow );
-	return S_OK;
-}
-
-ID3D11Device*				pd3dDevice = nullptr;
-ID3D11DeviceContext*		pImmediateContext = nullptr;
-IDXGISwapChain*				pSwapChain = nullptr;
-ID3D11RenderTargetView*		pRenderTargetView = nullptr;
-
-
-HRESULT Render(ID3D11DeviceContext*	pImmediateContext, ID3D11RenderTargetView*	pRenderTargetView )
-{
-
 	return S_OK;
 }
 
@@ -232,18 +224,24 @@ HRESULT Render(ID3D11DeviceContext*	pImmediateContext, ID3D11RenderTargetView*	p
 	return S_OK;
 }
 
+HRESULT Render(ID3D11DeviceContext*	pImmediateContext, ID3D11RenderTargetView*	pRenderTargetView )
+{
+    float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
+	pImmediateContext->OMSetRenderTargets( 1, &pRenderTargetView, NULL );
+    pImmediateContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
+    application.Render(pImmediateContext);
+
+	pSwapChain->Present( 0, 0 );
+	return S_OK;
+}
+
 int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow )
 {
     WIN_CALL_CHECK(InitWindow(hInstance, nCmdShow));
-    //D3D11_CALL_CHECK(InitializeD3D11(g_hWnd));
+    D3D11_CALL_CHECK(InitializeD3D11(g_hWnd));
+    D3D11_CALL_CHECK(application.initialize(pd3dDevice, pImmediateContext));
 
-	if (!application.Initialize(g_hWnd))
-	{
-        Logger::getLogger() << "Initialize App failed, exit!" << "\n";
-		return 0;
-	}
-
-	MSG msg = {0};
+	MSG msg = { 0 };
 	while( WM_QUIT != msg.message )
 	{
 		if( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) )
@@ -253,10 +251,11 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 		}
 		else
 		{
-			application.Render();
+            Render(pImmediateContext, pRenderTargetView);
 		}
 	}
     
+    application.Destory();
     Logger::flushLogger();
 	return ( int )msg.wParam;
 }
