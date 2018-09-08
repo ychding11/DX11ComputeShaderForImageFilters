@@ -52,30 +52,25 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="data\Circles.hlsl">
-      <Filter>Shader</Filter>
-    </FxCompile>
-    <FxCompile Include="data\Desaturate.hlsl">
-      <Filter>Shader</Filter>
-    </FxCompile>
-    <FxCompile Include="data\filters.hlsl">
-      <Filter>Shader</Filter>
-    </FxCompile>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="data\fullQuad.fx">
       <Filter>Shader</Filter>
     </None>
     <None Include="data\effect1.hlsl">
       <Filter>Shader</Filter>
     </None>
-    <None Include="effect\effect1.hlsl">
+    <None Include="data\Circles.hlsl">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="data\Desaturate.hlsl">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="data\filters.hlsl">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="effect\fishEye.hlsl">
       <Filter>effects</Filter>
     </None>
-    <None Include="effect\Desaturate.hlsl">
-      <Filter>effects</Filter>
-    </None>
-    <None Include="effect\Circles.hlsl">
+    <None Include="effect\swirl.hlsl">
       <Filter>effects</Filter>
     </None>
   </ItemGroup>
