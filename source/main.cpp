@@ -12,6 +12,13 @@ ID3D11DeviceContext*		pImmediateContext = nullptr;
 IDXGISwapChain*				pSwapChain = nullptr;
 ID3D11RenderTargetView*		pRenderTargetView = nullptr;
 
+#ifdef SAFE_RELEASE
+#undef SAFE_RELEASE
+#endif
+
+#ifndef SAFE_RELEASE
+#define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p) = nullptr; } }
+#endif
 
 
 #define CHECK_WIN_CALL_FAIL  0xffff
@@ -256,5 +263,11 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
     
     application.Destory();
     Logger::flushLogger();
+
+    SAFE_RELEASE(pRenderTargetView );
+    SAFE_RELEASE(pSwapChain );
+    SAFE_RELEASE(pImmediateContext );
+    SAFE_RELEASE(pd3dDevice );
+
 	return ( int )msg.wParam;
 }
