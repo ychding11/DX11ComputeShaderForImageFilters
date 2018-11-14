@@ -22,10 +22,10 @@ Wating for update...
 - F2  : Navigate to previous effect
 - F3  : Loop to next image
 - ESC : Exit the application
-- 'd' : Switch between different display mode
-  - onsource image
-  - only result image
-  - both source and result image
+- 'd' : Loop between different display mode
+  - only display source image
+  - only display result image
+  - display both source and result image
   
 ## Assumption 
 1. only apply one "pixel effect" to one image at one time.
