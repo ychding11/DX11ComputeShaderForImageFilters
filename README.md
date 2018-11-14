@@ -1,16 +1,13 @@
 ## DX11ComputeShaderFilter
 
-
 9 Jan 2017 
 
-
 ## Overview
-
-- This project implements an DX11 Effects Viewer.
-- Effects are implemented with hlsl compute shader.
-- It serves as an effect test framework.
-- It compiled OK on Window 10 with VS2015.
-- Only DX11 is supported. 
+- It serves as an image post effect demo framework.
+- It implements an Effects Viewer by **Compute Shader**.
+- Effects are written with hlsl.
+- Only DX11 is supported.
+- It is tested on Window 10 with VS2015.
 
 ## Demo
 
