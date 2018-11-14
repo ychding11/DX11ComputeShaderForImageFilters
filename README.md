@@ -10,6 +10,7 @@
 - Effects are implemented with hlsl compute shader.
 - It serves as an effect test framework.
 - It compiled OK on Window 10 with VS2015.
+- Only DX11 is supported. 
 
 ## Demo
 
@@ -26,14 +27,17 @@ Wating for update...
   - only display source image
   - only display result image
   - display both source and result image
+
+
+- All images put in *image* folder are looped.
+- All effects put in *effect* folder are looped.
   
 ## Assumption 
 1. only apply one "pixel effect" to one image at one time.
 1. just view "static effects", user is unable to adjust effect parameter.
 1. all effects are one-pass effects. 
-1. only DX11 is supported. 
 
 
 ## Plan 
 1. much more flexible design
-1. dd support to multipass-effects 
+1. add support to multipass-effects 

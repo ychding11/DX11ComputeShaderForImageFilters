@@ -74,7 +74,7 @@ void EffectManager::ClearEffects(void)
 
 void EffectManager::BuildEffects()
 {
-    int n = LoadEffectFileList("C:\\Users\\ding\\Documents\\GitHub\\DX11ComputeShaderForImageFilters\\effect");
+    int n = LoadEffectFileList("C:\\Users\\ding\\Documents\\GitHub\\DX11ComputeShaderForImageFilters\\effects");
     ClearEffects();
     for (int i = 0; i < n; ++i)
     {
