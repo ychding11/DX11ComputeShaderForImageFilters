@@ -50,7 +50,6 @@ class DX11EffectViewer
 
 public:
     DisplayMode mDisplayMode;
-	LPCWSTR	    m_csShaderFilename;
 	LPCWSTR	    m_imageFilename;
 
 	DX11EffectViewer() 
@@ -65,9 +64,8 @@ public:
 		, m_dstDataBufferCPUCopy(NULL)
 		, m_imageWidth(0)
 		, m_imageHeight(0)
-		, m_csShaderFilename(L"data/Desaturate.hlsl")
-        //, m_imageFilename (L"data/metal-bunny.png")
-        , m_imageFilename (L"data/test.jpg")
+        //, m_imageFilename (L"images/metal-bunny.png")
+        , m_imageFilename (L"images/test.jpg")
         , mDisplayMode(DisplayMode::SOURCE_RESULT )
 	{   }
 
