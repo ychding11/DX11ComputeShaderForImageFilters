@@ -49,7 +49,8 @@ int	DX11EffectViewer::initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
     m_pd3dDevice = pd3dDevice;
     m_pImmediateContext = pImmediateContext;
 
-	LoadImageAsTexture(pd3dDevice);// Load texture and upate image size.
+    // Load source image as texture and upate image size.
+	LoadImageAsTexture(pd3dDevice);
     CreateResultImageTextureAndView(pd3dDevice);
 	InitGraphics(pd3dDevice);
 
@@ -57,7 +58,7 @@ int	DX11EffectViewer::initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 	CreateCSInputTextureAndView(pd3dDevice);
 	CreateCSOutputTextureAndView(pd3dDevice);
 
-    BuildImageList("C:\\Users\\ding\\Documents\\GitHub\\DX11ComputeShaderForImageFilters\\image");
+    BuildImageList("C:\\Users\\ding\\Documents\\GitHub\\DX11ComputeShaderForImageFilters\\images");
 
     EffectManager::GetEffectManager(pd3dDevice)->CheckEffect();
     Logger::getLogger() << "- DX11EffectViewer Initialized OK. \n" << std::endl;
