@@ -16,6 +16,12 @@
 
 Wating for update...
 
+![Lens Circle effect](./demo/lensCircle.png)
+
+![swirl effect](./demo/swirl.png)
+
+![fish eye effect](./demo/fishEye.png)
+
 
 ## Controls
 
