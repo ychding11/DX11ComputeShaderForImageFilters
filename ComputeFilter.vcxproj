@@ -80,39 +80,6 @@
     <ClInclude Include="source\Logger.h" />
     <ClInclude Include="source\WICTextureLoader.h" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="data\Circles.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CSMain</EntryPointName>
-      <FileType>Document</FileType>
-    </None>
-    <None Include="data\Desaturate.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">CSMain</EntryPointName>
-      <FileType>Document</FileType>
-    </None>
-    <None Include="data\filters.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compute</ShaderType>
-      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">5.0</ShaderModel>
-      <FileType>Document</FileType>
-    </None>
-    <None Include="data\effect1.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="data\fullQuad.fx">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="effect\fishEye.hlsl">
-      <FileType>Document</FileType>
-    </None>
-    <None Include="effect\swirl.hlsl">
-      <FileType>Document</FileType>
-    </None>
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -5,6 +5,9 @@
 #include "Logger.h"
 #include <io.h>
 
+// locations used to store image files
+#define IMAGE_REPO "C:\\Users\\ding\\Documents\\GitHub\\DX11ComputeShaderForImageFilters\\images"
+
 // Safe Release Function
 template <class T>
 void SafeRelease(T **ppT)
@@ -58,7 +61,7 @@ int	DX11EffectViewer::initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 	CreateCSInputTextureAndView(pd3dDevice);
 	CreateCSOutputTextureAndView(pd3dDevice);
 
-    BuildImageList("C:\\Users\\ding\\Documents\\GitHub\\DX11ComputeShaderForImageFilters\\images");
+    BuildImageList(IMAGE_REPO);
 
     EffectManager::GetEffectManager(pd3dDevice)->CheckEffect();
     Logger::getLogger() << "- DX11EffectViewer Initialized OK. \n" << std::endl;
@@ -76,8 +79,9 @@ void  DX11EffectViewer::ActiveEffect(ID3D11ComputeShader* computeShader)
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
 	m_pImmediateContext->CSSetConstantBuffers(0, 1, &m_GPUConstBuffer);
     m_pImmediateContext->CSSetSamplers( 0, 1, &m_pSamplerLinear );
-	
-	m_pImmediateContext->Dispatch( (m_imageWidth + 31) / 32, (m_imageHeight + 31) / 32, 1 );// So Dispatch returns immediately?
+
+	// Dispatch returns immediately ?
+	m_pImmediateContext->Dispatch( (m_imageWidth + 31) / 32, (m_imageHeight + 31) / 32, 1 );
 
 	m_pImmediateContext->CSSetShader( NULL, NULL, 0 );
 	m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewNULL, NULL );
@@ -217,7 +221,7 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 
 	ID3DBlob* pErrorBlob;
 	ID3DBlob* pVSBlob = NULL;
-	if( FAILED(D3DCompileFromFile(L"./data/fullQuad.fx", NULL, NULL, "VS", "vs_4_0", dwShaderFlags, 0, &pVSBlob, &pErrorBlob) ) )
+	if( FAILED(D3DCompileFromFile(L"./fullQuad.fx", NULL, NULL, "VS", "vs_4_0", dwShaderFlags, 0, &pVSBlob, &pErrorBlob) ) )
 	{
 		if( pErrorBlob )
 		{

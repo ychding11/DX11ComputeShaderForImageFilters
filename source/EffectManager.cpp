@@ -4,6 +4,9 @@
 #include <io.h>
 #include <iostream>
 
+// locations used to store effect files
+#define EFFECT_REPO "C:\\Users\\ding\\Documents\\GitHub\\DX11ComputeShaderForImageFilters\\effects"
+
 void EffectManager::CheckEffect()
 {
     for (auto it = mEffects.begin(); it != mEffects.end(); ++it)
@@ -74,7 +77,7 @@ void EffectManager::ClearEffects(void)
 
 void EffectManager::BuildEffects()
 {
-    int n = LoadEffectFileList("C:\\Users\\ding\\Documents\\GitHub\\DX11ComputeShaderForImageFilters\\effects");
+    int n = LoadEffectFileList(EFFECT_REPO);
     ClearEffects();
     for (int i = 0; i < n; ++i)
     {
