@@ -1,6 +1,6 @@
-## DX11ComputeShaderFilter
+## Image Effects
 
-9 Jan 2017 
+9 Jan 2017 By ychding
 
 ## Overview
 - It serves as an image post effect demo framework.
@@ -42,5 +42,6 @@ Wating for update...
 
 
 ## Plan 
+1. add UI based on imgui
 1. much more flexible design
 1. add support to multipass-effects 
