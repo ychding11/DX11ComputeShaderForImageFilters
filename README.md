@@ -43,5 +43,6 @@ Wating for update...
 
 ## Plan 
 1. add UI based on imgui
+1. use cmake to build
 1. much more flexible design
 1. add support to multipass-effects 
