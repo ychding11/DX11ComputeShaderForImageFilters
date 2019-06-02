@@ -1,44 +1,14 @@
-#include "EffectManager.h"
-#include "Logger.h"
-
 #include <io.h>
 #include <iostream>
 
-// locations used to store effect files
-#define EFFECT_REPO "C:\\Users\\ding\\Documents\\GitHub\\DX11ComputeShaderForImageFilters\\effects"
+#include "EffectManager.h"
+#include "Logger.h"
+#include "Utils.h"
 
 void EffectManager::CheckEffect()
 {
     for (auto it = mEffects.begin(); it != mEffects.end(); ++it)
         Logger::getLogger() << it->first << " <===> " << it->second << '\n';
-}
-
-static wchar_t* CharPtrToLPCWSTR(const char* charArray)
-{
-    wchar_t* wString = new wchar_t[4096];
-    MultiByteToWideChar(CP_ACP, 0, charArray, -1, wString, 4096);
-    return wString;
-}
-
-static void getFiles(std::string path, std::vector<std::string>& files)
-{
-    long   hFile = 0;
-    struct _finddata_t fileinfo;
-    std::string p;
-    if ((hFile = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo)) != -1)
-    {
-        do
-        {
-            if ((fileinfo.attrib &  _A_SUBDIR)) // subdir
-            {
-            }
-            else
-            {
-                files.push_back(p.assign(path).append("\\").append(fileinfo.name));
-            }
-        } while (_findnext(hFile, &fileinfo) == 0);
-        _findclose(hFile);
-    }
 }
 
 EffectPtr EffectManager::NextEffect(std::string &name)

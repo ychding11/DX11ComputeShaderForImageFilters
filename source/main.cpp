@@ -3,14 +3,15 @@
 #include "DX11EffectViewer.h"
 #include "EffectManager.h"
 #include "Logger.h"
+#include "Utils.h"
 
 
-HWND			g_hWnd = NULL;
+HWND			    g_hWnd = NULL;
 DX11EffectViewer	application;
-ID3D11Device*				pd3dDevice = nullptr;
-ID3D11DeviceContext*		pImmediateContext = nullptr;
-IDXGISwapChain*				pSwapChain = nullptr;
-ID3D11RenderTargetView*		pRenderTargetView = nullptr;
+ID3D11Device*			pd3dDevice = nullptr;
+ID3D11DeviceContext*	pImmediateContext = nullptr;
+IDXGISwapChain*			pSwapChain = nullptr;
+ID3D11RenderTargetView*	pRenderTargetView = nullptr;
 
 #ifdef SAFE_RELEASE
 #undef SAFE_RELEASE
@@ -19,34 +20,6 @@ ID3D11RenderTargetView*		pRenderTargetView = nullptr;
 #ifndef SAFE_RELEASE
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p) = nullptr; } }
 #endif
-
-
-#define CHECK_WIN_CALL_FAIL  0xffff
-
-#define WIN_CALL_CHECK(x)                             \
-do{                                                   \
-    LRESULT ret = x;                                  \
-    if((ret) != S_OK)                                 \
-    {                                                 \
-        char buf[512];                                \
-        sprintf_s(buf, 512, "- Error @%s:%d\t  %s %d\t \n",__FILE__,__LINE__, #x, (ret) );  \
-        OutputDebugStringA(buf);                      \
-        system("pause");                              \
-        return CHECK_WIN_CALL_FAIL;                   \
-    }                                                 \
-} while(0)
-
-#define D3D11_CALL_CHECK(x)                           \
-do{                                                   \
-    LRESULT ret = x;                                  \
-    if((ret) != S_OK)                                 \
-    {                                                 \
-        char buf[512];                                \
-        sprintf_s(buf, 512, "- Error @%s:%d\t  %s %d\t \n",__FILE__,__LINE__, #x, (ret) );  \
-        OutputDebugStringA(buf);                      \
-    }                                                 \
-} while(0)
-
 
 LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 {
@@ -114,7 +87,7 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
 }
 
 #define CLASS_NAME  L"TutorialWindowClass"
-#define WINDOW_NAME L"Compute Shader - Filters"
+#define WINDOW_NAME L"Image Effects -Compute Shader"
 
 HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 {

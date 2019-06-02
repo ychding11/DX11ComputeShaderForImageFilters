@@ -17,7 +17,6 @@
 
 using namespace DirectX;
 
-
 struct CB
 {
 	int iWidth;
@@ -31,13 +30,6 @@ enum DisplayMode
     SOURCE_RESULT = 2,
     ALL_MODE      = 3,
 };
-
-static wchar_t* CharPtrToLPCWSTR(const char* charArray)
-{
-    wchar_t* wString = new wchar_t[4096];
-    MultiByteToWideChar(CP_ACP, 0, charArray, -1, wString, 4096);
-    return wString;
-}
 
 class DX11EffectViewer
 {
@@ -64,8 +56,7 @@ public:
 		, m_dstDataBufferCPUCopy(NULL)
 		, m_imageWidth(0)
 		, m_imageHeight(0)
-        //, m_imageFilename (L"images/metal-bunny.png")
-        , m_imageFilename (L"images/test.jpg")
+        , m_imageFilename (L"../images/test.png")
         , mDisplayMode(DisplayMode::SOURCE_RESULT )
 	{   }
 

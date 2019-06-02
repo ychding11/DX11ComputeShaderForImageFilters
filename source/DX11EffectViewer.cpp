@@ -1,12 +1,8 @@
 #include "DX11EffectViewer.h"
 #include "WICTextureLoader.h"
-
 #include "EffectManager.h"
 #include "Logger.h"
-#include <io.h>
-
-// locations used to store image files
-#define IMAGE_REPO "C:\\Users\\ding\\Documents\\GitHub\\DX11ComputeShaderForImageFilters\\images"
+#include "Utils.h"
 
 // Safe Release Function
 template <class T>
@@ -19,33 +15,11 @@ void SafeRelease(T **ppT)
 	}
 }
 
-static void getFiles(std::string path, std::vector<std::string>& files)
-{
-    long   hFile = 0;
-    struct _finddata_t fileinfo;
-    std::string p;
-    if ((hFile = _findfirst(p.assign(path).append("\\*").c_str(), &fileinfo)) != -1)
-    {
-        do
-        {
-            if ((fileinfo.attrib &  _A_SUBDIR)) // subdir
-            {
-            }
-            else
-            {
-                files.push_back(p.assign(path).append("\\").append(fileinfo.name));
-            }
-        } while (_findnext(hFile, &fileinfo) == 0);
-        _findclose(hFile);
-    }
-}
-
 void   DX11EffectViewer::BuildImageList(const std::string &dir)
 {
     getFiles(dir, mImageList);
     mCurrentImage = mImageList.begin();
 }
-
 
 int	DX11EffectViewer::initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pImmediateContext)
 {
@@ -179,6 +153,7 @@ void DX11EffectViewer::Destory()
 	SafeRelease(&m_pd3dDevice);
 }
 
+#define GRAPHICS_SHADER L"../data/fullQuad.fx" 
 /**
  *	Load full screen quad for rendering both src and dest texture.
  */
@@ -219,9 +194,9 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 		exit(1);
 	}
 
-	ID3DBlob* pErrorBlob;
+	ID3DBlob* pErrorBlob = NULL;
 	ID3DBlob* pVSBlob = NULL;
-	if( FAILED(D3DCompileFromFile(L"./fullQuad.fx", NULL, NULL, "VS", "vs_4_0", dwShaderFlags, 0, &pVSBlob, &pErrorBlob) ) )
+	if( FAILED(D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "VS", "vs_4_0", dwShaderFlags, 0, &pVSBlob, &pErrorBlob) ) )
 	{
 		if( pErrorBlob )
 		{
@@ -254,7 +229,7 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 
 	// Compile pixel shader
 	ID3DBlob* pPSBlob = NULL;
-	if( FAILED( D3DCompileFromFile(L"./data/fullQuad.fx", NULL, NULL, "PS", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob) ) )
+	if( FAILED( D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "PS", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob) ) )
 	{
 		if( pErrorBlob )
 		{
@@ -273,7 +248,7 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 	}
 
 	// Compile pixel shader
-	if( FAILED( D3DCompileFromFile(L"./data/fullQuad.fx", NULL, NULL, "psSampleResultImage", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob) ) )
+	if( FAILED( D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "psSampleResultImage", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob) ) )
 	{
 		if( pErrorBlob )
 		{
@@ -306,8 +281,6 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
         Logger::getLogger() << "- Failed to Create Texture Sampler Object.\n" << "\n";
 		exit(1);
 	}
-
-
     Logger::getLogger() << "- InitGraphics OK.\n" << "\n";
 }
 
@@ -402,17 +375,17 @@ void DX11EffectViewer::LoadImageAsTexture(ID3D11Device* pd3dDevice)
 		m_srcImageTexture->GetDesc(&desc);
 		if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
 		{
-            Logger::getLogger() << "-  Texture format of input image is not qualified: DXGI_FORMAT_R8G8B8A8_UNORM\n" << std::endl;
+            Logger::getLogger() << "-  [" << m_imageFilename << "] Texture format is not qualified: DXGI_FORMAT_R8G8B8A8_UNORM\n" << std::endl;
 			exit(1);
 		}
 		m_imageWidth  = desc.Width;
 		m_imageHeight = desc.Height;
         m_textureDataSize = m_imageWidth * m_imageHeight * 4;
-        Logger::getLogger() << "-  Size of input image: " << m_imageWidth << " x " << m_imageHeight << "\n" << std::endl;
+        Logger::getLogger() << "-  Size of input image: [" << m_imageWidth << ", " << m_imageHeight << "]\n" << std::endl;
 	}
 	else
 	{
-        Logger::getLogger() << "-  Texture Load failed! \n" << std::endl;
+        Logger::getLogger() <<"-  [" << m_imageFilename << "]  Texture loading failed! \n" << std::endl;
 		exit(1);
 	}
 }
