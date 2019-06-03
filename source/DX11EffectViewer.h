@@ -45,6 +45,7 @@ class DX11EffectViewer
 public:
     DisplayMode mDisplayMode;
 	LPCWSTR	    m_imageFilename;
+	std::string m_imageName;
 
 	DX11EffectViewer() 
 		: m_pd3dDevice(NULL)
@@ -58,9 +59,15 @@ public:
 		, m_dstDataBufferCPUCopy(NULL)
 		, m_imageWidth(0)
 		, m_imageHeight(0)
-        , m_imageFilename (L"../images/test.png")
+        //, m_imageFilename (L"../images/test.png")
+        , m_imageName ("../images/test.png")
         , mDisplayMode(DisplayMode::SOURCE_RESULT )
-	{   }
+	{
+
+        static wchar_t wString[4096];
+        MultiByteToWideChar(CP_ACP, 0, m_imageName.c_str(), -1, wString, 4096);
+        m_imageFilename = wString;
+	}
 
     void    NextEffect(std::string &name)
     {
@@ -74,11 +81,12 @@ public:
 
     void    NextImage(std::string &name)
     {
-        wchar_t wString[4096];
+        static wchar_t wString[4096];
         auto imageItr = mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
         MultiByteToWideChar(CP_ACP, 0, (*imageItr).c_str(), -1, wString, 4096);
+		m_imageName = (*imageItr);
         m_imageFilename = wString;
-        LoadImageAsTexture(m_pd3dDevice);
+        LoadImageAsSrcTexture(m_pd3dDevice);
         CreateCSInputTextureView(m_pd3dDevice);
         CreateCSOutputTextureAndView(m_pd3dDevice);
         CreateResultImageTextureAndView(m_pd3dDevice);
@@ -118,7 +126,7 @@ private:
     void    UpdateCSConstBuffer();
 
 	void	InitGraphics(ID3D11Device* pd3dDevice);
-	void	LoadImageAsTexture(ID3D11Device* pd3dDevice);
+	void	LoadImageAsSrcTexture(ID3D11Device* pd3dDevice);
     void    CreateCSInputTextureView(ID3D11Device* pd3dDevice);
 	void    CreateResultImageTextureAndView(ID3D11Device* pd3dDevice);
 	void	CreateCSInputTextureAndView(ID3D11Device* pd3dDevice);

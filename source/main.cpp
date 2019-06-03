@@ -8,6 +8,7 @@
 
 HWND			    g_hWnd = NULL;
 DX11EffectViewer	application;
+
 ID3D11Device*			pd3dDevice = nullptr;
 ID3D11DeviceContext*	pImmediateContext = nullptr;
 IDXGISwapChain*			pSwapChain = nullptr;

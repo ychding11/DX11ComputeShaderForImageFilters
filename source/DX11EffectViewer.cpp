@@ -26,8 +26,8 @@ int	DX11EffectViewer::initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
     m_pd3dDevice = pd3dDevice;
     m_pImmediateContext = pImmediateContext;
 
-    // Load source image as texture and upate image size.
-	LoadImageAsTexture(pd3dDevice);
+    
+	LoadImageAsSrcTexture(pd3dDevice); //< Load source image as texture and upate image size.
     CreateResultImageTextureAndView(pd3dDevice);
 	InitGraphics(pd3dDevice);
 
@@ -61,7 +61,7 @@ void  DX11EffectViewer::ActiveEffect(ID3D11ComputeShader* computeShader)
 	m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewNULL, NULL );
 	m_pImmediateContext->CSSetShaderResources( 0, 1, ppSRVNULL );
 
-    m_pImmediateContext->CopyResource(m_resultImageTexture, tempCSOutputTexture);
+    m_pImmediateContext->CopyResource(m_resultImageTexture, tempCSOutputTexture); //< dst <-- src
 }
 
 
@@ -281,10 +281,10 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 	hr = pd3dDevice->CreateSamplerState( &sampDesc, &m_pSamplerLinear );
 	if (FAILED(hr))
 	{
-        Logger::getLogger() << "- Failed to Create Texture Sampler Object.\n" << "\n";
+	    Info("[%s]: Failed to Create Texture Sampler Object. @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(1);
 	}
-    Logger::getLogger() << "- InitGraphics OK.\n" << "\n";
+	Info("[%s]: InitGraphics OK. @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 }
 
 void    DX11EffectViewer::UpdateCSConstBuffer()
@@ -316,7 +316,7 @@ void    DX11EffectViewer::CreateCSConstBuffer(ID3D11Device* pd3dDevice)
 	HRESULT hr = pd3dDevice->CreateBuffer(&descConstBuffer, &InitData, &m_GPUConstBuffer); // create const buffer.
 	if (FAILED(hr))
 	{
-        Logger::getLogger() << "-  Create Parameter Constant Buffer Failed. \n" << "\n";
+		Info("[%s]: Create Parameter Constant Buffer Failed @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(1);
 	}
 	m_pImmediateContext->CSSetConstantBuffers(0, 1, &m_GPUConstBuffer);
@@ -343,7 +343,7 @@ void   DX11EffectViewer::CreateResultImageTextureAndView(ID3D11Device* pd3dDevic
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
     if ( FAILED( pd3dDevice->CreateTexture2D(&desc, NULL, &m_resultImageTexture)))
     {
-        Logger::getLogger() << "-  Failed to create result image texture.\n" << "\n";
+		Info("[%s]: Failed to create result image texture @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(1);
     }
 
@@ -356,7 +356,7 @@ void   DX11EffectViewer::CreateResultImageTextureAndView(ID3D11Device* pd3dDevic
     viewDesc.Texture2D.MostDetailedMip = 0;
     if (FAILED(pd3dDevice->CreateShaderResourceView(m_resultImageTexture, &viewDesc, &m_resultImageTextureView)))
     {
-        Logger::getLogger() << "-  Failed to create result image texture resource view.\n" << "\n";
+		Info("[%s]: Failed to create result image texture resource view @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(1);
     }
 }
@@ -367,7 +367,7 @@ void   DX11EffectViewer::CreateResultImageTextureAndView(ID3D11Device* pd3dDevic
 //////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DX11EffectViewer::LoadImageAsTexture(ID3D11Device* pd3dDevice)
+void DX11EffectViewer::LoadImageAsSrcTexture(ID3D11Device* pd3dDevice)
 {
     if (m_srcImageTexture)      m_srcImageTexture->Release(), m_srcImageTexture = NULL;
     if (m_srcImageTextureView)  m_srcImageTextureView->Release(), m_srcImageTextureView = NULL;
@@ -378,18 +378,18 @@ void DX11EffectViewer::LoadImageAsTexture(ID3D11Device* pd3dDevice)
 		m_srcImageTexture->GetDesc(&desc);
 		if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
 		{
-            Logger::getLogger() << "-  [" << m_imageFilename << "] Texture format is not qualified: DXGI_FORMAT_R8G8B8A8_UNORM\n" << std::endl;
+		    Info("[%s]: Texture format is not qualified: DXGI_FORMAT_R8G8B8A8_UNORM @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 			exit(1);
 		}
 		m_imageWidth  = desc.Width;
 		m_imageHeight = desc.Height;
 		m_Aspect = double(m_imageWidth) / double(m_imageHeight);
         m_textureDataSize = m_imageWidth * m_imageHeight * 4;
-        Logger::getLogger() << "-  Size of input image: [" << m_imageWidth << ", " << m_imageHeight << "]\n" << std::endl;
+		Info("size [%s]:(%d,%d) @%s:%d\n", m_imageName.c_str(), m_imageWidth, m_imageHeight, __FILE__, __LINE__);
 	}
 	else
 	{
-        Logger::getLogger() <<"-  [" << m_imageFilename << "]  Texture loading failed! \n" << std::endl;
+		Info("size [%s]: load failed @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(1);
 	}
 }
@@ -405,7 +405,7 @@ void DX11EffectViewer::CreateCSInputTextureView(ID3D11Device* pd3dDevice)
     if (tempCSInputTextureView)tempCSInputTextureView->Release(), tempCSInputTextureView = NULL;
     if (FAILED(pd3dDevice->CreateShaderResourceView(m_srcImageTexture, &viewDesc, &tempCSInputTextureView)))
     {
-        Logger::getLogger() << "- Failed to create compute shader input texture resource view." << std::endl;
+		Info("[%s]: Failed to create compute shader SRV. @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(1);
     }
 }
@@ -419,7 +419,7 @@ void DX11EffectViewer::CreateCSInputTextureAndView(ID3D11Device* pd3dDevice)
 	m_srcImageTexture->GetDesc(&desc);
 	if (pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSInputTexture) != S_OK)
 	{
-        Logger::getLogger() << "- Failed to create compute shader input texture.\n" << std::endl;
+		Info("[%s]: Failed to create compute shader input texture @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(1);
 	}
     m_pImmediateContext->CopyResource(tempCSInputTexture, m_srcImageTexture); // copy resource by GPU.
@@ -433,7 +433,7 @@ void DX11EffectViewer::CreateCSInputTextureAndView(ID3D11Device* pd3dDevice)
     //if (FAILED(m_pd3dDevice->CreateShaderResourceView(tempCSInputTexture, &viewDesc, &tempCSInputTextureView)))
     if (FAILED(pd3dDevice->CreateShaderResourceView(m_srcImageTexture, &viewDesc, &tempCSInputTextureView)))
     {
-        Logger::getLogger() << "- Failed to create compute shader input texture resource view.\n" << std::endl;
+		Info("[%s]: Failed to create compute shader input SRV @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(1);
     }
 }
@@ -450,7 +450,7 @@ void DX11EffectViewer::CreateCSOutputTextureAndView(ID3D11Device* pd3dDevice)
     desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
 	if (pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSOutputTexture) != S_OK)
 	{
-        Logger::getLogger() << "- Failed to create compute shader input texture.\n" << std::endl;
+		Info("[%s]: Failed to create compute shader input texture @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(1);
 	}
 
@@ -462,7 +462,7 @@ void DX11EffectViewer::CreateCSOutputTextureAndView(ID3D11Device* pd3dDevice)
     descView.Texture2D = { 0 };
     if (FAILED(pd3dDevice->CreateUnorderedAccessView(tempCSOutputTexture, &descView, &tempCSOutputTextureView)))
     {
-        Logger::getLogger() << "- Failed to create compute shader output texture resource view.\n" << std::endl;
+		Info("[%s]: Failed to create compute shader output SRV @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(1);
     }
 }
@@ -487,7 +487,7 @@ void DX11EffectViewer::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID
 		if ( pErrorBlob ) OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
 		if ( pErrorBlob ) pErrorBlob->Release();
 		if(pBlob) pBlob->Release();
-		printf("- Compile Compute Shader Failed.\n");
+		Info("[%s]: Compile Compute Shader Failed @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(2);
 	}
 	else
