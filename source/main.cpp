@@ -13,6 +13,9 @@ ID3D11DeviceContext*	pImmediateContext = nullptr;
 IDXGISwapChain*			pSwapChain = nullptr;
 ID3D11RenderTargetView*	pRenderTargetView = nullptr;
 
+unsigned int widthSwapchain;
+unsigned int heightSwapchain;
+
 #ifdef SAFE_RELEASE
 #undef SAFE_RELEASE
 #endif
@@ -133,6 +136,8 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
     GetClientRect(hWnd, &rc);
     unsigned int width = rc.right - rc.left;
     unsigned int height = rc.bottom - rc.top;
+	widthSwapchain = width;
+	heightSwapchain = height;
 
     UINT createDeviceFlags = 0;
 #ifdef _DEBUG

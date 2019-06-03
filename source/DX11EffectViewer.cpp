@@ -104,14 +104,17 @@ void DX11EffectViewer::Render(ID3D11DeviceContext* pImmediateContext )
 
 void DX11EffectViewer::RenderMultiViewport()
 {
+	int width, height;
+	width = float(widthSwapchain - 2) / 2.;
+	height = 1. / m_Aspect * width;
 	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcImageTextureView );
 	m_pImmediateContext->PSSetShader( m_pPixelShaderSrcImage, NULL, 0 );
-	SetupViewport(0.f, 0.f, m_imageWidth, m_imageHeight);
+	SetupViewport(0.f, 0.f, width, height);
 	m_pImmediateContext->Draw( 4, 0 );
 
 	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_resultImageTextureView );
 	m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
-	SetupViewport(m_imageWidth + 1.f, 0.f, m_imageWidth, m_imageHeight);
+	SetupViewport(width + 2.f, 0.f, width, height);
 	m_pImmediateContext->Draw( 4, 0 );
 }
 
@@ -380,6 +383,7 @@ void DX11EffectViewer::LoadImageAsTexture(ID3D11Device* pd3dDevice)
 		}
 		m_imageWidth  = desc.Width;
 		m_imageHeight = desc.Height;
+		m_Aspect = double(m_imageWidth) / double(m_imageHeight);
         m_textureDataSize = m_imageWidth * m_imageHeight * 4;
         Logger::getLogger() << "-  Size of input image: [" << m_imageWidth << ", " << m_imageHeight << "]\n" << std::endl;
 	}

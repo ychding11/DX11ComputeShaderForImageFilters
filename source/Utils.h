@@ -35,6 +35,18 @@ do{                                                   \
     }                                                 \
 } while(0)
 
+
+#define INFO(x)                                       \
+do{                                                   \
+    LRESULT ret = x;                                  \
+    if((ret) != S_OK)                                 \
+    {                                                 \
+        char buf[512];                                \
+        sprintf_s(buf, 512, "- Info @%s:%d\t  %s %d\t \n",__FILE__,__LINE__, #x, (ret) );  \
+        OutputDebugStringA(buf);                      \
+    }                                                 \
+} while(0)
+
 // locations used to store image files
 #define IMAGE_REPO "..\\images"
 

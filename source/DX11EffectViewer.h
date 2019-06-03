@@ -31,6 +31,8 @@ enum DisplayMode
     ALL_MODE      = 3,
 };
 
+extern unsigned int widthSwapchain;
+extern unsigned int heightSwapchain;
 class DX11EffectViewer
 {
 
@@ -133,8 +135,9 @@ private:
 	byte*	getCPUCopyOfGPUDestBuffer();
     
 	// Fields
-	int							m_imageWidth;
-	int							m_imageHeight;
+	int	m_imageWidth;
+	int	m_imageHeight;
+	double m_Aspect;
 
 	ID3D11Device*				m_pd3dDevice;
 	ID3D11DeviceContext*		m_pImmediateContext;
