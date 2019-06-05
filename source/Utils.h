@@ -36,6 +36,23 @@ do{                                                   \
 } while(0)
 
 
+inline void Error(const char *format, ...)
+{
+	va_list ptr_arg;
+	va_start(ptr_arg, format);
+
+	static char tmps[1024];
+	vsprintf(tmps, format, ptr_arg);
+
+    //static char info[256];
+    //sprintf_s(info, 256, "- Info @%s:%d\t",__FILE__,__LINE__);
+	//Logger::getLogger() << info;
+
+	Logger::getLogger() << tmps;
+
+	va_end(ptr_arg);
+}
+
 
 inline void Info(const char *format, ...)
 {

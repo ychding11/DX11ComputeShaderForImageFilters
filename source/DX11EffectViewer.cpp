@@ -8,7 +8,7 @@
 template <class T>
 void SafeRelease(T **ppT)
 {
-	if (*ppT)
+	if (ppT && *ppT)
 	{
 		(*ppT)->Release();
 		*ppT = NULL;
@@ -38,7 +38,7 @@ int	DX11EffectViewer::initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
     BuildImageList(IMAGE_REPO);
 
     EffectManager::GetEffectManager(pd3dDevice)->CheckEffect();
-    Logger::getLogger() << "- DX11EffectViewer Initialized OK. \n" << std::endl;
+	Error("[%s]: DX11EffectViewer Initialized OK @%s:%d\n", m_imageName.c_str(), __FILE__, __LINE__);
 	return 0;
 }
 
@@ -193,7 +193,7 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 	hr = pd3dDevice->CreateBuffer( &bd, &InitData, &m_pVertexBuffer );
 	if( FAILED( hr ) )
 	{	
-        Logger::getLogger() << "- Failed to create vertex buffer.\n" << "\n";
+	    Error("[%s]: Failed to create vertex buffer @%s:%d\n", m_imageName.c_str(), __FILE__, __LINE__);
 		exit(1);
 	}
 
@@ -206,14 +206,14 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
 			pErrorBlob->Release();
 		}
-        Logger::getLogger() << "- Failed to compile vertex shader: /data/fullQuad.fx\n" << "\n";
+	    Error("[%s]: Failed to compile vertex shader: %s @%s:%d\n", m_imageName.c_str(),GRAPHICS_SHADER, __FILE__, __LINE__);
 		exit(1);
 	}
 	if( pErrorBlob ) pErrorBlob->Release(); // is this check a must ?
 	hr = pd3dDevice->CreateVertexShader( pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &m_pVertexShader );
 	if( FAILED(hr) )
 	{	
-        Logger::getLogger() << "- Failed to create vertex shader object." << "\n";
+	    Error("[%s]: Failed to create vertex shader object., %s @%s:%d\n", m_imageName.c_str(),GRAPHICS_SHADER, __FILE__, __LINE__);
 		exit(1);
 	}
 
@@ -226,7 +226,7 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 	pVSBlob->Release();
 	if (FAILED(hr))
 	{
-        Logger::getLogger() << "- Failed to layout object\n" << "\n";
+	    Error("[%s]: Failed to layout object, %s @%s:%d\n", m_imageName.c_str(),GRAPHICS_SHADER, __FILE__, __LINE__);
 		exit(1);
 	}
 
@@ -239,14 +239,14 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
 			pErrorBlob->Release();
 		}
-        Logger::getLogger() << "- Failed to compile pixel shader: /data/fullQuad.fx\n" << "\n";
+	    Error("[%s]: Failed to compile src image pixel shader, %s @%s:%d\n", m_imageName.c_str(),GRAPHICS_SHADER, __FILE__, __LINE__);
 		exit(1);
 	}
 	hr = pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShaderSrcImage );
 	pPSBlob->Release();
 	if( FAILED( hr ) )
 	{	
-        Logger::getLogger() << "- Failed to create pixel shader object." << "\n";
+	    Error("[%s]: Failed to create src image pixel shader, %s @%s:%d\n", m_imageName.c_str(),GRAPHICS_SHADER, __FILE__, __LINE__);
 		exit(1);
 	}
 
@@ -258,14 +258,14 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
 			pErrorBlob->Release();
 		}
-        Logger::getLogger() << "- Failed to compile pixel shader: /data/fullQuad.fx\n" << "\n";
+	    Error("[%s]: Failed to compile result image pixel shader, %s @%s:%d\n", m_imageName.c_str(),GRAPHICS_SHADER, __FILE__, __LINE__);
 		exit(1);
 	}
 	hr = pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShaderResultImage );
 	pPSBlob->Release();
 	if( FAILED( hr ) )
 	{	
-        Logger::getLogger() << "- Failed to create pixel shader object." << "\n";
+	    Error("[%s]: Failed to create pixel shader object @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(1);
 	}
 
