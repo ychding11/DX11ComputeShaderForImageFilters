@@ -24,14 +24,34 @@ do{                                                   \
     }                                                 \
 } while(0)
 
-#define D3D11_CALL_CHECK(x)                           \
+#define D3D11_COMPILE_CALL_CHECK(x)                   \
 do{                                                   \
-    LRESULT ret = x;                                  \
+    LRESULT ret = (x);                                \
     if((ret) != S_OK)                                 \
     {                                                 \
         char buf[512];                                \
-        sprintf_s(buf, 512, "- Error @%s:%d\t  %s %d\t \n",__FILE__,__LINE__, #x, (ret) );  \
+        sprintf_s(buf, 512, "- Error @%s:%d\t  %s 0x%x\t \n",__FILE__,__LINE__, #x, (ret) );  \
         OutputDebugStringA(buf);                      \
+	    Logger::getLogger() << buf;                   \
+        if (pErrorBlob)                               \
+		{                                             \
+			OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());                        \
+			Logger::getLogger() << ((char*)pErrorBlob->GetBufferPointer());                   \
+		}											  \
+		return false;                                 \
+    }                                                 \
+} while(0)
+
+#define D3D11_CALL_CHECK(x)                           \
+do{                                                   \
+    LRESULT ret = (x);                                \
+    if((ret) != S_OK)                                 \
+    {                                                 \
+        char buf[512];                                \
+        sprintf_s(buf, 512, "- Error @%s:%d\t  %s 0x%x\t \n",__FILE__,__LINE__, #x, (ret) );  \
+        OutputDebugStringA(buf);                      \
+	    Logger::getLogger() << buf;                   \
+		return false;                                 \
     }                                                 \
 } while(0)
 

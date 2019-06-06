@@ -470,7 +470,7 @@ void DX11EffectViewer::CreateCSOutputTextureAndView(ID3D11Device* pd3dDevice)
 /*
  *	Load a compute shader from  file and use CSMain as entry point
  */
-void DX11EffectViewer::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader)
+void DX11EffectViewer::BuildComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader)
 {
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 

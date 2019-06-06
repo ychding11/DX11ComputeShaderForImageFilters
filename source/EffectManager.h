@@ -61,7 +61,7 @@ private:
     /*
      *	Load a compute shader from  file and use CSMain as entry point
      */
-    bool LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
+    bool BuildComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
 
     int LoadEffectFileList(std::string dir);
 

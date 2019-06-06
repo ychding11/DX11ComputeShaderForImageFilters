@@ -55,15 +55,16 @@ void EffectManager::BuildEffects()
         LPCWSTR wfilename = CharPtrToLPCWSTR(filename.c_str());
         EffectPtr ptrEffect = NULL;
 		Info("- Begin build Compute Shader: %s\n", filename.c_str());
-        bool build = LoadComputeShader(wfilename, "CSMain", &ptrEffect);
+        bool build = BuildComputeShader(wfilename, "CSMain", &ptrEffect);
         delete[] wfilename;
 		if (build == true)
 		{
-			Info("- Build Compute Shader OK\n");
+			Info("- Build Compute Shader: [%s] OK.\n", filename.c_str());
 		}
 		else
 		{
-			exit(1);
+			Info("- Build Compute Shader: [%s] Failed.\n", filename.c_str());
+			continue;
 		}
 
         auto ret = mEffects.insert( std::pair<std::string, EffectPtr>(filename, ptrEffect) );
@@ -78,7 +79,7 @@ void EffectManager::BuildEffects()
 /*
 *	Load a compute shader from  file and use CSMain as entry point
 */
-bool EffectManager::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader)
+bool EffectManager::BuildComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader)
 {
     DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 
@@ -89,20 +90,9 @@ bool EffectManager::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D1
     ID3DBlob* pErrorBlob = NULL;
     ID3DBlob* pBlob = NULL;
     LPCSTR pTarget = (mpd3dDevice->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0) ? "cs_5_0" : "cs_4_0";
-    HRESULT hr = D3DCompileFromFile(filename, NULL, NULL, entrypoint, pTarget, dwShaderFlags, NULL, &pBlob, &pErrorBlob);
-    if (FAILED(hr))
-    {
-        if (pErrorBlob) OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
-        if (pErrorBlob) pErrorBlob->Release();
-        if (pBlob) pBlob->Release();
-		Error("- Compile Compute Shader Failed.");
-		return false;
-    }
-    else
-    {
-        hr = mpd3dDevice->CreateComputeShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, computeShader);
-        if (pErrorBlob) pErrorBlob->Release();
-        if (pBlob) pBlob->Release();
-		return true;
-    }
+	D3D11_COMPILE_CALL_CHECK(D3DCompileFromFile(filename, NULL, NULL, entrypoint, pTarget, dwShaderFlags, NULL, &pBlob, &pErrorBlob));
+	D3D11_CALL_CHECK(mpd3dDevice->CreateComputeShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, computeShader));
+    if (pErrorBlob) pErrorBlob->Release();
+    if (pBlob) pBlob->Release();
+	return true;
 }

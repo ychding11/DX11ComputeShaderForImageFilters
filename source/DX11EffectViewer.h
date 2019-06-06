@@ -134,7 +134,7 @@ private:
 	void    CreateCSConstBuffer(ID3D11Device* pd3dDevice);
 
 	void    SetupViewport(float topLeftX, float topLeftY, int width, int height);
-    void	LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
+    void	BuildComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
 
 	void	RenderMultiViewport();
 	void	RenderSourceImage();

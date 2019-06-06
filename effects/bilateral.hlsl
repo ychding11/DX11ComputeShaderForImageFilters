@@ -22,11 +22,16 @@ RWTexture2D<float4> OutputMap : register(u0);
 #define BSIGMA 0.1
 #define MSIZE 15
 
+
+//--------------------------------------------------------------------------------------
+// Normal distribution: http://mathworld.wolfram.com/NormalDistribution.html
+// Mean : 0
+// Variance : sigma * sigma
+//--------------------------------------------------------------------------------------
 float normpdf(in float x, in float sigma)
 {
     return 0.39894*exp(-0.5*x*x/(sigma*sigma))/sigma;
 }
-
 float normpdf3(in float3 v, in float sigma)
 {
     return 0.39894*exp(-0.5*dot(v,v)/(sigma*sigma))/sigma;
@@ -38,7 +43,7 @@ float normpdf3(in float3 v, in float sigma)
 void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 {
     uint3 uv = dispatchThreadID.xyz;
-	float3 c = InputMap.Load(uv).rgb;
+	float3 c = InputMap.Load(uv).rgb; // current pixel
 	const int kSize = (MSIZE-1) / 2;
 	float kernel[MSIZE];
 	float3 final_colour;
@@ -54,7 +59,7 @@ void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 	float factor;
 	float bZ = 1.0 / normpdf(0.0, BSIGMA);
 
-	//read out the texels
+	//read out the pixel 
 	for (int i=-kSize; i <= kSize; ++i)
 	{
 		for (int j=-kSize; j <= kSize; ++j)
@@ -63,7 +68,7 @@ void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
             cc = InputMap.Load(uv + int3(i, j, 0)).rgb;
 			factor = normpdf3(cc-c, BSIGMA) * bZ * kernel[kSize+j] * kernel[kSize+i];
 			Z += factor;
-			final_colour += factor*cc;
+			final_colour += factor * cc;
 		}
 	}
     OutputMap[dispatchThreadID.xy] = float4(final_colour/Z, 1.0);
