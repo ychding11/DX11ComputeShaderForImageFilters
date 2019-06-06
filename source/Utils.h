@@ -45,7 +45,7 @@ inline void Error(const char *format, ...)
 	vsprintf(tmps, format, ptr_arg);
 
     //static char info[256];
-    //sprintf_s(info, 256, "- Info @%s:%d\t",__FILE__,__LINE__);
+    //sprintf_s(info, 256, "- Error @%s:%d\t",__FILE__,__LINE__);
 	//Logger::getLogger() << info;
 
 	Logger::getLogger() << tmps;
@@ -70,6 +70,7 @@ inline void Info(const char *format, ...)
 
 	va_end(ptr_arg);
 }
+
 
 // locations used to store image files
 #define IMAGE_REPO "..\\images"

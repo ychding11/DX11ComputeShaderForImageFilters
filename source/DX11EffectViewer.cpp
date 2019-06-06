@@ -284,7 +284,7 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 	    Info("[%s]: Failed to Create Texture Sampler Object. @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
 		exit(1);
 	}
-	Info("[%s]: InitGraphics OK. @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
+	Info("InitGraphics OK. @%s:%d\n", __FILE__, __LINE__);
 }
 
 void    DX11EffectViewer::UpdateCSConstBuffer()
