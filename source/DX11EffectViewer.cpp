@@ -3,6 +3,10 @@
 #include "EffectManager.h"
 #include "Utils.h"
 
+#define STBI_MSC_SECURE_CRT
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 // Safe Release Function
 template <class T>
 void SafeRelease(T **ppT)
@@ -388,11 +392,16 @@ bool DX11EffectViewer::CreateCSOutputTextureAndView(ID3D11Device* pd3dDevice)
 	return true;
 }
 
+void DX11EffectViewer::SaveResult()
+{
+	stbi_write_png("output.png", m_imageWidth, m_imageHeight, 4, GetResultImage(), m_imageWidth * 4);
+}
+
 /**
  *	Get a copy of the GPU dest buffer.
  *	// Resources usage. https://msdn.microsoft.com/en-us/library/windows/desktop/ff476259(v=vs.85).aspx
  */
-byte* DX11EffectViewer::getCPUCopyOfGPUDestBuffer()
+byte* DX11EffectViewer::GetResultImage()
 {
 #if 1 
 	if (!m_resultGPUCopy)

@@ -70,6 +70,8 @@ public:
         m_imageFilename = wString;
 	}
 
+	void SaveResult();
+	
     void NextEffect(std::string &name)
     {
         ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->NextEffect(name));
@@ -149,7 +151,7 @@ private:
 	void	RenderSourceImage();
 	void	RenderResultImage();
 
-	byte*	getCPUCopyOfGPUDestBuffer();
+	byte*	GetResultImage();
     
 	// Fields
 	int	m_imageWidth;

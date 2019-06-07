@@ -17,7 +17,8 @@ file(GLOB EXT_FILES
 )
 
 include_directories(
-  ${CMAKE_SOURCE_DIR}/Source/*.h
+  ${CMAKE_SOURCE_DIR}/Source/
+  ${CMAKE_SOURCE_DIR}/thirdparty/
 )
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/")

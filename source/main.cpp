@@ -240,6 +240,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 		}
 	}
     
+	application.SaveResult();
     application.Destory();
     Logger::flushLogger();
 
