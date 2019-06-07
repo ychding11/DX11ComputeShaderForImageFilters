@@ -13,6 +13,7 @@ file(GLOB SRC_FILES
 )
 
 file(GLOB EXT_FILES
+    ${CMAKE_SOURCE_DIR}/thirdparty/*.h
 )
 
 include_directories(
