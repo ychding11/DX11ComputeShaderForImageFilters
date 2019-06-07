@@ -30,7 +30,7 @@ do{                                                   \
     if((ret) != S_OK)                                 \
     {                                                 \
         char buf[512];                                \
-        sprintf_s(buf, 512, "- Error @%s:%d\t  %s 0x%x\t \n",__FILE__,__LINE__, #x, (ret) );  \
+        sprintf_s(buf, 512, "- Error @%s:%d\t  %s 0x%x\t \n",__FUNCTION__,__FILE__,__LINE__, #x, (ret) );  \
         OutputDebugStringA(buf);                      \
 	    Logger::getLogger() << buf;                   \
         if (pErrorBlob)                               \
@@ -48,7 +48,7 @@ do{                                                   \
     if((ret) != S_OK)                                 \
     {                                                 \
         char buf[512];                                \
-        sprintf_s(buf, 512, "- Error @%s:%d\t  %s 0x%x\t \n",__FILE__,__LINE__, #x, (ret) );  \
+        sprintf_s(buf, 512, "- Error @%s,%s:%d\t  %s 0x%x\t \n",__FUNCTION__, __FILE__,__LINE__, #x, (ret) );  \
         OutputDebugStringA(buf);                      \
 	    Logger::getLogger() << buf;                   \
 		return false;                                 \

@@ -2,7 +2,6 @@
 #include <iostream>
 
 #include "EffectManager.h"
-#include "Logger.h"
 #include "Utils.h"
 
 void EffectManager::CheckEffect()

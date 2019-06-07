@@ -1,7 +1,6 @@
 #include "DX11EffectViewer.h"
 #include "WICTextureLoader.h"
 #include "EffectManager.h"
-#include "Logger.h"
 #include "Utils.h"
 
 // Safe Release Function
@@ -25,12 +24,11 @@ int	DX11EffectViewer::initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
 {
     m_pd3dDevice = pd3dDevice;
     m_pImmediateContext = pImmediateContext;
-
     
-	LoadImageAsSrcTexture(pd3dDevice); //< Load source image as texture and upate image size.
-    CreateResultImageTextureAndView(pd3dDevice);
 	InitGraphics(pd3dDevice);
 
+	LoadImageAsSrcTexture(pd3dDevice); //< Load source image as texture and upate image size.
+    CreateResultImageTextureAndView(pd3dDevice);
 	CreateCSConstBuffer(pd3dDevice);
 	CreateCSInputTextureAndView(pd3dDevice);
 	CreateCSOutputTextureAndView(pd3dDevice);
@@ -38,7 +36,7 @@ int	DX11EffectViewer::initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
     BuildImageList(IMAGE_REPO);
 
     EffectManager::GetEffectManager(pd3dDevice)->CheckEffect();
-	Error("[%s]: DX11EffectViewer Initialized OK @%s:%d\n", m_imageName.c_str(), __FILE__, __LINE__);
+	Error("DX11EffectViewer Initialized OK. image [%s]\n", m_imageName.c_str());
 	return 0;
 }
 
@@ -63,7 +61,6 @@ void  DX11EffectViewer::ActiveEffect(ID3D11ComputeShader* computeShader)
 
     m_pImmediateContext->CopyResource(m_resultImageTexture, tempCSOutputTexture); //< dst <-- src
 }
-
 
 void DX11EffectViewer::Render(ID3D11DeviceContext* pImmediateContext ) 
 {
@@ -160,7 +157,7 @@ void DX11EffectViewer::Destory()
 /**
  *	Load full screen quad for rendering both src and dest texture.
  */
-void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
+bool DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 {
 	HRESULT hr;
 	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
@@ -190,84 +187,39 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 	bd.Usage     = D3D11_USAGE_DEFAULT;
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; //bind the buffer to input-assembler stage.
 	bd.ByteWidth = sizeof( vertices);
-	hr = pd3dDevice->CreateBuffer( &bd, &InitData, &m_pVertexBuffer );
-	if( FAILED( hr ) )
-	{	
-	    Error("[%s]: Failed to create vertex buffer @%s:%d\n", m_imageName.c_str(), __FILE__, __LINE__);
-		exit(1);
-	}
+	D3D11_CALL_CHECK(pd3dDevice->CreateBuffer( &bd, &InitData, &m_pVertexBuffer));
+	Info("- Create quad vertex buffer OK.\n");
 
 	ID3DBlob* pErrorBlob = NULL;
 	ID3DBlob* pVSBlob = NULL;
-	if( FAILED(D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "VS", "vs_4_0", dwShaderFlags, 0, &pVSBlob, &pErrorBlob) ) )
-	{
-		if( pErrorBlob )
-		{
-			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
-			pErrorBlob->Release();
-		}
-	    Error("[%s]: Failed to compile vertex shader: %s @%s:%d\n", m_imageName.c_str(),GRAPHICS_SHADER, __FILE__, __LINE__);
-		exit(1);
-	}
-	if( pErrorBlob ) pErrorBlob->Release(); // is this check a must ?
-	hr = pd3dDevice->CreateVertexShader( pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &m_pVertexShader );
-	if( FAILED(hr) )
-	{	
-	    Error("[%s]: Failed to create vertex shader object., %s @%s:%d\n", m_imageName.c_str(),GRAPHICS_SHADER, __FILE__, __LINE__);
-		exit(1);
-	}
+	D3D11_COMPILE_CALL_CHECK(D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "VS", "vs_4_0", dwShaderFlags, 0, &pVSBlob, &pErrorBlob));
+	D3D11_CALL_CHECK(pd3dDevice->CreateVertexShader( pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &m_pVertexShader));
+	if( pErrorBlob ) pErrorBlob->Release(),pErrorBlob = nullptr ; // is this check a must ?
 
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
-	hr = pd3dDevice->CreateInputLayout(layout, 2, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &m_pVertexLayout);
-	pVSBlob->Release();
-	if (FAILED(hr))
-	{
-	    Error("[%s]: Failed to layout object, %s @%s:%d\n", m_imageName.c_str(),GRAPHICS_SHADER, __FILE__, __LINE__);
-		exit(1);
-	}
+	D3D11_CALL_CHECK(pd3dDevice->CreateInputLayout(layout, 2, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &m_pVertexLayout));
+	if (pVSBlob) pVSBlob->Release(), pVSBlob = nullptr;
+
+	Info("- Create  vertex Shader OK.\n");
 
 	// Compile pixel shader
-	ID3DBlob* pPSBlob = NULL;
-	if( FAILED( D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "PS", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob) ) )
-	{
-		if( pErrorBlob )
-		{
-			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
-			pErrorBlob->Release();
-		}
-	    Error("[%s]: Failed to compile src image pixel shader, %s @%s:%d\n", m_imageName.c_str(),GRAPHICS_SHADER, __FILE__, __LINE__);
-		exit(1);
-	}
-	hr = pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShaderSrcImage );
-	pPSBlob->Release();
-	if( FAILED( hr ) )
-	{	
-	    Error("[%s]: Failed to create src image pixel shader, %s @%s:%d\n", m_imageName.c_str(),GRAPHICS_SHADER, __FILE__, __LINE__);
-		exit(1);
-	}
+	ID3DBlob* pPSBlob = nullptr;
+	D3D11_COMPILE_CALL_CHECK(D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "PS", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob));
+	D3D11_CALL_CHECK(pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShaderSrcImage ));
+	if (pPSBlob) pPSBlob->Release(), pPSBlob = nullptr;
+	if (pErrorBlob) pErrorBlob->Release(), pErrorBlob = nullptr;
 
 	// Compile pixel shader
-	if( FAILED( D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "psSampleResultImage", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob) ) )
-	{
-		if( pErrorBlob )
-		{
-			OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
-			pErrorBlob->Release();
-		}
-	    Error("[%s]: Failed to compile result image pixel shader, %s @%s:%d\n", m_imageName.c_str(),GRAPHICS_SHADER, __FILE__, __LINE__);
-		exit(1);
-	}
-	hr = pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShaderResultImage );
-	pPSBlob->Release();
-	if( FAILED( hr ) )
-	{	
-	    Error("[%s]: Failed to create pixel shader object @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-		exit(1);
-	}
+	D3D11_COMPILE_CALL_CHECK ( D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "psSampleResultImage", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob)) ;
+	D3D11_CALL_CHECK(pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShaderResultImage));
+	if (pPSBlob) pPSBlob->Release(), pPSBlob = nullptr;
+	if (pErrorBlob) pErrorBlob->Release(), pErrorBlob = nullptr;
+
+	Info("- Create  pixel Shader OK.\n");
 
 	// Create sampler state
 	D3D11_SAMPLER_DESC sampDesc;
@@ -278,12 +230,8 @@ void DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 	sampDesc.MinLOD = 0; sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	hr = pd3dDevice->CreateSamplerState( &sampDesc, &m_pSamplerLinear );
-	if (FAILED(hr))
-	{
-	    Info("[%s]: Failed to Create Texture Sampler Object. @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-		exit(1);
-	}
+	D3D11_CALL_CHECK(hr = pd3dDevice->CreateSamplerState( &sampDesc, &m_pSamplerLinear ));
+	
 	Info("InitGraphics OK. @%s:%d\n", __FILE__, __LINE__);
 }
 
@@ -295,10 +243,10 @@ void    DX11EffectViewer::UpdateCSConstBuffer()
     pData->iHeight = this->m_imageHeight;
     pData->iWidth  = this->m_imageWidth;
     m_pImmediateContext->Unmap(m_GPUConstBuffer, 0);
-
+	Info("- Update Constant buffer.\n");
 }
 
-void    DX11EffectViewer::CreateCSConstBuffer(ID3D11Device* pd3dDevice)
+bool DX11EffectViewer::CreateCSConstBuffer(ID3D11Device* pd3dDevice)
 {
 	D3D11_BUFFER_DESC descConstBuffer;
 	ZeroMemory(&descConstBuffer, sizeof(descConstBuffer));
@@ -313,13 +261,12 @@ void    DX11EffectViewer::CreateCSConstBuffer(ID3D11Device* pd3dDevice)
 	InitData.pSysMem = &cb;
 	InitData.SysMemPitch = 0;
 	InitData.SysMemSlicePitch = 0;
-	HRESULT hr = pd3dDevice->CreateBuffer(&descConstBuffer, &InitData, &m_GPUConstBuffer); // create const buffer.
-	if (FAILED(hr))
-	{
-		Info("[%s]: Create Parameter Constant Buffer Failed @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-		exit(1);
-	}
+
+	D3D11_CALL_CHECK(pd3dDevice->CreateBuffer(&descConstBuffer, &InitData, &m_GPUConstBuffer));
 	m_pImmediateContext->CSSetConstantBuffers(0, 1, &m_GPUConstBuffer);
+
+	Info("- Create Constant buffer and Bind to CS OK.\n");
+	return true;
 }
 
 void  DX11EffectViewer::SetupViewport(float topLeftX, float topLeftY, int width, int height)
@@ -332,7 +279,7 @@ void  DX11EffectViewer::SetupViewport(float topLeftX, float topLeftY, int width,
 	m_pImmediateContext->RSSetViewports( 1, &vp );
 }
 
-void   DX11EffectViewer::CreateResultImageTextureAndView(ID3D11Device* pd3dDevice)
+bool DX11EffectViewer::CreateResultImageTextureAndView(ID3D11Device* pd3dDevice)
 {
     if (m_resultImageTexture)m_resultImageTexture->Release(), m_resultImageTexture = NULL;
     D3D11_TEXTURE2D_DESC desc;
@@ -341,11 +288,7 @@ void   DX11EffectViewer::CreateResultImageTextureAndView(ID3D11Device* pd3dDevic
     desc.MipLevels = 1;
     desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
     desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    if ( FAILED( pd3dDevice->CreateTexture2D(&desc, NULL, &m_resultImageTexture)))
-    {
-		Info("[%s]: Failed to create result image texture @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-		exit(1);
-    }
+	D3D11_CALL_CHECK(pd3dDevice->CreateTexture2D(&desc, NULL, &m_resultImageTexture));
 
     if (m_resultImageTextureView)m_resultImageTextureView->Release(), m_resultImageTextureView = NULL;
     D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
@@ -354,11 +297,8 @@ void   DX11EffectViewer::CreateResultImageTextureAndView(ID3D11Device* pd3dDevic
     viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
     viewDesc.Texture2D.MipLevels = 1;
     viewDesc.Texture2D.MostDetailedMip = 0;
-    if (FAILED(pd3dDevice->CreateShaderResourceView(m_resultImageTexture, &viewDesc, &m_resultImageTextureView)))
-    {
-		Info("[%s]: Failed to create result image texture resource view @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-		exit(1);
-    }
+	D3D11_CALL_CHECK(pd3dDevice->CreateShaderResourceView(m_resultImageTexture, &viewDesc, &m_resultImageTextureView));
+	Info("- Create result image texture & view OK.\n");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -367,34 +307,30 @@ void   DX11EffectViewer::CreateResultImageTextureAndView(ID3D11Device* pd3dDevic
 //////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-void DX11EffectViewer::LoadImageAsSrcTexture(ID3D11Device* pd3dDevice)
+bool DX11EffectViewer::LoadImageAsSrcTexture(ID3D11Device* pd3dDevice)
 {
     if (m_srcImageTexture)      m_srcImageTexture->Release(), m_srcImageTexture = NULL;
     if (m_srcImageTextureView)  m_srcImageTextureView->Release(), m_srcImageTextureView = NULL;
 
-    if (SUCCEEDED(CreateWICTextureFromFile(pd3dDevice, m_imageFilename, (ID3D11Resource **)&m_srcImageTexture, &m_srcImageTextureView)))
+	D3D11_CALL_CHECK(CreateWICTextureFromFile(pd3dDevice, m_imageFilename, (ID3D11Resource **)&m_srcImageTexture, &m_srcImageTextureView));
 	{
 		D3D11_TEXTURE2D_DESC desc;
 		m_srcImageTexture->GetDesc(&desc);
 		if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
 		{
-		    Info("[%s]: Texture format is not qualified: DXGI_FORMAT_R8G8B8A8_UNORM @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-			exit(1);
+		    Info("Load [%s]: Texture format NOT qualified: DXGI_FORMAT_R8G8B8A8_UNORM @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
+			return false;
 		}
 		m_imageWidth  = desc.Width;
 		m_imageHeight = desc.Height;
 		m_Aspect = double(m_imageWidth) / double(m_imageHeight);
-        m_textureDataSize = m_imageWidth * m_imageHeight * 4;
-		Info("size [%s]:(%d,%d) @%s:%d\n", m_imageName.c_str(), m_imageWidth, m_imageHeight, __FILE__, __LINE__);
+        m_textureSizeInBytes = m_imageWidth * m_imageHeight * 4;
+		Info("Load [%s]:size (%d,%d) OK.\n", m_imageName.c_str(), m_imageWidth, m_imageHeight);
 	}
-	else
-	{
-		Info("size [%s]: load failed @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-		exit(1);
-	}
+	return true;
 }
 
-void DX11EffectViewer::CreateCSInputTextureView(ID3D11Device* pd3dDevice)
+bool DX11EffectViewer::CreateCSInputTextureView(ID3D11Device* pd3dDevice)
 {
     D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
     ZeroMemory(&viewDesc, sizeof(viewDesc));
@@ -403,25 +339,19 @@ void DX11EffectViewer::CreateCSInputTextureView(ID3D11Device* pd3dDevice)
     viewDesc.Texture2D.MipLevels = 1;
     viewDesc.Texture2D.MostDetailedMip = 0;
     if (tempCSInputTextureView)tempCSInputTextureView->Release(), tempCSInputTextureView = NULL;
-    if (FAILED(pd3dDevice->CreateShaderResourceView(m_srcImageTexture, &viewDesc, &tempCSInputTextureView)))
-    {
-		Info("[%s]: Failed to create compute shader SRV. @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-		exit(1);
-    }
+    D3D11_CALL_CHECK(pd3dDevice->CreateShaderResourceView(m_srcImageTexture, &viewDesc, &tempCSInputTextureView));
+	return true;
 }
 
  /*
-  *	Once we have the texture data in RAM we create a GPU buffer to feed the compute shader.
+  *	Create a GPU buffer to feed the compute shader.
   */
-void DX11EffectViewer::CreateCSInputTextureAndView(ID3D11Device* pd3dDevice)
+bool DX11EffectViewer::CreateCSInputTextureAndView(ID3D11Device* pd3dDevice)
 {
 	D3D11_TEXTURE2D_DESC desc;
 	m_srcImageTexture->GetDesc(&desc);
-	if (pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSInputTexture) != S_OK)
-	{
-		Info("[%s]: Failed to create compute shader input texture @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-		exit(1);
-	}
+	D3D11_CALL_CHECK(pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSInputTexture));
+	
     m_pImmediateContext->CopyResource(tempCSInputTexture, m_srcImageTexture); // copy resource by GPU.
 
     D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
@@ -430,72 +360,32 @@ void DX11EffectViewer::CreateCSInputTextureAndView(ID3D11Device* pd3dDevice)
     viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
     viewDesc.Texture2D.MipLevels = 1;
     viewDesc.Texture2D.MostDetailedMip = 0;
-    //if (FAILED(m_pd3dDevice->CreateShaderResourceView(tempCSInputTexture, &viewDesc, &tempCSInputTextureView)))
-    if (FAILED(pd3dDevice->CreateShaderResourceView(m_srcImageTexture, &viewDesc, &tempCSInputTextureView)))
-    {
-		Info("[%s]: Failed to create compute shader input SRV @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-		exit(1);
-    }
+    D3D11_CALL_CHECK(pd3dDevice->CreateShaderResourceView(m_srcImageTexture, &viewDesc, &tempCSInputTextureView));
+    
+	return true;
 }
 
 /**
-*	We know the compute shader will output on a buffer which is as big as the texture. Therefore we need to create a
-*	GPU buffer and an unordered resource view.
+ * compute shader output on a buffer with the same size with source. create a
+ * GPU buffer and an unordered resource view.
 */
-void DX11EffectViewer::CreateCSOutputTextureAndView(ID3D11Device* pd3dDevice)
+bool DX11EffectViewer::CreateCSOutputTextureAndView(ID3D11Device* pd3dDevice)
 {
     if (tempCSOutputTexture) tempCSOutputTexture->Release(), tempCSOutputTexture = NULL;
     D3D11_TEXTURE2D_DESC desc;
     m_srcImageTexture->GetDesc(&desc);
     desc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
-	if (pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSOutputTexture) != S_OK)
-	{
-		Info("[%s]: Failed to create compute shader input texture @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-		exit(1);
-	}
-
+	D3D11_CALL_CHECK(pd3dDevice->CreateTexture2D(&desc, NULL, &tempCSOutputTexture));
+	
     if (tempCSOutputTextureView)tempCSOutputTextureView->Release(), tempCSOutputTextureView = NULL;
+
 	D3D11_UNORDERED_ACCESS_VIEW_DESC descView;
     ZeroMemory(&descView, sizeof(descView));
     descView.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     descView.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
     descView.Texture2D = { 0 };
-    if (FAILED(pd3dDevice->CreateUnorderedAccessView(tempCSOutputTexture, &descView, &tempCSOutputTextureView)))
-    {
-		Info("[%s]: Failed to create compute shader output SRV @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-		exit(1);
-    }
-}
-
-/*
- *	Load a compute shader from  file and use CSMain as entry point
- */
-void DX11EffectViewer::BuildComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader)
-{
-	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
-
-#if defined( _DEBUG )
-	dwShaderFlags |= D3DCOMPILE_DEBUG;
-#endif
-
-	ID3DBlob* pErrorBlob = NULL;
-	ID3DBlob* pBlob = NULL;
-    LPCSTR pTarget = ( m_pd3dDevice->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ) ? "cs_5_0" : "cs_4_0";
-	HRESULT hr = D3DCompileFromFile( filename, NULL, NULL, entrypoint, pTarget, dwShaderFlags, NULL, &pBlob, &pErrorBlob);
-	if ( FAILED(hr) )
-	{
-		if ( pErrorBlob ) OutputDebugStringA( (char*)pErrorBlob->GetBufferPointer() );
-		if ( pErrorBlob ) pErrorBlob->Release();
-		if(pBlob) pBlob->Release();
-		Info("[%s]: Compile Compute Shader Failed @%s:%d\n", m_imageName.c_str(),  __FILE__, __LINE__);
-		exit(2);
-	}
-	else
-	{
-		hr = m_pd3dDevice->CreateComputeShader( pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, computeShader );
-		if (pErrorBlob) pErrorBlob->Release();
-		if (pBlob) pBlob->Release();
-	}
+    D3D11_CALL_CHECK(pd3dDevice->CreateUnorderedAccessView(tempCSOutputTexture, &descView, &tempCSOutputTextureView));
+	return true;
 }
 
 /**
@@ -504,34 +394,32 @@ void DX11EffectViewer::BuildComputeShader(LPCWSTR filename, LPCSTR entrypoint, I
  */
 byte* DX11EffectViewer::getCPUCopyOfGPUDestBuffer()
 {
-#if 0 
-	if (!m_dstDataBufferGPUCopy)
+#if 1 
+	if (!m_resultGPUCopy)
 	{
-		D3D11_BUFFER_DESC desc;
+		D3D11_TEXTURE2D_DESC desc;
 		ZeroMemory(&desc, sizeof(desc));
-		m_destDataGPUBuffer->GetDesc(&desc);
+		m_resultImageTexture->GetDesc(&desc);
 		desc.Usage = D3D11_USAGE_STAGING; // Support data copy from GPU to CPU.
 		desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 		desc.BindFlags = 0;
 		desc.MiscFlags = 0;
-		if ( FAILED(m_pd3dDevice->CreateBuffer(&desc, NULL, &m_dstDataBufferGPUCopy)))
-		{
-			printf("- Create copy of Compute output buffer failed.\n");
-			return NULL;
-		}
+		D3D11_CALL_CHECK(m_pd3dDevice->CreateTexture2D(&desc, NULL, &m_resultGPUCopy));
+		
 	}
-	if (!m_dstDataBufferCPUCopy)
+	if (!m_resultCPUCopy)
 	{
-		m_dstDataBufferCPUCopy = new byte[m_textureDataSize];
-		if (!m_dstDataBufferCPUCopy) printf("- Allocaate dst data buffer cpu copy failed.\n");
+		m_resultCPUCopy = new byte[m_textureSizeInBytes];
+		if (!m_resultCPUCopy) Info("- New CPU buffer failed.\n");
 	}
 
-	m_pImmediateContext->CopyResource(m_dstDataBufferGPUCopy, m_destDataGPUBuffer ); // Copy resource by GPU
+	m_pImmediateContext->CopyResource(m_resultGPUCopy, m_resultImageTexture); // Copy resource by GPU
 	D3D11_MAPPED_SUBRESOURCE mappedResource;
-	if(m_pImmediateContext->Map(m_dstDataBufferGPUCopy, 0, D3D11_MAP_READ, 0, &mappedResource) != S_OK) return false;
-	memcpy(m_dstDataBufferCPUCopy, mappedResource.pData, m_textureDataSize); // copy from GPU meory into CPU memory.
-	m_pImmediateContext->Unmap(m_dstDataBufferGPUCopy, 0);
-	return m_dstDataBufferCPUCopy; // return CPU copy of GPU resource.
+	D3D11_CALL_CHECK(m_pImmediateContext->Map(m_resultGPUCopy, 0, D3D11_MAP_READ, 0, &mappedResource));
+	memcpy(m_resultCPUCopy, mappedResource.pData, m_textureSizeInBytes); // copy from GPU meory into CPU memory.
+	m_pImmediateContext->Unmap(m_resultGPUCopy, 0);
+	return m_resultCPUCopy; // return CPU copy of GPU resource.
+
 #endif
     return 0;
 }
