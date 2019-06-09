@@ -1,10 +1,16 @@
 #include <windows.h>
 #include <d3d11.h>                                 
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
+
 #include "DX11EffectViewer.h"
 #include "EffectManager.h"
 #include "Logger.h"
 #include "Utils.h"
 
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
 
 HWND			    g_hWnd = NULL;
 DX11EffectViewer	application;
@@ -16,6 +22,8 @@ ID3D11RenderTargetView*	pRenderTargetView = nullptr;
 
 unsigned int widthSwapchain;
 unsigned int heightSwapchain;
+
+static float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
 
 #ifdef SAFE_RELEASE
 #undef SAFE_RELEASE
@@ -212,11 +220,9 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 
 HRESULT Render(ID3D11DeviceContext*	pImmediateContext, ID3D11RenderTargetView*	pRenderTargetView )
 {
-    float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
 	pImmediateContext->OMSetRenderTargets( 1, &pRenderTargetView, NULL );
     pImmediateContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
     application.Render(pImmediateContext);
-	pSwapChain->Present( 0, 0 );
 	return S_OK;
 }
 
@@ -225,6 +231,21 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
     WIN_CALL_CHECK(InitWindow(hInstance, nCmdShow));
     D3D11_CALL_CHECK(InitializeD3D11(g_hWnd));
     D3D11_CALL_CHECK(application.initialize(pd3dDevice, pImmediateContext));
+
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsClassic();
+
+	// Setup Platform/Renderer bindings
+	ImGui_ImplWin32_Init(g_hWnd);
+	ImGui_ImplDX11_Init(pd3dDevice, pImmediateContext);
 
 	MSG msg = { 0 };
 	while( WM_QUIT != msg.message )
@@ -236,11 +257,43 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 		}
 		else
 		{
+			// Start the Dear ImGui frame
+			ImGui_ImplDX11_NewFrame();
+			ImGui_ImplWin32_NewFrame();
+			ImGui::NewFrame();
+
+			ImGui::Begin("UI");
+
+			ImGui::Text("This is experialment."); // Display some text (you can use a format strings too)
+			//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+			//ImGui::Checkbox("Another Window", &show_another_window);
+			//ImGui::SliderFloat("float", &f, 0.0f, 1.0f);         // Edit 1 float using a slider from 0.0f to 1.0f
+			ImGui::ColorEdit4("clear color", ClearColor, ImGuiColorEditFlags_Float); // floats representing a color
+
+			if (ImGui::Button("Save")) // Buttons return true when clicked (most widgets return true when edited/activated)
+			{
+				application.SaveResult();
+			}
+			ImGui::SameLine();
+			//ImGui::Text("counter = %d", counter);
+			ImGui::Text("Application Average: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+			ImGui::End();
+
+			// Rendering
+			ImGui::Render();
+
             Render(pImmediateContext, pRenderTargetView);
+
+			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+			pSwapChain->Present( 1, 0 ); //vsync
 		}
 	}
     
-	application.SaveResult();
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+
     application.Destory();
     Logger::flushLogger();
 

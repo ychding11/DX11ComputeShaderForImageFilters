@@ -14,11 +14,14 @@ file(GLOB SRC_FILES
 
 file(GLOB EXT_FILES
     ${CMAKE_SOURCE_DIR}/thirdparty/*.h
+	${CMAKE_SOURCE_DIR}/thirdparty/imgui/*.h
+	${CMAKE_SOURCE_DIR}/thirdparty/imgui/*.cpp
 )
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/Source/
   ${CMAKE_SOURCE_DIR}/thirdparty/
+  ${CMAKE_SOURCE_DIR}/thirdparty/imgui/
 )
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/")
