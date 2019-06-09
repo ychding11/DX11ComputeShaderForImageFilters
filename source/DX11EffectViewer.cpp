@@ -40,7 +40,7 @@ int	DX11EffectViewer::initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* 
     BuildImageList(IMAGE_REPO);
 
     EffectManager::GetEffectManager(pd3dDevice)->CheckEffect();
-	Error("DX11EffectViewer Initialized OK. image [%s]\n", m_imageName.c_str());
+	Info("DX11EffectViewer Initialized OK. image [%s]\n", m_imageName.c_str());
 	return 0;
 }
 
@@ -153,8 +153,6 @@ void DX11EffectViewer::Destory()
 	SafeRelease(&m_pSamplerLinear);
 
 	if( m_pImmediateContext ) m_pImmediateContext->ClearState();
-	SafeRelease(&m_pImmediateContext);
-	SafeRelease(&m_pd3dDevice);
 }
 
 #define GRAPHICS_SHADER L"../data/fullQuad.fx" 
