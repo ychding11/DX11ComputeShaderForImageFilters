@@ -33,8 +33,57 @@ static float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p) = nullptr; } }
 #endif
 
+
+static void WindowMessageCallback(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	if (msg == WM_NCCREATE) return;
+	ImGuiIO& io = ImGui::GetIO();
+	switch (msg)
+	{
+	case WM_LBUTTONDOWN:
+		io.MouseDown[0] = true;
+		return;
+	case WM_LBUTTONUP:
+		io.MouseDown[0] = false;
+		return;
+	case WM_RBUTTONDOWN:
+		io.MouseDown[1] = true;
+		return;
+	case WM_RBUTTONUP:
+		io.MouseDown[1] = false;
+		return;
+	case WM_MBUTTONDOWN:
+		io.MouseDown[2] = true;
+		return;
+	case WM_MBUTTONUP:
+		io.MouseDown[2] = false;
+		return;
+	case WM_MOUSEWHEEL:
+		io.MouseWheel += GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? +1.0f : -1.0f;
+		return;
+	case WM_MOUSEMOVE:
+		io.MousePos.x = (signed short)(lParam);
+		io.MousePos.y = (signed short)(lParam >> 16);
+		return;
+	case WM_KEYDOWN:
+		if (wParam < 256)
+			io.KeysDown[wParam] = 1;
+		return;
+	case WM_KEYUP:
+		if (wParam < 256)
+			io.KeysDown[wParam] = 0;
+		return;
+	case WM_CHAR:
+		if (wParam > 0 && wParam < 0x10000)
+			io.AddInputCharacter(uint16_t(wParam));
+		return;
+	}
+}
+
 LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 {
+	WindowMessageCallback( nullptr, hWnd, message, wParam, lParam);
+
 	switch( message )
 	{
     	case WM_PAINT:
@@ -236,8 +285,30 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	io.KeyMap[ImGuiKey_Tab] = VK_TAB;
+	io.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
+	io.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
+	io.KeyMap[ImGuiKey_UpArrow] = VK_UP;
+	io.KeyMap[ImGuiKey_DownArrow] = VK_DOWN;
+	io.KeyMap[ImGuiKey_PageUp] = VK_PRIOR;
+	io.KeyMap[ImGuiKey_PageDown] = VK_NEXT;
+	io.KeyMap[ImGuiKey_Home] = VK_HOME;
+	io.KeyMap[ImGuiKey_End] = VK_END;
+	io.KeyMap[ImGuiKey_Delete] = VK_DELETE;
+	io.KeyMap[ImGuiKey_Backspace] = VK_BACK;
+	io.KeyMap[ImGuiKey_Enter] = VK_RETURN;
+	io.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
+	io.KeyMap[ImGuiKey_A] = 'A';
+	io.KeyMap[ImGuiKey_C] = 'C';
+	io.KeyMap[ImGuiKey_V] = 'V';
+	io.KeyMap[ImGuiKey_X] = 'X';
+	io.KeyMap[ImGuiKey_Y] = 'Y';
+	io.KeyMap[ImGuiKey_Z] = 'Z';
+
+	io.ImeWindowHandle = g_hWnd;
 
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
@@ -255,7 +326,7 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 			TranslateMessage( &msg );
 			DispatchMessage( &msg );
 		}
-		else
+		//else
 		{
 			// Start the Dear ImGui frame
 			ImGui_ImplDX11_NewFrame();
@@ -277,15 +348,14 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 			ImGui::SameLine();
 			//ImGui::Text("counter = %d", counter);
 			ImGui::Text("Application Average: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
 			ImGui::End();
-
-			// Rendering
-			ImGui::Render();
 
             Render(pImmediateContext, pRenderTargetView);
 
+			// Rendering
+			ImGui::Render();
 			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
 			pSwapChain->Present( 1, 0 ); //vsync
 		}
 	}
