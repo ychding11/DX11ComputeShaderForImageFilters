@@ -2,7 +2,6 @@
 #include <iostream>
 
 #include "EffectManager.h"
-#include "Logger.h"
 #include "Utils.h"
 
 void EffectManager::CheckEffect()
@@ -14,7 +13,7 @@ void EffectManager::CheckEffect()
 EffectPtr EffectManager::NextEffect(std::string &name)
 {
     auto ret =  mCurrentEffect == mEffects.end() ? --mCurrentEffect : mCurrentEffect++;
-    Logger::getLogger() << "- Next Effect: " << ret->first << "\n"<<std::endl;
+	Info("- Next Effect: %s\n", ret->first.c_str());
     name = ret->first;
     return ret->second;
 
@@ -22,7 +21,7 @@ EffectPtr EffectManager::NextEffect(std::string &name)
 EffectPtr EffectManager::PrevEffect(std::string &name)
 {
     auto ret =  mCurrentEffect == mEffects.begin() ? mCurrentEffect : --mCurrentEffect;
-    Logger::getLogger() << "- Prev Effect: " << ret->first << "\n";
+	Info("- Prev Effect: %s\n", ret->first.c_str());
     name = ret->first;
     return ret->second;
 }
@@ -54,24 +53,32 @@ void EffectManager::BuildEffects()
         std::string filename = mFileList[i];
         LPCWSTR wfilename = CharPtrToLPCWSTR(filename.c_str());
         EffectPtr ptrEffect = NULL;
-        Logger::getLogger() << "- Build Compute Shader:" << filename << '\n';
-        LoadComputeShader(wfilename, "CSMain", &ptrEffect);
+		Info("- Begin build Compute Shader: %s\n", filename.c_str());
+        bool build = BuildComputeShader(wfilename, "CSMain", &ptrEffect);
         delete[] wfilename;
+		if (build == true)
+		{
+			Info("- Build Compute Shader: [%s] OK.\n", filename.c_str());
+		}
+		else
+		{
+			Info("- Build Compute Shader: [%s] Failed.\n", filename.c_str());
+			continue;
+		}
 
         auto ret = mEffects.insert( std::pair<std::string, EffectPtr>(filename, ptrEffect) );
         if (ret.second == false)
         {
-            Logger::getLogger() << "- Effect exist:" << filename << '\n';
+			Info("- Effect file exist:", filename.c_str());
         }
     }
     mCurrentEffect = mEffects.begin();
 }
 
-
 /*
 *	Load a compute shader from  file and use CSMain as entry point
 */
-void EffectManager::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader)
+bool EffectManager::BuildComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader)
 {
     DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
 
@@ -82,18 +89,9 @@ void EffectManager::LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D1
     ID3DBlob* pErrorBlob = NULL;
     ID3DBlob* pBlob = NULL;
     LPCSTR pTarget = (mpd3dDevice->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0) ? "cs_5_0" : "cs_4_0";
-    HRESULT hr = D3DCompileFromFile(filename, NULL, NULL, entrypoint, pTarget, dwShaderFlags, NULL, &pBlob, &pErrorBlob);
-    if (FAILED(hr))
-    {
-        if (pErrorBlob) OutputDebugStringA((char*)pErrorBlob->GetBufferPointer());
-        if (pErrorBlob) pErrorBlob->Release();
-        if (pBlob) pBlob->Release();
-        Logger::getLogger() << "- Compile Compute Shader Failed." << filename << '\n';
-    }
-    else
-    {
-        hr = mpd3dDevice->CreateComputeShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, computeShader);
-        if (pErrorBlob) pErrorBlob->Release();
-        if (pBlob) pBlob->Release();
-    }
+	D3D11_COMPILE_CALL_CHECK(D3DCompileFromFile(filename, NULL, NULL, entrypoint, pTarget, dwShaderFlags, NULL, &pBlob, &pErrorBlob));
+	D3D11_CALL_CHECK(mpd3dDevice->CreateComputeShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), NULL, computeShader));
+    if (pErrorBlob) pErrorBlob->Release();
+    if (pBlob) pBlob->Release();
+	return true;
 }

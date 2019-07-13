@@ -1,13 +1,20 @@
 #include <windows.h>
 #include <d3d11.h>                                 
+#define DIRECTINPUT_VERSION 0x0800
+#include <dinput.h>
+
 #include "DX11EffectViewer.h"
 #include "EffectManager.h"
 #include "Logger.h"
 #include "Utils.h"
 
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
 
 HWND			    g_hWnd = NULL;
 DX11EffectViewer	application;
+
 ID3D11Device*			pd3dDevice = nullptr;
 ID3D11DeviceContext*	pImmediateContext = nullptr;
 IDXGISwapChain*			pSwapChain = nullptr;
@@ -15,6 +22,8 @@ ID3D11RenderTargetView*	pRenderTargetView = nullptr;
 
 unsigned int widthSwapchain;
 unsigned int heightSwapchain;
+
+static float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
 
 #ifdef SAFE_RELEASE
 #undef SAFE_RELEASE
@@ -24,8 +33,57 @@ unsigned int heightSwapchain;
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p) = nullptr; } }
 #endif
 
+
+static void WindowMessageCallback(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	if (msg == WM_NCCREATE) return;
+	ImGuiIO& io = ImGui::GetIO();
+	switch (msg)
+	{
+	case WM_LBUTTONDOWN:
+		io.MouseDown[0] = true;
+		return;
+	case WM_LBUTTONUP:
+		io.MouseDown[0] = false;
+		return;
+	case WM_RBUTTONDOWN:
+		io.MouseDown[1] = true;
+		return;
+	case WM_RBUTTONUP:
+		io.MouseDown[1] = false;
+		return;
+	case WM_MBUTTONDOWN:
+		io.MouseDown[2] = true;
+		return;
+	case WM_MBUTTONUP:
+		io.MouseDown[2] = false;
+		return;
+	case WM_MOUSEWHEEL:
+		io.MouseWheel += GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? +1.0f : -1.0f;
+		return;
+	case WM_MOUSEMOVE:
+		io.MousePos.x = (signed short)(lParam);
+		io.MousePos.y = (signed short)(lParam >> 16);
+		return;
+	case WM_KEYDOWN:
+		if (wParam < 256)
+			io.KeysDown[wParam] = 1;
+		return;
+	case WM_KEYUP:
+		if (wParam < 256)
+			io.KeysDown[wParam] = 0;
+		return;
+	case WM_CHAR:
+		if (wParam > 0 && wParam < 0x10000)
+			io.AddInputCharacter(uint16_t(wParam));
+		return;
+	}
+}
+
 LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam )
 {
+	WindowMessageCallback( nullptr, hWnd, message, wParam, lParam);
+
 	switch( message )
 	{
     	case WM_PAINT:
@@ -211,11 +269,9 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
 
 HRESULT Render(ID3D11DeviceContext*	pImmediateContext, ID3D11RenderTargetView*	pRenderTargetView )
 {
-    float ClearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
 	pImmediateContext->OMSetRenderTargets( 1, &pRenderTargetView, NULL );
     pImmediateContext->ClearRenderTargetView(pRenderTargetView, ClearColor);
     application.Render(pImmediateContext);
-	pSwapChain->Present( 0, 0 );
 	return S_OK;
 }
 
@@ -225,6 +281,43 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
     D3D11_CALL_CHECK(InitializeD3D11(g_hWnd));
     D3D11_CALL_CHECK(application.initialize(pd3dDevice, pImmediateContext));
 
+	// Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+	io.KeyMap[ImGuiKey_Tab] = VK_TAB;
+	io.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
+	io.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
+	io.KeyMap[ImGuiKey_UpArrow] = VK_UP;
+	io.KeyMap[ImGuiKey_DownArrow] = VK_DOWN;
+	io.KeyMap[ImGuiKey_PageUp] = VK_PRIOR;
+	io.KeyMap[ImGuiKey_PageDown] = VK_NEXT;
+	io.KeyMap[ImGuiKey_Home] = VK_HOME;
+	io.KeyMap[ImGuiKey_End] = VK_END;
+	io.KeyMap[ImGuiKey_Delete] = VK_DELETE;
+	io.KeyMap[ImGuiKey_Backspace] = VK_BACK;
+	io.KeyMap[ImGuiKey_Enter] = VK_RETURN;
+	io.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
+	io.KeyMap[ImGuiKey_A] = 'A';
+	io.KeyMap[ImGuiKey_C] = 'C';
+	io.KeyMap[ImGuiKey_V] = 'V';
+	io.KeyMap[ImGuiKey_X] = 'X';
+	io.KeyMap[ImGuiKey_Y] = 'Y';
+	io.KeyMap[ImGuiKey_Z] = 'Z';
+
+	io.ImeWindowHandle = g_hWnd;
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsClassic();
+
+	// Setup Platform/Renderer bindings
+	ImGui_ImplWin32_Init(g_hWnd);
+	ImGui_ImplDX11_Init(pd3dDevice, pImmediateContext);
+
 	MSG msg = { 0 };
 	while( WM_QUIT != msg.message )
 	{
@@ -233,12 +326,44 @@ int WINAPI wWinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdL
 			TranslateMessage( &msg );
 			DispatchMessage( &msg );
 		}
-		else
+		//else
 		{
+			// Start the Dear ImGui frame
+			ImGui_ImplDX11_NewFrame();
+			ImGui_ImplWin32_NewFrame();
+			ImGui::NewFrame();
+
+			ImGui::Begin("UI");
+
+			ImGui::Text("This is experialment."); // Display some text (you can use a format strings too)
+			//ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+			//ImGui::Checkbox("Another Window", &show_another_window);
+			//ImGui::SliderFloat("float", &f, 0.0f, 1.0f);         // Edit 1 float using a slider from 0.0f to 1.0f
+			ImGui::ColorEdit4("clear color", ClearColor, ImGuiColorEditFlags_Float); // floats representing a color
+
+			if (ImGui::Button("Save")) // Buttons return true when clicked (most widgets return true when edited/activated)
+			{
+				application.SaveResult();
+			}
+			ImGui::SameLine();
+			//ImGui::Text("counter = %d", counter);
+			ImGui::Text("Application Average: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::End();
+
             Render(pImmediateContext, pRenderTargetView);
+
+			// Rendering
+			ImGui::Render();
+			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+			pSwapChain->Present( 1, 0 ); //vsync
 		}
 	}
     
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+
     application.Destory();
     Logger::flushLogger();
 

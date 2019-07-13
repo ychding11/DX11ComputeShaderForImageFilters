@@ -14,6 +14,7 @@
 #include <DirectXMath.h>
 
 #include "EffectManager.h"
+#include "Utils.h"
 
 using namespace DirectX;
 
@@ -45,6 +46,7 @@ class DX11EffectViewer
 public:
     DisplayMode mDisplayMode;
 	LPCWSTR	    m_imageFilename;
+	std::string m_imageName;
 
 	DX11EffectViewer() 
 		: m_pd3dDevice(NULL)
@@ -54,31 +56,50 @@ public:
 		, m_computeShader(NULL)
 		, m_pVertexLayout(NULL)
 		, m_GPUConstBuffer(NULL)
-		, m_dstDataBufferGPUCopy(NULL)
-		, m_dstDataBufferCPUCopy(NULL)
+		, m_resultGPUCopy(NULL)
+		, m_resultCPUCopy(NULL)
 		, m_imageWidth(0)
 		, m_imageHeight(0)
-        , m_imageFilename (L"../images/test.png")
+        //, m_imageFilename (L"../images/test.png")
+        , m_imageName ("../images/test.png")
         , mDisplayMode(DisplayMode::SOURCE_RESULT )
-	{   }
+	{
 
-    void    NextEffect(std::string &name)
+        static wchar_t wString[4096];
+        MultiByteToWideChar(CP_ACP, 0, m_imageName.c_str(), -1, wString, 4096);
+        m_imageFilename = wString;
+	}
+
+	void SaveResult();
+	
+    void NextEffect(std::string &name)
     {
         ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->NextEffect(name));
     }
 
-    void    PrevEffect(std::string &name)
+    void PrevEffect(std::string &name)
     {
         ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->PrevEffect(name));
     }
 
-    void    NextImage(std::string &name)
+    void NextImage(std::string &name)
     {
-        wchar_t wString[4096];
+        static wchar_t wString[4096];
         auto imageItr = mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
         MultiByteToWideChar(CP_ACP, 0, (*imageItr).c_str(), -1, wString, 4096);
+		m_imageName = (*imageItr);
         m_imageFilename = wString;
-        LoadImageAsTexture(m_pd3dDevice);
+		Info("- Switch to image [%s]\n", m_imageName.c_str());
+
+		//! All resource related need to rebuild 
+		while (!LoadImageAsSrcTexture(m_pd3dDevice))
+		{
+			auto imageItr = mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
+			MultiByteToWideChar(CP_ACP, 0, (*imageItr).c_str(), -1, wString, 4096);
+			m_imageName = (*imageItr);
+			m_imageFilename = wString;
+			Info("- Switch to image [%s]\n", m_imageName.c_str());
+		}
         CreateCSInputTextureView(m_pd3dDevice);
         CreateCSOutputTextureAndView(m_pd3dDevice);
         CreateResultImageTextureAndView(m_pd3dDevice);
@@ -107,7 +128,6 @@ public:
     int     imageHeight() const { return m_imageHeight; }
     int     imageWidth()  const { return m_imageWidth; }
 
-
 private:
 
     std::vector<std::string> mImageList;
@@ -117,22 +137,21 @@ private:
     void    ActiveEffect(ID3D11ComputeShader* computeShader);
     void    UpdateCSConstBuffer();
 
-	void	InitGraphics(ID3D11Device* pd3dDevice);
-	void	LoadImageAsTexture(ID3D11Device* pd3dDevice);
-    void    CreateCSInputTextureView(ID3D11Device* pd3dDevice);
-	void    CreateResultImageTextureAndView(ID3D11Device* pd3dDevice);
-	void	CreateCSInputTextureAndView(ID3D11Device* pd3dDevice);
-	void	CreateCSOutputTextureAndView(ID3D11Device* pd3dDevice);
-	void    CreateCSConstBuffer(ID3D11Device* pd3dDevice);
+	bool	InitGraphics(ID3D11Device* pd3dDevice);
+	bool LoadImageAsSrcTexture(ID3D11Device* pd3dDevice);
+    bool    CreateCSInputTextureView(ID3D11Device* pd3dDevice);
+	bool CreateResultImageTextureAndView(ID3D11Device* pd3dDevice);
+	bool	CreateCSInputTextureAndView(ID3D11Device* pd3dDevice);
+	bool	CreateCSOutputTextureAndView(ID3D11Device* pd3dDevice);
+	bool CreateCSConstBuffer(ID3D11Device* pd3dDevice);
 
 	void    SetupViewport(float topLeftX, float topLeftY, int width, int height);
-    void	LoadComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader);
 
 	void	RenderMultiViewport();
 	void	RenderSourceImage();
 	void	RenderResultImage();
 
-	byte*	getCPUCopyOfGPUDestBuffer();
+	byte*	GetResultImage();
     
 	// Fields
 	int	m_imageWidth;
@@ -149,7 +168,7 @@ private:
 	ID3D11Buffer*				m_pVertexBuffer;
 	ID3D11SamplerState*			m_pSamplerLinear;
 
-	UINT						m_textureDataSize;
+	UINT						m_textureSizeInBytes;
 
 	ID3D11Texture2D*			m_srcImageTexture;
 	ID3D11ShaderResourceView*	m_srcImageTextureView;
@@ -164,8 +183,8 @@ private:
     ID3D11Texture2D*            tempCSOutputTexture;
     ID3D11UnorderedAccessView*  tempCSOutputTextureView;
 
-    //Maybe removed
-	ID3D11Buffer*				m_dstDataBufferGPUCopy;
-	byte*						m_dstDataBufferCPUCopy;
+    // Used to copy result to CPU buffer
+	ID3D11Texture2D *m_resultGPUCopy;
+	byte *m_resultCPUCopy;
 
 };

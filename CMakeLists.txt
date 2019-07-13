@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.6)
 project (ImageEffects)
 
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON) 
@@ -13,10 +13,15 @@ file(GLOB SRC_FILES
 )
 
 file(GLOB EXT_FILES
+    ${CMAKE_SOURCE_DIR}/thirdparty/*.h
+	${CMAKE_SOURCE_DIR}/thirdparty/imgui/*.h
+	${CMAKE_SOURCE_DIR}/thirdparty/imgui/*.cpp
 )
 
 include_directories(
-  ${CMAKE_SOURCE_DIR}/Source/*.h
+  ${CMAKE_SOURCE_DIR}/Source/
+  ${CMAKE_SOURCE_DIR}/thirdparty/
+  ${CMAKE_SOURCE_DIR}/thirdparty/imgui/
 )
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/")
@@ -44,6 +49,20 @@ foreach(f ${SRC_FILES})
     # then alter it (not compulsory)
     file(RELATIVE_PATH SRCGR ${CMAKE_SOURCE_DIR} ${f})
     set(SRCGR "Sources/${SRCGR}")
+
+    # Extract the folder, ie remove the filename part
+    string(REGEX REPLACE "(.*)(/[^/]*)$" "\\1" SRCGR ${SRCGR})
+
+    # Source_group expects \\ (double antislash), not / (slash)
+    string(REPLACE / \\ SRCGR ${SRCGR})
+    source_group("${SRCGR}" FILES ${f})
+endforeach()
+
+foreach(f ${EXT_FILES})
+    # Get the path of the file relative to ${DIRECTORY},
+    # then alter it (not compulsory)
+    file(RELATIVE_PATH SRCGR ${CMAKE_SOURCE_DIR} ${f})
+    set(SRCGR "External/${SRCGR}")
 
     # Extract the folder, ie remove the filename part
     string(REGEX REPLACE "(.*)(/[^/]*)$" "\\1" SRCGR ${SRCGR})

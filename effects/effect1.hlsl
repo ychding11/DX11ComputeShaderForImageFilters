@@ -25,5 +25,5 @@ void temp1( uint3 dispatchThreadID : SV_DispatchThreadID )
 {
     uint3 uv = dispatchThreadID.xyz;
     float4 data = InputMap.Load(uv);
-    OutputMap[dispatchThreadID.xy] = data * (float(dispatchThreadID.x) / float(g_iWidth) );
+    OutputMap[dispatchThreadID.xy] = data * (float(dispatchThreadID.x) / float(g_iWidth));
 }

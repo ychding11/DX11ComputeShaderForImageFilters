@@ -2,6 +2,17 @@
 # - FindDirectX.cmake
 # - (DirectX_D3D11_INCLUDE_DIR AND DirectX_D3D11_LIBRARY AND DirectX_D3D11_COMPILER )
 
+  MACRO(LISTSUBDIR result curdir)
+  FILE(GLOB children RELATIVE ${curdir} ${curdir}/*)
+  SET(dirlist "")
+  FOREACH(child ${children})
+    IF(IS_DIRECTORY ${curdir}/${child})
+      LIST(APPEND dirlist ${child})
+    ENDIF()
+  ENDFOREACH()
+  SET(${result} ${dirlist})
+  ENDMACRO()
+
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
 	if (CMAKE_CL_64)
@@ -20,8 +31,22 @@ if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 	# - Hard code Widnows SDK
 	set(_PF86 "ProgramFiles(x86)")
 	set(_PF "ProgramFiles")
-	set(WIN_SDK_ROOT_DIR "$ENV{${_PF86}}/Windows Kits/10/")
-	set(WIN_SDK_VERSION "10.0.17763.0")
+	set(WIN_SDK_ROOT_DIR "$ENV{${_PF86}}/Windows Kits/10")
+	
+	## Causion '\' should be '\\'
+	string(REPLACE "\\" "/" Win10_Versions_Dir "${WIN_SDK_ROOT_DIR}/Include/")
+	message(STATUS ${Win10_Versions_Dir})
+	LISTSUBDIR(Win10_Versions ${Win10_Versions_Dir})
+	foreach(VERSION ${Win10_Versions})
+		message(STATUS ${VERSION})
+	endforeach()
+	list(LENGTH Win10_Versions Win10_Versions_Num)
+	list(GET Win10_Versions -1 Win10_Version_Latest)
+	message(STATUS "There ${Win10_Versions_Num} Win10 SDK installed, use latest.")
+	message(STATUS "Win10_Version_Latest=" ${Win10_Version_Latest})
+	
+	set(WIN_SDK_VERSION ${Win10_Version_Latest}) 
+	#set(WIN_SDK_VERSION "10.0.17763.0") 
 	if (DEFINED MSVC_VERSION AND NOT ${MSVC_VERSION} LESS 1700)
 		if (WIN_SDK_ROOT_DIR)
 			set (DirectX_INC_SEARCH_PATH "${WIN_SDK_ROOT_DIR}/Include/${WIN_SDK_VERSION}/um" "${WIN_SDK_ROOT_DIR}/Include/${WIN_SDK_VERSION}/shared")
