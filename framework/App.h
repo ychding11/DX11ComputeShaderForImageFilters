@@ -20,15 +20,25 @@ public:
 
     int32 Run();
 
+private:
+    void Initialize_private();
+	void BeginFrame_private();
+	void EndFrame_private();
+	void Shutdown_private();
+	
 protected:
 
     virtual void Initialize() = 0;
     virtual void Update(const Timer& timer) = 0;
     virtual void Render(const Timer& timer) = 0;
+    virtual void Shutdown() = 0;
 
 
 	ID3D11Device* Device();
 	ID3D11DeviceContext* ImmediateContext();
+
+	uint32 SwapchainWidth() const;
+	uint32 SwapchainHeight() const;
 
     void Exit();
     void ToggleFullScreen(bool fullScreen);
@@ -52,13 +62,7 @@ protected:
     bool showWindow;
     int32 returnCode;
 
-private:
-
-    void Initialize_private();
-	void BeginFrame_private();
-	void EndFrame_private();
-	
-
+	float clearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
 public:
 
     // Accessors

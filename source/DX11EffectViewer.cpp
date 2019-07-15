@@ -106,7 +106,7 @@ void DX11EffectViewer::Render(ID3D11DeviceContext* pImmediateContext )
 void DX11EffectViewer::RenderMultiViewport()
 {
 	int width, height;
-	width = float(widthSwapchain - 2) / 2.;
+	width = float(SwapchainWidth() - 2) / 2.;
 	height = 1. / m_Aspect * width;
 	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcImageTextureView );
 	m_pImmediateContext->PSSetShader( m_pPixelShaderSrcImage, NULL, 0 );
@@ -135,7 +135,7 @@ void	DX11EffectViewer::RenderResultImage()
 	m_pImmediateContext->Draw( 4, 0 );
 }
 
-void DX11EffectViewer::Destory() 
+void DX11EffectViewer::Shutdown() 
 {
 	SafeRelease(&m_computeShader);
 
@@ -429,4 +429,65 @@ byte* DX11EffectViewer::GetResultImage()
 
 #endif
     return 0;
+}
+
+void DX11EffectViewer::WindowMessageCallback(void* context, HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	DX11EffectViewer *app = (DX11EffectViewer*)context;
+	switch (message)
+	{
+		case WM_PAINT:
+		{
+			PAINTSTRUCT ps;
+			HDC hdc;
+			hdc = BeginPaint(hWnd, &ps);
+			EndPaint(hWnd, &ps);
+			break;
+		}
+		case WM_KEYUP:
+		{
+			char key = tolower((int)wParam);
+			if (wParam == VK_F1)
+			{
+				std::string name;
+				app->NextEffect(name);
+			}
+			else if (wParam == VK_F2)
+			{
+				std::string name;
+				app->PrevEffect(name);
+			}
+			else if (wParam == VK_F3)
+			{
+				std::string name;
+				app->NextImage(name);
+			}
+			else if (wParam == VK_ESCAPE)
+			{
+				SendMessage(hWnd, WM_CLOSE, 0, 0);
+			}
+			else if (key == 'u')
+			{
+				std::string name;
+				app->UpdateEffects();
+				app->NextEffect(name);
+			}
+			else if (key == 'd')
+			{
+				app->mDisplayMode = DisplayMode((1 + app->mDisplayMode) % DisplayMode::ALL_MODE);
+			}
+			else if (key == 'q')
+			{
+				PostQuitMessage(0);
+			}
+			break;
+		}
+	}
+}
+
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
+{
+	DX11EffectViewer viewer;
+	viewer.Run();
+	return 0;
 }

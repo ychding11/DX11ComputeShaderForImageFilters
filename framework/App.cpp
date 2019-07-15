@@ -147,13 +147,6 @@ App::App(const wchar* appName, const wchar* iconResource) :
 
 }
 
-App::~App()
-{
-	imgui::Shutdown();
-	swapchain.Shutdown();
-	DX11::Shutdown();
-}
-
 int32 App::Run()
 {
     try
@@ -183,6 +176,9 @@ int32 App::Run()
             }
             window.MessageLoop();
         }
+
+		Shutdown();
+		Shutdown_private();
     }
 	catch(SimpleFramework::Exception exception)
     {
@@ -195,7 +191,7 @@ int32 App::Run()
 
 void App::Initialize_private()
 {
-	DX11::Initialize(D3D_FEATURE_LEVEL_11_0, 0);
+	DX11::Initialize(D3D_FEATURE_LEVEL_11_0);
 	swapchain.Initialize(window);
 	imgui::Initialize(window);
 }
@@ -203,6 +199,7 @@ void App::Initialize_private()
 void App::BeginFrame_private()
 {
 	DX11::ImmediateContext()->OMSetRenderTargets(1, swapchain.RTV(), nullptr);
+	DX11::ImmediateContext()->ClearRenderTargetView((swapchain.RTV())[0], clearColor);
 	imgui::BeginFrame();
 }
 
@@ -210,6 +207,17 @@ void App::EndFrame_private()
 {
 	imgui::EndFrame();
 	swapchain.D3DSwapChain()->Present(0,0);
+}
+
+void App::Shutdown_private()
+{
+	imgui::Shutdown();
+	swapchain.Shutdown();
+	DX11::Shutdown();
+}
+
+App::~App()
+{
 }
 
 void App::CalculateFPS()
@@ -236,6 +244,15 @@ ID3D11Device* App::Device()
 ID3D11DeviceContext* App::ImmediateContext()
 {
 	return DX11::ImmediateContext();
+}
+uint32 App::SwapchainWidth() const
+{
+	return swapchain.Width();
+}
+
+uint32 App::SwapchainHeight() const
+{
+	return swapchain.Height();
 }
 
 

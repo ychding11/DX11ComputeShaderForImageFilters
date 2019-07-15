@@ -10,7 +10,7 @@
 #include "DX11.h"
 #include "Exceptions.h"
 
-#if Debug_
+#ifdef _DEBUG
     #define UseDebugDevice_ 1
     #define BreakOnDXError_ (UseDebugDevice_ && 1)
     #define UseGPUValidation_ 0
@@ -27,8 +27,8 @@ namespace DX11
 {
 
 D3D_FEATURE_LEVEL FeatureLevel = D3D_FEATURE_LEVEL_11_0;
-IDXGIFactory1* Factory = nullptr;
-IDXGIAdapter1* Adapter = nullptr;
+IDXGIFactory* Factory = nullptr;
+IDXGIAdapter* Adapter = nullptr;
 
 static ID3D11Device* pDevice = nullptr;
 static ID3D11DeviceContext     *pImmediateContext = nullptr;
@@ -96,20 +96,20 @@ void Initialize(D3D_FEATURE_LEVEL minFeatureLevel, uint32 adapterIdx)
 {
     ShuttingDown = false;
 
-    HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&Factory));
+    HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&Factory));
     if(FAILED(hr))
         throw Exception(L"Unable to create a DXGI 1.4 device.\n "
                         L"Make sure that your OS and driver support DirectX 12");
 
     LARGE_INTEGER umdVersion = { };
-    Factory->EnumAdapters1(adapterIdx, &Adapter);
+    Factory->EnumAdapters(adapterIdx, &Adapter);
 
     if(Adapter == nullptr)
         throw Exception(L"Unable to locate a DXGI 1.4 adapter that supports a D3D12 device.\n"
                         L"Make sure that your OS and driver support DirectX 12");
 
-    DXGI_ADAPTER_DESC1 desc = { };
-    Adapter->GetDesc1(&desc);
+    DXGI_ADAPTER_DESC desc = { };
+    Adapter->GetDesc(&desc);
     WriteLog("Creating DX11 device on adapter '%ls'", desc.Description);
 
 	UINT createDeviceFlags = 0;
@@ -118,11 +118,11 @@ void Initialize(D3D_FEATURE_LEVEL minFeatureLevel, uint32 adapterIdx)
 		createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
     #endif
 
-    D3D_FEATURE_LEVEL featureLevelsArray[4];
+    D3D_FEATURE_LEVEL featureLevelsArray[1];
     featureLevelsArray[0] = D3D_FEATURE_LEVEL_11_0;
 
 	DXCall(D3D11CreateDevice(Adapter,
-		D3D_DRIVER_TYPE_HARDWARE,
+		D3D_DRIVER_TYPE_UNKNOWN,
 		NULL,
 		createDeviceFlags,
 		featureLevelsArray, 1,
@@ -140,6 +140,46 @@ void Initialize(D3D_FEATURE_LEVEL minFeatureLevel, uint32 adapterIdx)
     }
 }
 
+void Initialize(D3D_FEATURE_LEVEL minFeatureLevel)
+{
+    ShuttingDown = false;
+
+	UINT createDeviceFlags = 0;
+
+    #if UseDebugDevice_
+		createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
+    #endif
+
+    D3D_FEATURE_LEVEL featureLevelsArray[1];
+    featureLevelsArray[0] = D3D_FEATURE_LEVEL_11_0;
+
+	DXCall(D3D11CreateDevice(nullptr,
+		D3D_DRIVER_TYPE_HARDWARE,
+		NULL,
+		createDeviceFlags,
+		featureLevelsArray, 1,
+		D3D11_SDK_VERSION,
+		&pDevice,
+		&FeatureLevel,
+		&pImmediateContext ));
+
+    // Check the maximum feature level, and make sure it's above our minimum
+    if(FeatureLevel < minFeatureLevel)
+    {
+        std::wstring majorLevel = ToString<int>(minFeatureLevel >> 12);
+        std::wstring minorLevel = ToString<int>((minFeatureLevel >> 8) & 0xF);
+        throw Exception(L"The device doesn't support the minimum feature level required to run this sample (DX" + majorLevel + L"." + minorLevel + L")");
+    }
+
+	IDXGIDevice * dxgiDevice = 0;
+	DXCall(pDevice->QueryInterface(__uuidof(IDXGIDevice), (void **)& dxgiDevice));
+	DXCall(dxgiDevice->GetParent(__uuidof(IDXGIAdapter), (void **)&  Adapter));
+	DXCall(Adapter->GetParent(__uuidof(IDXGIFactory), (void **)& Factory));
+
+	DXGI_ADAPTER_DESC desc = { };
+	Adapter->GetDesc(&desc);
+	WriteLog("Creating DX11 device on default adapter '%ls'", desc.Description);
+}
 void Shutdown()
 {
     Assert_(CurrentCPUFrame == CurrentGPUFrame);

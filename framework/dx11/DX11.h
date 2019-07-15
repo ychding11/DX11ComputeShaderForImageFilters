@@ -22,8 +22,8 @@ const uint64 RenderLatency = 2;
 
 // Externals
 extern D3D_FEATURE_LEVEL FeatureLevel;
-extern IDXGIFactory1* Factory;  // For DX11
-extern IDXGIAdapter1* Adapter;
+extern IDXGIFactory* Factory;  // For DX11
+extern IDXGIAdapter* Adapter;
 
 extern uint64 CurrentCPUFrame;  // Total number of CPU frames completed (completed means all command buffers submitted to the GPU)
 extern uint64 CurrentGPUFrame;  // Total number of GPU frames completed (completed means that the GPU signals the fence)
@@ -31,6 +31,7 @@ extern uint64 CurrFrameIdx;     // CurrentCPUFrame % RenderLatency
 
 // Lifetime
 void Initialize(D3D_FEATURE_LEVEL minFeatureLevel, uint32 adapterIdx);
+void Initialize(D3D_FEATURE_LEVEL minFeatureLevel);
 void Shutdown();
 
 ID3D11Device* Device();

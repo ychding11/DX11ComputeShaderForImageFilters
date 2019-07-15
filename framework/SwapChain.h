@@ -53,7 +53,7 @@ protected:
 	IDXGISwapChain* swapChain = nullptr;
 
     static const uint64 NumBackBuffers = 1;
-	ID3D11RenderTargetView* backBuffers[NumBackBuffers];
+	ID3D11RenderTargetView* backBuffers[NumBackBuffers] = {nullptr};
 
     IDXGIOutput* output = nullptr;
 

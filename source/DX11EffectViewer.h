@@ -12,6 +12,7 @@
 // #include <xnamath.h> //has been replaced
 #include <DirectXMath.h>
 
+#include "imgui.h"
 #include "EffectManager.h"
 #include "Utils.h"
 #include "App.h"
@@ -32,8 +33,6 @@ enum DisplayMode
     ALL_MODE      = 3,
 };
 
-extern unsigned int widthSwapchain;
-extern unsigned int heightSwapchain;
 class DX11EffectViewer : public SimpleFramework::App
 {
 
@@ -50,15 +49,6 @@ public:
 
 	DX11EffectViewer() 
 		: App(L"Sample")
-		, m_pd3dDevice(NULL)
-		, m_pImmediateContext(NULL)
-		, m_srcImageTexture(NULL)
-		, m_resultImageTexture(NULL)
-		, m_computeShader(NULL)
-		, m_pVertexLayout(NULL)
-		, m_GPUConstBuffer(NULL)
-		, m_resultGPUCopy(NULL)
-		, m_resultCPUCopy(NULL)
 		, m_imageWidth(0)
 		, m_imageHeight(0)
         //, m_imageFilename (L"../images/test.png")
@@ -69,23 +59,36 @@ public:
         static wchar_t wString[4096];
         MultiByteToWideChar(CP_ACP, 0, m_imageName.c_str(), -1, wString, 4096);
         m_imageFilename = wString;
+		window.RegisterMessageCallback(WindowMessageCallback,this);
 	}
 
 	virtual void Update(const SimpleFramework::Timer& timer) override
 	{
+		ImGui::Begin("UI");
 
+		ImGui::Text("This is experialment."); // Display some text (you can use a format strings too)
+		ImGui::ColorEdit4("clear color", clearColor, ImGuiColorEditFlags_Float); // floats representing a color
+
+		if (ImGui::Button("Save")) // Buttons return true when clicked (most widgets return true when edited/activated)
+		{
+		}
+		ImGui::SameLine();
+		ImGui::Text("Application Average: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::End();
 	}
 	virtual void Render(const SimpleFramework::Timer& timer) override
 	{
-
+		Render( m_pImmediateContext);
 	}
 
 	virtual void Initialize() override
 	{
-		m_pd3dDevice;
-		m_pImmediateContext;
+		m_pd3dDevice = Device();
+		m_pImmediateContext = ImmediateContext();
 		initialize(m_pd3dDevice, m_pImmediateContext);
 	}
+
+    virtual void Shutdown() override;
 
 	void SaveResult();
 	
@@ -138,12 +141,14 @@ public:
     }
 
 	void	Render(ID3D11DeviceContext* pImmediateContext );
-	void	Destory();
 
 	int     initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pImmediateContext);
 
     int     imageHeight() const { return m_imageHeight; }
     int     imageWidth()  const { return m_imageWidth; }
+
+protected:
+		static void WindowMessageCallback(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 private:
 
@@ -171,37 +176,37 @@ private:
 	byte*	GetResultImage();
     
 	// Fields
-	int	m_imageWidth;
-	int	m_imageHeight;
-	double m_Aspect;
+	int	m_imageWidth = 0;
+	int	m_imageHeight = 0;
+	double m_Aspect = 1.f;
 
-	ID3D11Device*				m_pd3dDevice;
-	ID3D11DeviceContext*		m_pImmediateContext;
+	ID3D11Device*				m_pd3dDevice = nullptr;
+	ID3D11DeviceContext*		m_pImmediateContext = nullptr;
 
-	ID3D11VertexShader*			m_pVertexShader;
-	ID3D11PixelShader*			m_pPixelShaderSrcImage;
-	ID3D11PixelShader*			m_pPixelShaderResultImage;
-	ID3D11InputLayout*			m_pVertexLayout;
-	ID3D11Buffer*				m_pVertexBuffer;
-	ID3D11SamplerState*			m_pSamplerLinear;
+	ID3D11VertexShader*			m_pVertexShader = nullptr;
+	ID3D11PixelShader*			m_pPixelShaderSrcImage = nullptr;
+	ID3D11PixelShader*			m_pPixelShaderResultImage = nullptr;
+	ID3D11InputLayout*			m_pVertexLayout = nullptr;
+	ID3D11Buffer*				m_pVertexBuffer = nullptr;
+	ID3D11SamplerState*			m_pSamplerLinear = nullptr;
 
 	UINT						m_textureSizeInBytes;
 
-	ID3D11Texture2D*			m_srcImageTexture;
-	ID3D11ShaderResourceView*	m_srcImageTextureView;
-	ID3D11Texture2D*			m_resultImageTexture;
-	ID3D11ShaderResourceView*	m_resultImageTextureView;
+	ID3D11Texture2D*			m_srcImageTexture = nullptr;
+	ID3D11ShaderResourceView*	m_srcImageTextureView = nullptr;
+	ID3D11Texture2D*			m_resultImageTexture = nullptr;
+	ID3D11ShaderResourceView*	m_resultImageTextureView = nullptr;
 
-	ID3D11Buffer*               m_GPUConstBuffer;
-	ID3D11ComputeShader*		m_computeShader;
+	ID3D11Buffer*               m_GPUConstBuffer = nullptr;
+	ID3D11ComputeShader*		m_computeShader = nullptr;
 
-    ID3D11Texture2D*            tempCSInputTexture;
-    ID3D11ShaderResourceView*   tempCSInputTextureView;
-    ID3D11Texture2D*            tempCSOutputTexture;
-    ID3D11UnorderedAccessView*  tempCSOutputTextureView;
+    ID3D11Texture2D*            tempCSInputTexture = nullptr;
+    ID3D11ShaderResourceView*   tempCSInputTextureView = nullptr;
+    ID3D11Texture2D*            tempCSOutputTexture = nullptr;
+    ID3D11UnorderedAccessView*  tempCSOutputTextureView = nullptr;
 
     // Used to copy result to CPU buffer
-	ID3D11Texture2D *m_resultGPUCopy;
-	byte *m_resultCPUCopy;
+	ID3D11Texture2D *m_resultGPUCopy = nullptr;
+	byte *m_resultCPUCopy = nullptr;
 
 };
