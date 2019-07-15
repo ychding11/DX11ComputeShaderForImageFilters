@@ -10,11 +10,11 @@
 
 // code migration. https://msdn.microsoft.com/en-us/library/windows/desktop/ee418730(v=vs.85).aspx
 // #include <xnamath.h> //has been replaced
-
 #include <DirectXMath.h>
 
 #include "EffectManager.h"
 #include "Utils.h"
+#include "App.h"
 
 using namespace DirectX;
 
@@ -34,7 +34,7 @@ enum DisplayMode
 
 extern unsigned int widthSwapchain;
 extern unsigned int heightSwapchain;
-class DX11EffectViewer
+class DX11EffectViewer : public SimpleFramework::App
 {
 
 	struct SimpleVertex
@@ -49,7 +49,8 @@ public:
 	std::string m_imageName;
 
 	DX11EffectViewer() 
-		: m_pd3dDevice(NULL)
+		: App(L"Sample")
+		, m_pd3dDevice(NULL)
 		, m_pImmediateContext(NULL)
 		, m_srcImageTexture(NULL)
 		, m_resultImageTexture(NULL)
@@ -68,6 +69,22 @@ public:
         static wchar_t wString[4096];
         MultiByteToWideChar(CP_ACP, 0, m_imageName.c_str(), -1, wString, 4096);
         m_imageFilename = wString;
+	}
+
+	virtual void Update(const SimpleFramework::Timer& timer) override
+	{
+
+	}
+	virtual void Render(const SimpleFramework::Timer& timer) override
+	{
+
+	}
+
+	virtual void Initialize() override
+	{
+		m_pd3dDevice;
+		m_pImmediateContext;
+		initialize(m_pd3dDevice, m_pImmediateContext);
 	}
 
 	void SaveResult();

@@ -163,6 +163,8 @@ int32 App::Run()
         window.RegisterMessageCallback(OnWindowResized, this);
 
         Initialize_private();
+		
+		Initialize(); // pure virtual
 
         while(window.IsAlive())
         {
@@ -226,6 +228,14 @@ void App::Exit()
 
 void App::ToggleFullScreen(bool fullScreen)
 {
+}
+ID3D11Device* App::Device()
+{
+	return DX11::Device();
+}
+ID3D11DeviceContext* App::ImmediateContext()
+{
+	return DX11::ImmediateContext();
 }
 
 

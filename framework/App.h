@@ -15,16 +15,20 @@ class App
 {
 public:
 
-    App(const wchar* appName, const wchar* iconResource = NULL);
+    App(const wchar* appName=L"sample", const wchar* iconResource = NULL);
     virtual ~App();
 
     int32 Run();
 
 protected:
 
+    virtual void Initialize() = 0;
     virtual void Update(const Timer& timer) = 0;
     virtual void Render(const Timer& timer) = 0;
 
+
+	ID3D11Device* Device();
+	ID3D11DeviceContext* ImmediateContext();
 
     void Exit();
     void ToggleFullScreen(bool fullScreen);
