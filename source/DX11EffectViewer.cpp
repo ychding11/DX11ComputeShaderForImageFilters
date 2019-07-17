@@ -71,8 +71,6 @@ void DX11EffectViewer::Render(ID3D11DeviceContext* pImmediateContext )
     assert(pImmediateContext == m_pImmediateContext);
 
 	UINT offset = 0, stride = sizeof( SimpleVertex );
-	m_pImmediateContext->IASetVertexBuffers( 0, 1, &m_pVertexBuffer, &stride, &offset );
-	m_pImmediateContext->IASetInputLayout( m_pVertexLayout );
 	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
 	m_pImmediateContext->VSSetShader( m_pVertexShader, NULL, 0 );
 	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
@@ -94,12 +92,12 @@ void DX11EffectViewer::Render(ID3D11DeviceContext* pImmediateContext )
         m_pImmediateContext->PSSetShaderResources(0, 1, &m_srcImageTextureView );
         m_pImmediateContext->PSSetShader( m_pPixelShaderSrcImage, NULL, 0 );
         SetupViewport(0.f, 0.f, m_imageWidth, m_imageHeight);
-        m_pImmediateContext->Draw( 4, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
+        m_pImmediateContext->Draw( 3, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
 
         m_pImmediateContext->PSSetShaderResources(1, 1, &m_resultImageTextureView );
         m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
         SetupViewport(m_imageWidth + 1.f, 0.f, m_imageWidth, m_imageHeight);
-        m_pImmediateContext->Draw( 4, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
+        m_pImmediateContext->Draw( 3, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
     }
 }
 
@@ -111,12 +109,12 @@ void DX11EffectViewer::RenderMultiViewport()
 	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcImageTextureView );
 	m_pImmediateContext->PSSetShader( m_pPixelShaderSrcImage, NULL, 0 );
 	SetupViewport(0.f, 0.f, width, height);
-	m_pImmediateContext->Draw( 4, 0 );
+	m_pImmediateContext->Draw( 3, 0 );
 
 	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_resultImageTextureView );
 	m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
 	SetupViewport(width + 2.f, 0.f, width, height);
-	m_pImmediateContext->Draw( 4, 0 );
+	m_pImmediateContext->Draw( 3, 0 );
 }
 
 void	DX11EffectViewer::RenderSourceImage()
@@ -124,7 +122,7 @@ void	DX11EffectViewer::RenderSourceImage()
 	m_pImmediateContext->PSSetShaderResources( 0, 1, &m_srcImageTextureView );
 	m_pImmediateContext->PSSetShader( m_pPixelShaderSrcImage, NULL, 0 );
 	SetupViewport(0.f, 0.f, m_imageWidth, m_imageHeight);
-	m_pImmediateContext->Draw( 4, 0 );
+	m_pImmediateContext->Draw( 3, 0 );
 }
 
 void	DX11EffectViewer::RenderResultImage()
@@ -132,7 +130,7 @@ void	DX11EffectViewer::RenderResultImage()
 	m_pImmediateContext->PSSetShaderResources( 1, 1, &m_resultImageTextureView );
 	m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
 	SetupViewport(0.f, 0.f, m_imageWidth, m_imageHeight);
-	m_pImmediateContext->Draw( 4, 0 );
+	m_pImmediateContext->Draw( 3, 0 );
 }
 
 void DX11EffectViewer::Shutdown() 
@@ -168,49 +166,18 @@ bool DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 	dwShaderFlags |= D3DCOMPILE_DEBUG;
 #endif
 	
-	SimpleVertex vertices[] =
-	{
-		{  XMFLOAT3(-1.0f,-1.0f, 0.5f ), XMFLOAT2( 0.0f, 1.0f ) },
-		{  XMFLOAT3(-1.0f, 1.0f, 0.5f ), XMFLOAT2( 0.0f, 0.0f ) },
-		{  XMFLOAT3( 1.0f,-1.0f, 0.5f ), XMFLOAT2( 1.0f, 1.0f ) },
-		{  XMFLOAT3( 1.0f, 1.0f, 0.5f ), XMFLOAT2( 1.0f, 0.0f ) }
-	};
-
-	D3D11_SUBRESOURCE_DATA InitData;
-	ZeroMemory( &InitData, sizeof(InitData) );
-	InitData.pSysMem = vertices;
-
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory( &bd, sizeof(bd) );
-	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof( vertices);
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bd.CPUAccessFlags = 0;
-	bd.Usage     = D3D11_USAGE_DEFAULT;
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER; //bind the buffer to input-assembler stage.
-	bd.ByteWidth = sizeof( vertices);
-	D3D11_CALL_CHECK(pd3dDevice->CreateBuffer( &bd, &InitData, &m_pVertexBuffer));
-	Info("- Create quad vertex buffer OK.\n");
-
 	ID3DBlob* pErrorBlob = NULL;
 	ID3DBlob* pVSBlob = NULL;
 	D3D11_COMPILE_CALL_CHECK(D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "VS", "vs_4_0", dwShaderFlags, 0, &pVSBlob, &pErrorBlob));
 	D3D11_CALL_CHECK(pd3dDevice->CreateVertexShader( pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &m_pVertexShader));
 	if( pErrorBlob ) pErrorBlob->Release(),pErrorBlob = nullptr ; // is this check a must ?
-
-	D3D11_INPUT_ELEMENT_DESC layout[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 }
-	};
-	D3D11_CALL_CHECK(pd3dDevice->CreateInputLayout(layout, 2, pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), &m_pVertexLayout));
 	if (pVSBlob) pVSBlob->Release(), pVSBlob = nullptr;
 
 	Info("- Create  vertex Shader OK.\n");
 
 	// Compile pixel shader
 	ID3DBlob* pPSBlob = nullptr;
-	D3D11_COMPILE_CALL_CHECK(D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "PS", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob));
+	D3D11_COMPILE_CALL_CHECK(D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "psSampleSrcImage", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob));
 	D3D11_CALL_CHECK(pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShaderSrcImage ));
 	if (pPSBlob) pPSBlob->Release(), pPSBlob = nullptr;
 	if (pErrorBlob) pErrorBlob->Release(), pErrorBlob = nullptr;

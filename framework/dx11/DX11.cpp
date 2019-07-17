@@ -132,9 +132,13 @@ static void EnumerateAdapters(void)
         {
             sAvailableAdapters[L"AMD"].push_back(adapter);
         }
+        else if (strDesc.find(L"Intel") != std::wstring::npos)
+        {
+            sAvailableAdapters[L"Intel"].push_back(adapter);
+        }
         else
         {
-            WriteLog("Other Video Adapter:'%ls' NOT recorded.", desc.Description);
+            WriteLog("\t\tVideo Adapter:'%ls' NOT recorded.", desc.Description);
         }
     }
     WriteLog("================== Adapter List =========================");
