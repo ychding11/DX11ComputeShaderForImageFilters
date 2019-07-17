@@ -9,6 +9,7 @@
 
 #include "DX11.h"
 #include "Exceptions.h"
+#include "Utility.h"
 
 #ifdef _DEBUG
     #define UseDebugDevice_ 1
@@ -52,45 +53,6 @@ ID3D11DeviceContext* ImmediateContext()
 	return pImmediateContext;
 }
 
-// Converts a number to a string
-template<typename T> inline std::wstring ToString(const T& val)
-{
-	std::wostringstream stream;
-	if (!(stream << val))
-		throw Exception(L"Error converting value to string");
-	return stream.str();
-}
-
-// Converts a number to an ansi string
-template<typename T> inline std::string ToAnsiString(const T& val)
-{
-	std::ostringstream stream;
-	if (!(stream << val))
-		throw Exception(L"Error converting value to string");
-	return stream.str();
-}
-
-
-void WriteLog(const wchar* format, ...)
-{
-	wchar buffer[1024] = { 0 };
-	va_list args;
-	va_start(args, format);
-	vswprintf_s(buffer, 1024, format, args);
-	OutputDebugStringW(buffer);
-	OutputDebugStringW(L"\n");
-}
-
-void WriteLog(const char* format, ...)
-{
-	char buffer[1024] = { 0 };
-	va_list args;
-	va_start(args, format);
-	vsprintf_s(buffer, 1024, format, args);
-	OutputDebugStringA(buffer);
-	OutputDebugStringA("\n");
-}
-
 struct VideoAdapter
 {
     DXGI_ADAPTER_DESC desc;
@@ -98,7 +60,6 @@ struct VideoAdapter
 };
 
 static std::unordered_map<std::wstring, std::vector<VideoAdapter>> sAvailableAdapters;
-//static std::vector <IDXGIAdapter*> sAvailableAdapters;
 static UINT sBestAdapterIndex;
 
 static void EnumerateAdapters(void)

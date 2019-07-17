@@ -67,6 +67,7 @@ public:
 
     // Accessors
     Window& Window() { return window; }
+	std::string Name() const;
 };
 
 extern App* GlobalApp;

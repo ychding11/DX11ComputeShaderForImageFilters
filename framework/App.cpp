@@ -10,6 +10,7 @@
 #include "PCH.h"
 #include "DX11.h"
 #include "App.h"
+#include "Utility.h"
 
 #include "imgui.h"
 #include "imgui_impl_win32.h"
@@ -255,5 +256,9 @@ uint32 App::SwapchainHeight() const
 	return swapchain.Height();
 }
 
+std::string App::Name() const
+{
+	return WstringToStr(applicationName.c_str());
+}
 
 }
