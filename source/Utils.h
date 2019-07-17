@@ -85,8 +85,10 @@ inline void Info(const char *format, ...)
     //static char info[256];
     //sprintf_s(info, 256, "- Info @%s:%d\t",__FILE__,__LINE__);
 	//Logger::getLogger() << info;
+	OutputDebugStringA(tmps);
+	OutputDebugStringA("\n");
 
-	Logger::getLogger() << tmps;
+	//Logger::getLogger() << tmps;
 
 	va_end(ptr_arg);
 }

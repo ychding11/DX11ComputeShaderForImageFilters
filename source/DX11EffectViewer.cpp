@@ -24,22 +24,19 @@ void   DX11EffectViewer::BuildImageList(const std::string &dir)
     mCurrentImage = mImageList.begin();
 }
 
-int	DX11EffectViewer::initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pImmediateContext)
+int	DX11EffectViewer::initialize()
 {
-    m_pd3dDevice = pd3dDevice;
-    m_pImmediateContext = pImmediateContext;
-    
-	InitGraphics(pd3dDevice);
+	InitGraphics(m_pd3dDevice);
 
-	LoadImageAsSrcTexture(pd3dDevice); //< Load source image as texture and upate image size.
-    CreateResultImageTextureAndView(pd3dDevice);
-	CreateCSConstBuffer(pd3dDevice);
-	CreateCSInputTextureAndView(pd3dDevice);
-	CreateCSOutputTextureAndView(pd3dDevice);
+	LoadImageAsSrcTexture(m_pd3dDevice); //< Load source image as texture and upate image size.
+    CreateResultImageTextureAndView(m_pd3dDevice);
+	CreateCSConstBuffer(m_pd3dDevice);
+	CreateCSInputTextureAndView(m_pd3dDevice);
+	CreateCSOutputTextureAndView(m_pd3dDevice);
 
     BuildImageList(IMAGE_REPO);
 
-    EffectManager::GetEffectManager(pd3dDevice)->CheckEffect();
+    EffectManager::GetEffectManager(m_pd3dDevice)->CheckEffect();
 	Info("DX11EffectViewer Initialized OK. image [%s]\n", m_imageName.c_str());
 	return 0;
 }
@@ -66,11 +63,8 @@ void  DX11EffectViewer::ActiveEffect(ID3D11ComputeShader* computeShader)
     m_pImmediateContext->CopyResource(m_resultImageTexture, tempCSOutputTexture); //< dst <-- src
 }
 
-void DX11EffectViewer::Render(ID3D11DeviceContext* pImmediateContext ) 
+void DX11EffectViewer::Render() 
 {
-    assert(pImmediateContext == m_pImmediateContext);
-
-	UINT offset = 0, stride = sizeof( SimpleVertex );
 	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
 	m_pImmediateContext->VSSetShader( m_pVertexShader, NULL, 0 );
 	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
