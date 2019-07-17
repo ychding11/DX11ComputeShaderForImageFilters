@@ -91,6 +91,59 @@ void WriteLog(const char* format, ...)
 	OutputDebugStringA("\n");
 }
 
+struct VideoAdapter
+{
+    DXGI_ADAPTER_DESC desc;
+    IDXGIAdapter* adapter;
+};
+
+static std::unordered_map<std::wstring, std::vector<VideoAdapter>> sAvailableAdapters;
+//static std::vector <IDXGIAdapter*> sAvailableAdapters;
+static UINT sBestAdapterIndex;
+
+static void EnumerateAdapters(void)
+{
+    IDXGIAdapter * pAdapter;
+    IDXGIFactory* pFactory = NULL;
+    bool hasNvCard = false;
+    bool hasAMDCard = false;
+
+    if (FAILED(CreateDXGIFactory(__uuidof(IDXGIFactory), (void**)&pFactory)))
+    {
+        throw Exception(L"Unable to create a DXGI Factory.\n "
+                        L"Make sure that your OS and driver support DirectX");
+    }
+
+    WriteLog("================== Adapter List =========================");
+    for (UINT i = 0;
+        pFactory->EnumAdapters(i, &pAdapter) != DXGI_ERROR_NOT_FOUND;
+        ++i)
+    {
+        DXGI_ADAPTER_DESC desc = { };
+        pAdapter->GetDesc(&desc);
+        WriteLog("adapter Index: %d  name:'%ls'", i, desc.Description);
+        std::wstring strDesc(desc.Description);
+        VideoAdapter adapter = { desc, pAdapter };
+        if (strDesc.find(L"NVIDIA") != std::wstring::npos)
+        {
+            sAvailableAdapters[L"NV"].push_back(adapter);
+        }
+        else if (strDesc.find(L"AMD") != std::wstring::npos)
+        {
+            sAvailableAdapters[L"AMD"].push_back(adapter);
+        }
+        else
+        {
+            WriteLog("Other Video Adapter:'%ls' NOT recorded.", desc.Description);
+        }
+    }
+    WriteLog("================== Adapter List =========================");
+        
+    if (pFactory)
+    {
+        pFactory->Release();
+    }
+}
 
 void Initialize(D3D_FEATURE_LEVEL minFeatureLevel, uint32 adapterIdx)
 {
@@ -143,6 +196,8 @@ void Initialize(D3D_FEATURE_LEVEL minFeatureLevel, uint32 adapterIdx)
 void Initialize(D3D_FEATURE_LEVEL minFeatureLevel)
 {
     ShuttingDown = false;
+
+    EnumerateAdapters();
 
 	UINT createDeviceFlags = 0;
 
