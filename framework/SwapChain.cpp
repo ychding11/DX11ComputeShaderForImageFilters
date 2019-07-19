@@ -106,7 +106,6 @@ void SwapChain::CreateRTVs()
 		DXCall(swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer));
 
         DX11::Device()->CreateRenderTargetView(pBackBuffer, NULL, &backBuffers[i]);
-
     }
 }
 
