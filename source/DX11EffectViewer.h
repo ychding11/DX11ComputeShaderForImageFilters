@@ -36,12 +36,6 @@ enum DisplayMode
 class DX11EffectViewer : public SimpleFramework::App
 {
 
-	struct SimpleVertex
-	{
-		XMFLOAT3 Pos;
-		XMFLOAT2 Tex;
-	};
-
 public:
     DisplayMode mDisplayMode;
 	LPCWSTR	    m_imageFilename;
@@ -78,14 +72,14 @@ public:
 	}
 	virtual void Render(const SimpleFramework::Timer& timer) override
 	{
-		Render( m_pImmediateContext);
+		Render();
 	}
 
 	virtual void Initialize() override
 	{
 		m_pd3dDevice = Device();
 		m_pImmediateContext = ImmediateContext();
-		initialize(m_pd3dDevice, m_pImmediateContext);
+		initialize();
 	}
 
     virtual void Shutdown() override;
@@ -140,10 +134,6 @@ public:
         return EffectManager::GetEffectManager(m_pd3dDevice)->CurrentEffectName();
     }
 
-	void	Render(ID3D11DeviceContext* pImmediateContext );
-
-	int     initialize(ID3D11Device* pd3dDevice, ID3D11DeviceContext* pImmediateContext);
-
     int     imageHeight() const { return m_imageHeight; }
     int     imageWidth()  const { return m_imageWidth; }
 
@@ -151,6 +141,9 @@ protected:
 		static void WindowMessageCallback(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 private:
+
+	void	Render();
+	int     initialize();
 
     std::vector<std::string> mImageList;
     std::vector<std::string>::iterator mCurrentImage;
