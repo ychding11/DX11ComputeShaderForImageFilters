@@ -10,6 +10,7 @@
 #include "GHIResources.h" 
 #include "GHICommandContext.h" 
 #include "FDX11GHIResources.h" 
+#include "Exceptions.h" 
 #include "DX11.h" 
 
 namespace SimpleFramework
@@ -78,7 +79,7 @@ namespace SimpleFramework
             InitData.SysMemSlicePitch = 0;
 
 	        ID3D11Buffer *constBuffer = nullptr;
-            (DX11::Device()->CreateBuffer(&descConstBuffer, &InitData, &constBuffer));
+            DXCall(DX11::Device()->CreateBuffer(&descConstBuffer, &InitData, &constBuffer));
             
             return new FDX11GHIBuffer(constBuffer);
 

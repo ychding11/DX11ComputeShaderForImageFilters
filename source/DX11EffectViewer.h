@@ -17,9 +17,13 @@
 #include "Utils.h"
 #include "App.h"
 
+#include "GHIResources.h"
+#include "GHICommandContext.h"
+
+
 using namespace DirectX;
 
-struct CB
+struct alignas(16) CB
 {
 	int iWidth;
 	int iHeight;
@@ -172,6 +176,8 @@ private:
 	int	m_imageWidth = 0;
 	int	m_imageHeight = 0;
 	double m_Aspect = 1.f;
+
+	SimpleFramework::GHIBuffer *mConstBuffer = nullptr;
 
 	ID3D11Device*				m_pd3dDevice = nullptr;
 	ID3D11DeviceContext*		m_pImmediateContext = nullptr;
