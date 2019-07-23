@@ -11,65 +11,75 @@
 
 namespace SimpleFramework
 {
-    class GHIResourceView;
-	class GHIResource
+	enum EPixelFormat
 	{
-    public:
-        GHIResourceView * view;
-        GHIResource() : view(nullptr)
-        {
-        }
+		PixelFormat_R8G8B8A8_UNORM,
+
 	};
 
+	enum EUAVDemension
+	{
+        UAVDimension_TEXTURE2D,
+
+	};
 
     struct GHIUAVParam
     {
-
+        EPixelFormat Format;
+        EUAVDemension ViewDimension;
+		uint32_t MostDetailedMip;
+		uint32_t MipLevels;
     };
     struct GHISRVParam
     {
+        EPixelFormat Format;
+        EUAVDemension ViewDimension;
+		uint32_t MostDetailedMip;
+		uint32_t MipLevels;
 
     };
     struct GHIRTVParam
     {
+        EPixelFormat Format;
+        EUAVDemension ViewDimension;
+		uint32_t MostDetailedMip;
+		uint32_t MipLevels;
+    };
+
+
+    class GHIResourceView;
+	class GHIResource
+	{
+	};
+
+    class GHIRenderTargetView
+    {
+
+    };
+
+    class GHIShaderResourceView
+    {
+
+    };
+
+    class GHIUnorderedAccessView
+    {
 
     };
 
 
-	class GHIResourceView
+	class IGHIResourceView
 	{
-	private:
-		GHIResource *resource;
-
 	public:
-        GHIResourceView(GHIResource *res)
-            :resource(res)
-        {
-
-        }
         virtual void CreateRTV(const GHIRTVParam &) = 0;
         virtual void CreateSRV(const GHISRVParam &) = 0;
         virtual void CreateUAV(const GHIUAVParam &) = 0;
 	};
 
-    class GHIRenderTargetView :public GHIResourceView
-    {
-
-    };
-
-    class GHIShaderResourceView :public GHIResourceView
-    {
-
-    };
-
-    class GHIUnorderedAccessView :public GHIResourceView
-    {
-
-    };
-
 	class GHITexture :public GHIResource
 	{
 	public:
+		IGHIResourceView *view = nullptr;
 		virtual void LoadFromFile(std::string filename) = 0;
 	};
 
@@ -79,28 +89,5 @@ namespace SimpleFramework
 		virtual void Update(void* data, int size) = 0;
 	};
 
-// Common
-    template<class T>
-    struct TD3D11ResourceTraits
-    {
-    };
-    template<>
-    struct TD3D11ResourceTraits<GHITexture>
-    {
-        typedef int  TConcreteType;
-    };
-    template<>
-    struct TD3D11ResourceTraits<GHIBuffer>
-    {
-        typedef int TConcreteType;
-    };
-
-    #define FORCEINLINE __forceinline									/* Force code to be inline */
-
-    template<typename TRHIType>
-    static FORCEINLINE typename TD3D11ResourceTraits<TRHIType>::TConcreteType* ResourceCast(TRHIType* Resource)
-    {
-        return static_cast<typename TD3D11ResourceTraits<TRHIType>::TConcreteType*>(Resource);
-    }
 
 }

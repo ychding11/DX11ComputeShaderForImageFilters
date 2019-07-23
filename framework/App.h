@@ -5,6 +5,8 @@
 #include "Timer.h"
 #include "Window.h"
 #include "SwapChain.h"
+#include "GHIResources.h"
+#include "GHICommandContext.h"
 
 namespace SimpleFramework
 {
@@ -63,6 +65,8 @@ protected:
     int32 returnCode;
 
 	float clearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
+
+    IGHIComputeCommandCotext *commandContext = nullptr;
 public:
 
     // Accessors

@@ -11,6 +11,7 @@
 #include "DX11.h"
 #include "App.h"
 #include "Utility.h"
+#include "FDX11GHICommandContext.h"
 
 #include "imgui.h"
 #include "imgui_impl_win32.h"
@@ -193,6 +194,7 @@ int32 App::Run()
 void App::Initialize_private()
 {
 	DX11::Initialize(D3D_FEATURE_LEVEL_11_0);
+    commandContext = new FDX11IGHIComputeCommandCotext;
 	swapchain.Initialize(window);
 	imgui::Initialize(window);
 }

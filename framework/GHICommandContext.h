@@ -19,10 +19,17 @@ namespace SimpleFramework
         SRV,
         NUM
     };
-	class GHIComputeCommandCotext
+
+	class IGHIComputeCommandCotext
 	{
 	public:
-		virtual void SetShaderResource(GHIResource resource, int slot, EResourceView view) = 0;
+        virtual GHIBuffer* CreateConstBuffer(int size, const void* initData) = 0;
+
+		virtual void UpdateBuffer(GHIBuffer*buffer, void* data, int size) = 0;
+        virtual void SetShaderResource(GHITexture *resource, int slot, GHISRVParam view) = 0;
+        virtual void SetShaderResource(GHITexture *resource, int slot, GHIUAVParam view) = 0;
+        virtual void SetConstBuffer(GHIBuffer *resource, int slot) = 0;
+        //virtual void SetSampler(GHIBuffer *resource, int slot) = 0;
 		virtual void Dispatch(int nX, int nY, int nZ) = 0;
 	};
 }
