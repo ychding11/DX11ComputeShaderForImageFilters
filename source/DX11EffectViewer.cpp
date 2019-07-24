@@ -51,14 +51,9 @@ void  DX11EffectViewer::ActiveEffect(ID3D11ComputeShader* computeShader)
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
     m_pImmediateContext->CSSetSamplers( 0, 1, &m_pSamplerLinear );
-#if 0
-	m_pImmediateContext->CSSetConstantBuffers(0, 1, &m_GPUConstBuffer);
-#else
-	commandContext->SetConstBuffer(mConstBuffer, 0);
-#endif
 
-	// Dispatch returns immediately ?
-	m_pImmediateContext->Dispatch( (m_imageWidth + 31) / 32, (m_imageHeight + 31) / 32, 1 );
+	commandContext->SetConstBuffer(mConstBuffer, 0);
+	commandContext->Dispatch( (m_imageWidth + 31) / 32, (m_imageHeight + 31) / 32, 1 );
 
 	m_pImmediateContext->CSSetShader( NULL, NULL, 0 );
 	m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewNULL, NULL );
@@ -204,47 +199,18 @@ bool DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 
 void    DX11EffectViewer::UpdateCSConstBuffer()
 {
-#if 0
-    D3D11_MAPPED_SUBRESOURCE MappedResource;
-    m_pImmediateContext->Map(m_GPUConstBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
-    auto pData = reinterpret_cast<CB*>(MappedResource.pData);
-    pData->iHeight = this->m_imageHeight;
-    pData->iWidth  = this->m_imageWidth;
-    m_pImmediateContext->Unmap(m_GPUConstBuffer, 0);
-
-#else
 	CB data;
 	data.iHeight = m_imageHeight;
 	data.iWidth = m_imageWidth;
 	commandContext->UpdateBuffer(mConstBuffer,&data, sizeof(data));
-#endif
 	Info("- Update Constant buffer.\n");
 }
 
 bool DX11EffectViewer::CreateCSConstBuffer(ID3D11Device* pd3dDevice)
 {
 	CB cb = { m_imageWidth, m_imageHeight };
-#if 0
-	D3D11_BUFFER_DESC descConstBuffer;
-	ZeroMemory(&descConstBuffer, sizeof(descConstBuffer));
-	descConstBuffer.ByteWidth = ((sizeof(CB) + 15) / 16) * 16; // Caution! size needs to be multiple of 16.
-	descConstBuffer.Usage = D3D11_USAGE_DYNAMIC;
-	descConstBuffer.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	descConstBuffer.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-	// Fill in the subresource data.
-	D3D11_SUBRESOURCE_DATA InitData;
-	InitData.pSysMem = &cb;
-	InitData.SysMemPitch = 0;
-	InitData.SysMemSlicePitch = 0;
-
-	D3D11_CALL_CHECK(pd3dDevice->CreateBuffer(&descConstBuffer, &InitData, &m_GPUConstBuffer));
-	m_pImmediateContext->CSSetConstantBuffers(0, 1, &m_GPUConstBuffer);
-
-#else
 	mConstBuffer = commandContext->CreateConstBuffer(sizeof(cb), &cb);
 	commandContext->SetConstBuffer(mConstBuffer, 0);
-#endif
 	Info("- Create Constant buffer and Bind to CS OK.\n");
 	return true;
 }
