@@ -8,6 +8,8 @@
 #pragma once
 
 #include <string>
+#include <vector>
+#include <list>
 
 namespace SimpleFramework
 {
@@ -31,9 +33,8 @@ namespace SimpleFramework
         Staging	= 3
     };
 
-    class TextureDesc2D
+    struct TextureDesc2D
     {
-	public:
 		uint32_t Width = 0;
 		uint32_t Height = 0;
 		uint32_t MipLevels = 1;
@@ -119,9 +120,20 @@ namespace SimpleFramework
     };
 
 
-    class GHIResourceView;
 	class GHIResource
 	{
+    public:
+        static std::list<GHIResource *> list;
+    public:
+        GHIResource()
+        {
+        }
+
+        virtual void release() = 0;
+
+        virtual ~GHIResource()
+        {
+        }
 	};
 
     class GHIRenderTargetView
@@ -152,7 +164,7 @@ namespace SimpleFramework
 	{
 	public:
 		IGHIResourceView *view = nullptr;
-		virtual void LoadFromFile(std::string filename) = 0;
+		virtual void LoadFromFile(std::wstring filename) = 0;
 	};
 
 	class GHIBuffer :public GHIResource
@@ -164,6 +176,11 @@ namespace SimpleFramework
 	class GHISampler :public GHIResource
 	{
 
+    public:
+        ~GHISampler()
+        {
+
+        }
 	};
 
 }

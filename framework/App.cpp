@@ -196,7 +196,7 @@ void App::Initialize_private()
 	DX11::Initialize(D3D_FEATURE_LEVEL_11_0);
     commandContext = new FDX11IGHIComputeCommandCotext;
 	GHISamplerDesc desc;
-	linearSampler = commandContext->CreateSampler(desc);
+	linearSampler = (commandContext->CreateSampler(desc));
 	swapchain.Initialize(window);
 	imgui::Initialize(window);
 }
@@ -216,6 +216,10 @@ void App::EndFrame_private()
 
 void App::Shutdown_private()
 {
+    for (auto it = GHIResource::list.begin(); it != GHIResource::list.end(); ++it)
+    {
+        (*it)->release();
+    }
 	imgui::Shutdown();
 	swapchain.Shutdown();
 	DX11::Shutdown();

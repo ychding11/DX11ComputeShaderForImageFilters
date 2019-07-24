@@ -10,9 +10,21 @@
 #include <string>
 #include <d3d11.h>
 #include "GHIResources.h" 
+#include "DXassert.h" 
+#include "Utility.h" 
 
 namespace SimpleFramework
 {
+    // Safe Release Function
+    template <class T>
+    void DXRelease(T *&ppT)
+    {
+        if (ppT)
+        {
+            ppT->Release();
+            ppT = nullptr;
+        }
+    }
 
     class FDX11GHIRenderTargetView : public GHIRenderTargetView
     {
@@ -54,12 +66,25 @@ namespace SimpleFramework
 		ID3D11ShaderResourceView *rawSRV = nullptr;
 		ID3D11UnorderedAccessView *rawUAV = nullptr;
 		ID3D11RenderTargetView *rawRTV = nullptr;
-		FDX11GHITexture(std::string filename)
+
+		float aspect = 1.f;
+		uint32_t textureSizeInBytes = 0;
+
+		FDX11GHITexture(std::wstring filename)
 		{
 			LoadFromFile(filename);
 			view = new FDX11GHIResourceView(this);
+            list.push_back(this);
 		}
-		virtual void LoadFromFile(std::string filename) override;
+        virtual void release() override
+        {
+            DXRelease(rawTexture);
+            DXRelease(rawSRV);
+            DXRelease(rawUAV);
+            DXRelease(rawRTV);
+        }
+
+		virtual void LoadFromFile(std::wstring filename) override;
 	};
 
 	class FDX11GHIBuffer: public GHIBuffer 
@@ -70,7 +95,13 @@ namespace SimpleFramework
 		FDX11GHIBuffer(ID3D11Buffer *buffer)
             :rawBuffer(buffer)
 		{
+            list.push_back(this);
 		}
+        virtual void release() override
+        {
+            WriteLog("Begin, DXRelease() buffer");
+            DXRelease(rawBuffer);
+        }
 		virtual void Update(void* data, int size) override;
 	};
 
@@ -81,8 +112,14 @@ namespace SimpleFramework
 		FDX11GHISampler(ID3D11SamplerState *sampler)
 			:rawSampler(sampler)
 		{
-
+            list.push_back(this);
 		}
+        virtual void release() override
+        {
+            WriteLog("Begin, DXRelease(), sampler");
+            DXRelease(rawSampler);
+            AssertMsg_(rawSampler==nullptr, "Fault, DXRelease()");
+        }
 	};
 
     // Cast

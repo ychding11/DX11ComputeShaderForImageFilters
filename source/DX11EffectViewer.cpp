@@ -14,7 +14,7 @@ void SafeRelease(T **ppT)
 	if (ppT && *ppT)
 	{
 		(*ppT)->Release();
-		*ppT = NULL;
+		*ppT = nullptr;
 	}
 }
 
@@ -28,7 +28,7 @@ int	DX11EffectViewer::initialize()
 {
 	InitGraphics(m_pd3dDevice);
 
-	LoadImageAsSrcTexture(m_pd3dDevice); //< Load source image as texture and upate image size.
+	LoadImageAsSrcTexture(); //< Load source image as texture and upate image size.
     CreateResultImageTextureAndView(m_pd3dDevice);
 	CreateCSConstBuffer(m_pd3dDevice);
 	CreateCSInputTextureAndView(m_pd3dDevice);
@@ -239,12 +239,13 @@ bool DX11EffectViewer::CreateResultImageTextureAndView(ID3D11Device* pd3dDevice)
 //////
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool DX11EffectViewer::LoadImageAsSrcTexture(ID3D11Device* pd3dDevice)
+bool DX11EffectViewer::LoadImageAsSrcTexture()
 {
-    if (m_srcImageTexture)      m_srcImageTexture->Release(), m_srcImageTexture = NULL;
-    if (m_srcImageTextureView)  m_srcImageTextureView->Release(), m_srcImageTextureView = NULL;
+    if (m_srcImageTexture)      m_srcImageTexture->Release(), m_srcImageTexture = nullptr;
+    if (m_srcImageTextureView)  m_srcImageTextureView->Release(), m_srcImageTextureView = nullptr;
 
-	D3D11_CALL_CHECK(CreateWICTextureFromFile(pd3dDevice, m_imageFilename, (ID3D11Resource **)&m_srcImageTexture, &m_srcImageTextureView));
+    std::wstring wName = ToWstr(m_imageName);
+	D3D11_CALL_CHECK(CreateWICTextureFromFile(m_pd3dDevice, wName.c_str(), (ID3D11Resource **)&m_srcImageTexture, &m_srcImageTextureView));
 	{
 		D3D11_TEXTURE2D_DESC desc;
 		m_srcImageTexture->GetDesc(&desc);

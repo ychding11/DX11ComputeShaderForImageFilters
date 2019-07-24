@@ -3,6 +3,7 @@
 
 #include "PCH.h"
 #include "Timer.h"
+#include "Utility.h"
 #include "Window.h"
 #include "SwapChain.h"
 #include "GHIResources.h"
@@ -66,13 +67,26 @@ protected:
 
 	float clearColor[4] = { 0.0f, 0.0f, 1.0f, 1.0f };
 
-    IGHIComputeCommandCotext *commandContext = nullptr;
-	GHISampler *linearSampler = nullptr;
 public:
 
     // Accessors
     Window& Window() { return window; }
 	std::string Name() const;
+
+protected:
+
+    IGHIComputeCommandCotext *commandContext = nullptr;
+	GHISampler *linearSampler = nullptr;
+    //std::unique_ptr<GHISampler> linearSampler;
+
+    inline std::wstring ToWstr(const std::string &str)
+    {
+        return StrToWstring(str.c_str());
+    }
+    inline std::string ToStr(const std::wstring &wstr)
+    {
+        return WstringToStr(wstr.c_str());
+    }
 };
 
 extern App* GlobalApp;

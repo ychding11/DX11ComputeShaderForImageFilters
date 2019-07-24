@@ -42,21 +42,15 @@ class DX11EffectViewer : public SimpleFramework::App
 
 public:
     DisplayMode mDisplayMode;
-	LPCWSTR	    m_imageFilename;
 	std::string m_imageName;
 
 	DX11EffectViewer() 
 		: App(L"Sample")
 		, m_imageWidth(0)
 		, m_imageHeight(0)
-        //, m_imageFilename (L"../images/test.png")
         , m_imageName ("../images/test.png")
         , mDisplayMode(DisplayMode::SOURCE_RESULT )
 	{
-
-        static wchar_t wString[4096];
-        MultiByteToWideChar(CP_ACP, 0, m_imageName.c_str(), -1, wString, 4096);
-        m_imageFilename = wString;
 		window.RegisterMessageCallback(WindowMessageCallback,this);
 	}
 
@@ -102,20 +96,15 @@ public:
 
     void NextImage(std::string &name)
     {
-        static wchar_t wString[4096];
         auto imageItr = mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
-        MultiByteToWideChar(CP_ACP, 0, (*imageItr).c_str(), -1, wString, 4096);
 		m_imageName = (*imageItr);
-        m_imageFilename = wString;
 		Info("- Switch to image [%s]\n", m_imageName.c_str());
 
 		//! All resource related need to rebuild 
-		while (!LoadImageAsSrcTexture(m_pd3dDevice))
+		while (!LoadImageAsSrcTexture())
 		{
 			auto imageItr = mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
-			MultiByteToWideChar(CP_ACP, 0, (*imageItr).c_str(), -1, wString, 4096);
 			m_imageName = (*imageItr);
-			m_imageFilename = wString;
 			Info("- Switch to image [%s]\n", m_imageName.c_str());
 		}
         CreateCSInputTextureView(m_pd3dDevice);
@@ -125,10 +114,10 @@ public:
         ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->NextEffect(name));
     }
 
-    void    PrevImage(std::string &name)
+    void PrevImage(std::string &name)
     {
     }
-    void    UpdateEffects()
+    void UpdateEffects()
     {
         EffectManager::GetEffectManager(m_pd3dDevice)->BuildEffects();
     }
@@ -157,7 +146,7 @@ private:
     void    UpdateCSConstBuffer();
 
 	bool	InitGraphics(ID3D11Device* pd3dDevice);
-	bool LoadImageAsSrcTexture(ID3D11Device* pd3dDevice);
+	bool LoadImageAsSrcTexture();
     bool    CreateCSInputTextureView(ID3D11Device* pd3dDevice);
 	bool CreateResultImageTextureAndView(ID3D11Device* pd3dDevice);
 	bool	CreateCSInputTextureAndView(ID3D11Device* pd3dDevice);
