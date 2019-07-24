@@ -74,20 +74,39 @@ namespace SimpleFramework
 		virtual void Update(void* data, int size) override;
 	};
 
+	class FDX11GHISampler : public GHISampler
+	{
+	public:
+		ID3D11SamplerState *rawSampler = nullptr;
+		FDX11GHISampler(ID3D11SamplerState *sampler)
+			:rawSampler(sampler)
+		{
+
+		}
+	};
+
     // Cast
     template<class T>
     struct TD3D11ResourceTraits
     {
     };
+
     template<>
     struct TD3D11ResourceTraits<GHITexture>
     {
         typedef FDX11GHITexture  TConcreteType;
     };
+
     template<>
     struct TD3D11ResourceTraits<GHIBuffer>
     {
         typedef FDX11GHIBuffer TConcreteType;
+    };
+
+    template<>
+    struct TD3D11ResourceTraits<GHISampler>
+    {
+        typedef FDX11GHISampler TConcreteType;
     };
 
     #define FORCEINLINE __forceinline									/* Force code to be inline */

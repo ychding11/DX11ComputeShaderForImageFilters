@@ -50,8 +50,8 @@ void  DX11EffectViewer::ActiveEffect(ID3D11ComputeShader* computeShader)
 	m_pImmediateContext->CSSetShader( computeShader, NULL, 0 );
     m_pImmediateContext->CSSetShaderResources(0, 1, &tempCSInputTextureView);
     m_pImmediateContext->CSSetUnorderedAccessViews(0, 1, &tempCSOutputTextureView, NULL);
-    m_pImmediateContext->CSSetSamplers( 0, 1, &m_pSamplerLinear );
 
+    commandContext->SetSampler(linearSampler, 0, SimpleFramework::EShaderStage::CS);
 	commandContext->SetConstBuffer(mConstBuffer, 0);
 	commandContext->Dispatch( (m_imageWidth + 31) / 32, (m_imageHeight + 31) / 32, 1 );
 
@@ -66,7 +66,7 @@ void DX11EffectViewer::Render()
 {
 	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
 	m_pImmediateContext->VSSetShader( m_pVertexShader, NULL, 0 );
-	m_pImmediateContext->PSSetSamplers( 0, 1, &m_pSamplerLinear );
+    commandContext->SetSampler(linearSampler, 0, SimpleFramework::EShaderStage::PS);
 
     if (mDisplayMode == DisplayMode::ONLY_RESULT)
     {
@@ -136,12 +136,9 @@ void DX11EffectViewer::Shutdown()
 	SafeRelease(&m_srcImageTexture);
 	SafeRelease(&m_srcImageTextureView);
 
-	SafeRelease(&m_pVertexBuffer);
-	SafeRelease(&m_pVertexLayout);
 	SafeRelease(&m_pVertexShader);
 	SafeRelease(&m_pPixelShaderSrcImage);
 
-	SafeRelease(&m_pSamplerLinear);
 
 	if( m_pImmediateContext ) m_pImmediateContext->ClearState();
 }
@@ -183,17 +180,6 @@ bool DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
 
 	Info("- Create  pixel Shader OK.\n");
 
-	// Create sampler state
-	D3D11_SAMPLER_DESC sampDesc;
-	ZeroMemory( &sampDesc, sizeof(sampDesc) );
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	sampDesc.MinLOD = 0; sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	D3D11_CALL_CHECK(hr = pd3dDevice->CreateSamplerState( &sampDesc, &m_pSamplerLinear ));
-	
 	Info("InitGraphics OK. @%s:%d\n", __FILE__, __LINE__);
 }
 

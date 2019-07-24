@@ -185,9 +185,6 @@ private:
 	ID3D11VertexShader*			m_pVertexShader = nullptr;
 	ID3D11PixelShader*			m_pPixelShaderSrcImage = nullptr;
 	ID3D11PixelShader*			m_pPixelShaderResultImage = nullptr;
-	ID3D11InputLayout*			m_pVertexLayout = nullptr;
-	ID3D11Buffer*				m_pVertexBuffer = nullptr;
-	ID3D11SamplerState*			m_pSamplerLinear = nullptr;
 
 	UINT						m_textureSizeInBytes;
 
@@ -196,7 +193,6 @@ private:
 	ID3D11Texture2D*			m_resultImageTexture = nullptr;
 	ID3D11ShaderResourceView*	m_resultImageTextureView = nullptr;
 
-	ID3D11Buffer*               m_GPUConstBuffer = nullptr;
 	ID3D11ComputeShader*		m_computeShader = nullptr;
 
     ID3D11Texture2D*            tempCSInputTexture = nullptr;

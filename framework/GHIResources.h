@@ -47,6 +47,53 @@ namespace SimpleFramework
 		uint32_t MiscFlags = 0;
     };
 
+	enum TextureAddressMode
+	{
+		WRAP = 1,
+		MIRROR = 2,
+		CLAMP = 3,
+		BORDER = 4,
+		MIRROR_ONCE = 5
+	};
+	enum TextureFilter
+	{
+		FILTER_MIN_MAG_MIP_POINT = 0,
+		FILTER_MIN_MAG_POINT_MIP_LINEAR = 0x1,
+		FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT = 0x4,
+		FILTER_MIN_POINT_MAG_MIP_LINEAR = 0x5,
+		FILTER_MIN_LINEAR_MAG_MIP_POINT = 0x10,
+		FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR = 0x11,
+		FILTER_MIN_MAG_LINEAR_MIP_POINT = 0x14,
+		FILTER_MIN_MAG_MIP_LINEAR = 0x15,
+		FILTER_ANISOTROPIC = 0x55,
+	};
+
+	enum ComparisonFunc
+	{
+		COMPARISON_NEVER = 1,
+		COMPARISON_LESS = 2,
+		COMPARISON_EQUAL = 3,
+		COMPARISON_LESS_EQUAL = 4,
+		COMPARISON_GREATER = 5,
+		COMPARISON_NOT_EQUAL = 6,
+		COMPARISON_GREATER_EQUAL = 7,
+		COMPARISON_ALWAYS = 8
+	};
+
+	struct GHISamplerDesc
+	{
+		TextureFilter Filter = TextureFilter::FILTER_MIN_MAG_MIP_LINEAR;
+		TextureAddressMode AddressU = TextureAddressMode::WRAP;
+		TextureAddressMode AddressV = TextureAddressMode::WRAP;
+		TextureAddressMode AddressW = TextureAddressMode::WRAP;
+		float MipLODBias = 0;
+		uint32_t MaxAnisotropy = 0;
+		ComparisonFunc ComparisonFunc = ComparisonFunc::COMPARISON_NEVER;
+		float BorderColor[4] = {0, 0, 0, 0};
+		float MinLOD = 0;
+		float MaxLOD = 1e20;
+	};
+
     struct GHIUAVParam
     {
         EPixelFormat Format;
@@ -114,5 +161,9 @@ namespace SimpleFramework
 		virtual void Update(void* data, int size) = 0;
 	};
 
+	class GHISampler :public GHIResource
+	{
+
+	};
 
 }

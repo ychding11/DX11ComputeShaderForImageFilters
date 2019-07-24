@@ -195,6 +195,8 @@ void App::Initialize_private()
 {
 	DX11::Initialize(D3D_FEATURE_LEVEL_11_0);
     commandContext = new FDX11IGHIComputeCommandCotext;
+	GHISamplerDesc desc;
+	linearSampler = commandContext->CreateSampler(desc);
 	swapchain.Initialize(window);
 	imgui::Initialize(window);
 }

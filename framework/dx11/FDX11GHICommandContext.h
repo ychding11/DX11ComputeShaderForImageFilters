@@ -16,6 +16,25 @@
 namespace SimpleFramework
 {
 	
+	inline D3D11_SAMPLER_DESC  DX11SamplerCast(const GHISamplerDesc  &desc)
+	{
+		D3D11_SAMPLER_DESC dx11desc;
+		dx11desc.AddressU = (D3D11_TEXTURE_ADDRESS_MODE)desc.AddressU;
+		dx11desc.AddressV = (D3D11_TEXTURE_ADDRESS_MODE)desc.AddressV;
+		dx11desc.AddressW = (D3D11_TEXTURE_ADDRESS_MODE)desc.AddressW;
+		dx11desc.BorderColor[0] = desc.BorderColor[0];
+		dx11desc.BorderColor[1] = desc.BorderColor[1];
+		dx11desc.BorderColor[2] = desc.BorderColor[2];
+		dx11desc.BorderColor[3] = desc.BorderColor[3];
+		dx11desc.ComparisonFunc = (D3D11_COMPARISON_FUNC)desc.ComparisonFunc;
+		dx11desc.Filter = (D3D11_FILTER)desc.Filter;
+		dx11desc.MaxAnisotropy = desc.MaxAnisotropy;
+		dx11desc.MaxLOD = desc.MaxLOD;
+		dx11desc.MinLOD = desc.MinLOD;
+		dx11desc.MipLODBias = desc.MipLODBias;
+		return dx11desc;
+	}
+
 	class FDX11IGHIComputeCommandCotext: public IGHIComputeCommandCotext
 	{
 
@@ -98,6 +117,29 @@ namespace SimpleFramework
             }
         }
 
+		virtual GHISampler* CreateSampler(const GHISamplerDesc  &desc) override
+		{
+			D3D11_SAMPLER_DESC descDX11 = DX11SamplerCast(desc);
+			ID3D11SamplerState *sampler = nullptr;
+			DXCall(DX11::Device()->CreateSamplerState(&descDX11, &sampler));
+			return new FDX11GHISampler(sampler);
+		}
+		virtual void SetSampler(GHISampler *resource, int slot, EShaderStage stage) override
+		{
+            FDX11GHISampler *res = ResourceCast(resource);
+            if (res)
+            {
+				if (EShaderStage::CS == stage)
+					DX11::ImmediateContext()->CSSetSamplers(slot, 1, &(res->rawSampler) );
+				else if (EShaderStage::PS == stage)
+					DX11::ImmediateContext()->PSSetSamplers(slot, 1, &(res->rawSampler) );
+            }
+            else
+            {
+                //! cast failed
+            }
+
+		}
         virtual void Dispatch(int nX, int nY, int nZ) override
         {
             DX11::ImmediateContext()->Dispatch( nX, nY, nZ);

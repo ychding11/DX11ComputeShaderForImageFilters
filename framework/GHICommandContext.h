@@ -20,6 +20,13 @@ namespace SimpleFramework
         NUM
     };
 
+    enum EShaderStage
+    {
+        VS,
+        PS,
+        CS,
+    };
+
 	class IGHIComputeCommandCotext
 	{
 	public:
@@ -29,7 +36,8 @@ namespace SimpleFramework
         virtual void SetShaderResource(GHITexture *resource, int slot, GHISRVParam view) = 0;
         virtual void SetShaderResource(GHITexture *resource, int slot, GHIUAVParam view) = 0;
         virtual void SetConstBuffer(GHIBuffer *resource, int slot) = 0;
-        //virtual void SetSampler(GHIBuffer *resource, int slot) = 0;
+        virtual GHISampler* CreateSampler(const GHISamplerDesc  &desc) = 0;
+        virtual void SetSampler(GHISampler *resource, int slot, EShaderStage stage) = 0;
 		virtual void Dispatch(int nX, int nY, int nZ) = 0;
 	};
 }
