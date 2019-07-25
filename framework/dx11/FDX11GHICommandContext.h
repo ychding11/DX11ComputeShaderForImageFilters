@@ -39,13 +39,17 @@ namespace SimpleFramework
 	{
 
 	public:
-		virtual void SetShaderResource(GHITexture *resource, int slot, GHISRVParam view) override
+		virtual void SetShaderResource(GHITexture *resource, int slot, GHISRVParam view, EShaderStage stage = EShaderStage::CS) override
 		{
 			FDX11GHITexture *res = ResourceCast(resource);
 			if (res)
 			{
                 res->view->CreateSRV(view);
-                DX11::ImmediateContext()->CSSetShaderResources(slot, 1, &res->rawSRV);
+                if (stage==EShaderStage::CS)
+                    DX11::ImmediateContext()->CSSetShaderResources(slot, 1, &res->rawSRV);
+                else if (stage==EShaderStage::PS) 
+                    DX11::ImmediateContext()->PSSetShaderResources(slot, 1, &res->rawSRV);
+
 			}
             else
             {
@@ -54,13 +58,14 @@ namespace SimpleFramework
 
 		}
 
-        virtual void SetShaderResource(GHITexture *resource, int slot, GHIUAVParam view) override
+        virtual void SetShaderResource(GHITexture *resource, int slot, GHIUAVParam view,EShaderStage stage = EShaderStage::CS) override
 		{
 			FDX11GHITexture *res = ResourceCast(resource);
 			if (res)
 			{
                 res->view->CreateUAV(view);
-                DX11::ImmediateContext()->CSSetUnorderedAccessViews(slot, 1, &(res->rawUAV), nullptr);
+                if (stage==EShaderStage::CS)
+                    DX11::ImmediateContext()->CSSetUnorderedAccessViews(slot, 1, &(res->rawUAV), nullptr);
 			}
             else
             {
@@ -140,6 +145,11 @@ namespace SimpleFramework
             }
 
 		}
+
+        virtual GHITexture* CreateTexture(std::string filename) override;
+        virtual GHITexture* CreateTextureByAnother(GHITexture * tex) override;
+		virtual void CopyTexture(GHITexture *dst, GHITexture *src) override;
+
         virtual void Dispatch(int nX, int nY, int nZ) override
         {
             DX11::ImmediateContext()->Dispatch( nX, nY, nZ);

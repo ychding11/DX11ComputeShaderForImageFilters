@@ -97,10 +97,10 @@ namespace SimpleFramework
 
     struct GHIUAVParam
     {
-        EPixelFormat Format;
-        EViewDemension ViewDimension;
-		uint32_t MostDetailedMip;
-		uint32_t MipLevels;
+        EPixelFormat Format = EPixelFormat::PixelFormat_R8G8B8A8_UNORM;
+        EViewDemension ViewDimension = EViewDemension::EViewDimension_TEXTURE2D;
+		uint32_t MostDetailedMip = 0;
+		uint32_t MipLevels = 1;
     };
     class GHISRVParam
     {
@@ -163,8 +163,12 @@ namespace SimpleFramework
 	class GHITexture :public GHIResource
 	{
 	public:
+		float aspect = 1.f;
+		uint32_t textureSizeInBytes = 0;
+		uint32_t width= 0;
+		uint32_t height = 0;
+
 		IGHIResourceView *view = nullptr;
-		virtual void LoadFromFile(std::wstring filename) = 0;
 	};
 
 	class GHIBuffer :public GHIResource

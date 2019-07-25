@@ -10,6 +10,7 @@
 #include "FDX11GHIResources.h" 
 #include "DX11.h" 
 #include "Exceptions.h" 
+#include "Utility.h" 
 #include "WICTextureLoader.h"
 
 using namespace DirectX;
@@ -17,16 +18,22 @@ using namespace DirectX;
 namespace SimpleFramework
 {
 
-	void FDX11GHITexture::LoadFromFile(std::wstring filename)
+	void FDX11GHITexture::LoadFromFile(std::string filename)
 	{
-		DXCall(CreateWICTextureFromFile(DX11::Device(), filename.c_str(), (ID3D11Resource **)&rawTexture, &rawSRV));
+		std::wstring wName = StrToWstring(filename.c_str());
+		DXCall(CreateWICTextureFromFile(DX11::Device(), wName.c_str(), (ID3D11Resource **)&rawTexture, &rawSRV));
 		D3D11_TEXTURE2D_DESC desc;
 		rawTexture->GetDesc(&desc);
-		if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
-		{
-			//Info("Load [%s]: Texture format NOT qualified: DXGI_FORMAT_R8G8B8A8_UNORM @%s:%d\n", m_imageName.c_str(), __FILE__, __LINE__);
-		}
-		aspect = float(desc.Width) / float(desc.Height);
+		//AssertMsg_((desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM), "Texutre format != DXGI_FORMAT_R8G8B8A8_UNORM");
+        if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
+        {
+            width = height = textureSizeInBytes = 0;
+            aspect = 0.;
+            WriteLog("Texutre format != DXGI_FORMAT_R8G8B8A8_UNORM");
+        }
+		width = desc.Width;
+		height = desc.Height;
+		aspect = float(width) / float(height);
 		textureSizeInBytes = desc.Width * desc.Height * 4;
 	}
 
@@ -50,7 +57,13 @@ namespace SimpleFramework
         }
 		else
 		{
-
+			D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc;
+			ZeroMemory(&viewDesc, sizeof(viewDesc));
+			viewDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			viewDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D;
+			viewDesc.Texture2D.MipLevels = 1;
+			viewDesc.Texture2D.MostDetailedMip = 0;
+			DXCall(DX11::Device()->CreateShaderResourceView(res->rawTexture, &viewDesc, &(res->rawSRV)));
         }
 	}
 	void FDX11GHIResourceView::CreateUAV(const GHIUAVParam &param)
@@ -61,7 +74,13 @@ namespace SimpleFramework
         }
 		else
 		{
+			D3D11_UNORDERED_ACCESS_VIEW_DESC descView;
+			ZeroMemory(&descView, sizeof(descView));
+			descView.Texture2D = { 0 };
+			descView.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+			descView.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
 
+			DXCall(DX11::Device()->CreateUnorderedAccessView(res->rawTexture, &descView, &(res->rawUAV)));
         }
 	}
 

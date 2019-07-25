@@ -20,9 +20,6 @@
 #include "GHIResources.h"
 #include "GHICommandContext.h"
 
-
-using namespace DirectX;
-
 struct alignas(16) CB
 {
 	int iWidth;
@@ -41,7 +38,8 @@ class DX11EffectViewer : public SimpleFramework::App
 {
 
 public:
-    DisplayMode mDisplayMode;
+    //DisplayMode mDisplayMode = DisplayMode::ONLY_SOURCE;
+    DisplayMode mDisplayMode = DisplayMode::SOURCE_RESULT;
 	std::string m_imageName;
 
 	DX11EffectViewer() 
@@ -49,7 +47,6 @@ public:
 		, m_imageWidth(0)
 		, m_imageHeight(0)
         , m_imageName ("../images/test.png")
-        , mDisplayMode(DisplayMode::SOURCE_RESULT )
 	{
 		window.RegisterMessageCallback(WindowMessageCallback,this);
 	}
@@ -107,9 +104,9 @@ public:
 			m_imageName = (*imageItr);
 			Info("- Switch to image [%s]\n", m_imageName.c_str());
 		}
-        CreateCSInputTextureView(m_pd3dDevice);
-        CreateCSOutputTextureAndView(m_pd3dDevice);
-        CreateResultImageTextureAndView(m_pd3dDevice);
+
+	    mDstTexture = commandContext->CreateTextureByAnother(mSrcTexture);
+	    mFinalTexture = commandContext->CreateTextureByAnother(mSrcTexture);
         UpdateCSConstBuffer();
         ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->NextEffect(name));
     }
@@ -147,10 +144,6 @@ private:
 
 	bool	InitGraphics(ID3D11Device* pd3dDevice);
 	bool LoadImageAsSrcTexture();
-    bool    CreateCSInputTextureView(ID3D11Device* pd3dDevice);
-	bool CreateResultImageTextureAndView(ID3D11Device* pd3dDevice);
-	bool	CreateCSInputTextureAndView(ID3D11Device* pd3dDevice);
-	bool	CreateCSOutputTextureAndView(ID3D11Device* pd3dDevice);
 	bool CreateCSConstBuffer(ID3D11Device* pd3dDevice);
 
 	void    SetupViewport(float topLeftX, float topLeftY, int width, int height);
@@ -165,8 +158,12 @@ private:
 	int	m_imageWidth = 0;
 	int	m_imageHeight = 0;
 	double m_Aspect = 1.f;
+	UINT m_textureSizeInBytes;
 
 	SimpleFramework::GHIBuffer *mConstBuffer = nullptr;
+	SimpleFramework::GHITexture *mSrcTexture = nullptr;
+	SimpleFramework::GHITexture *mDstTexture = nullptr;
+	SimpleFramework::GHITexture *mFinalTexture = nullptr;
 
 	ID3D11Device*				m_pd3dDevice = nullptr;
 	ID3D11DeviceContext*		m_pImmediateContext = nullptr;
@@ -175,22 +172,8 @@ private:
 	ID3D11PixelShader*			m_pPixelShaderSrcImage = nullptr;
 	ID3D11PixelShader*			m_pPixelShaderResultImage = nullptr;
 
-	UINT						m_textureSizeInBytes;
-
-	ID3D11Texture2D*			m_srcImageTexture = nullptr;
-	ID3D11ShaderResourceView*	m_srcImageTextureView = nullptr;
-	ID3D11Texture2D*			m_resultImageTexture = nullptr;
-	ID3D11ShaderResourceView*	m_resultImageTextureView = nullptr;
-
-	ID3D11ComputeShader*		m_computeShader = nullptr;
-
-    ID3D11Texture2D*            tempCSInputTexture = nullptr;
-    ID3D11ShaderResourceView*   tempCSInputTextureView = nullptr;
-    ID3D11Texture2D*            tempCSOutputTexture = nullptr;
-    ID3D11UnorderedAccessView*  tempCSOutputTextureView = nullptr;
 
     // Used to copy result to CPU buffer
 	ID3D11Texture2D *m_resultGPUCopy = nullptr;
 	byte *m_resultCPUCopy = nullptr;
-
 };

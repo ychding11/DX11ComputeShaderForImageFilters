@@ -67,10 +67,13 @@ namespace SimpleFramework
 		ID3D11UnorderedAccessView *rawUAV = nullptr;
 		ID3D11RenderTargetView *rawRTV = nullptr;
 
-		float aspect = 1.f;
-		uint32_t textureSizeInBytes = 0;
-
-		FDX11GHITexture(std::wstring filename)
+		FDX11GHITexture(ID3D11Texture2D *tex)
+			: rawTexture(tex)
+		{
+			view = new FDX11GHIResourceView(this);
+            list.push_back(this);
+		}
+		FDX11GHITexture(std::string filename)
 		{
 			LoadFromFile(filename);
 			view = new FDX11GHIResourceView(this);
@@ -78,13 +81,14 @@ namespace SimpleFramework
 		}
         virtual void release() override
         {
+            WriteLog("Begin, DXRelease() texture");
             DXRelease(rawTexture);
             DXRelease(rawSRV);
             DXRelease(rawUAV);
             DXRelease(rawRTV);
         }
 
-		virtual void LoadFromFile(std::wstring filename) override;
+		void LoadFromFile(std::string filename);
 	};
 
 	class FDX11GHIBuffer: public GHIBuffer 
