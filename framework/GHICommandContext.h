@@ -11,7 +11,8 @@
 
 namespace SimpleFramework
 {
-	
+    typedef float               FLOAT;
+
     enum EResourceView
     {
         RTV,
@@ -25,6 +26,16 @@ namespace SimpleFramework
         VS,
         PS,
         CS,
+    };
+
+    struct GHIViewport
+    {
+        FLOAT TopLeftX = 0;
+        FLOAT TopLeftY = 0;
+        FLOAT Width = 0;
+        FLOAT Height = 0;
+        FLOAT MinDepth = 0.;
+        FLOAT MaxDepth = 1.;
     };
 
 	class IGHIComputeCommandCotext
@@ -43,5 +54,7 @@ namespace SimpleFramework
 
 		virtual void CopyTexture(GHITexture *dst, GHITexture *src) = 0;
 		virtual void Dispatch(int nX, int nY, int nZ) = 0;
+		virtual void SetViewport(GHIViewport viewport) = 0;
+		virtual void Draw(int count, int offset) = 0;
 	};
 }

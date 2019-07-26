@@ -87,6 +87,8 @@ protected:
     {
         return WstringToStr(wstr.c_str());
     }
+
+    void DrawFullScreenTriangle(GHIViewport viewport);
 };
 
 extern App* GlobalApp;

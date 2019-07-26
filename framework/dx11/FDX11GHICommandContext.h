@@ -154,5 +154,8 @@ namespace SimpleFramework
         {
             DX11::ImmediateContext()->Dispatch( nX, nY, nZ);
         }
+
+        virtual void SetViewport(GHIViewport viewport) override;
+        virtual void Draw(int count, int offset) override;
 	};
 }

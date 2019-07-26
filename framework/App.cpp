@@ -269,4 +269,11 @@ std::string App::Name() const
 	return WstringToStr(applicationName.c_str());
 }
 
+
+void App::DrawFullScreenTriangle(GHIViewport viewport)
+{
+    commandContext->SetViewport(viewport);
+    commandContext->Draw(3, 0);
+}
+
 }

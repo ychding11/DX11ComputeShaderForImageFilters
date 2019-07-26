@@ -53,4 +53,17 @@ namespace SimpleFramework
 				return nullptr;
 			}
 	}
+
+    void FDX11IGHIComputeCommandCotext::SetViewport(GHIViewport viewport)
+    {
+        D3D11_VIEWPORT vp;
+        vp.Width = viewport.Width; vp.Height = viewport.Height;
+        vp.TopLeftX = viewport.TopLeftX; vp.TopLeftY = viewport.TopLeftY;
+        vp.MinDepth = viewport.MinDepth; vp.MaxDepth = viewport.MaxDepth;
+        DX11::ImmediateContext()->RSSetViewports(1, &vp);
+    }
+    void FDX11IGHIComputeCommandCotext::Draw(int count, int offset)
+    {
+        DX11::ImmediateContext()->Draw(count, offset);
+    }
 }

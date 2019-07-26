@@ -142,11 +142,9 @@ private:
     void    ActiveEffect(ID3D11ComputeShader* computeShader);
     void    UpdateCSConstBuffer();
 
-	bool	InitGraphics(ID3D11Device* pd3dDevice);
+	bool InitGraphics(ID3D11Device* pd3dDevice);
 	bool LoadImageAsSrcTexture();
 	bool CreateCSConstBuffer(ID3D11Device* pd3dDevice);
-
-	void    SetupViewport(float topLeftX, float topLeftY, int width, int height);
 
 	void	RenderMultiViewport();
 	void	RenderSourceImage();

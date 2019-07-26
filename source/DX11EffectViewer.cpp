@@ -86,46 +86,41 @@ void DX11EffectViewer::Render()
     {
         commandContext->SetShaderResource(mSrcTexture,0,SimpleFramework::GHISRVParam(),SimpleFramework::EShaderStage::PS);
         m_pImmediateContext->PSSetShader( m_pPixelShaderSrcImage, NULL, 0 );
-        SetupViewport(0.f, 0.f, m_imageWidth, m_imageHeight);
-        m_pImmediateContext->Draw( 3, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
+        DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f});
 
         commandContext->SetShaderResource(mFinalTexture,1,SimpleFramework::GHISRVParam(),SimpleFramework::EShaderStage::PS);
         m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
-        SetupViewport(m_imageWidth + 1.f, 0.f, m_imageWidth, m_imageHeight);
-        m_pImmediateContext->Draw( 3, 0 );// draw non-indexed non-instanced primitives.[vertex count, vertex offset in vertex buffer]
+        DrawFullScreenTriangle({m_imageWidth + 1.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f});
     }
 }
 
 void DX11EffectViewer::RenderMultiViewport()
 {
-	int width, height;
+	float width, height;
 	width = float(SwapchainWidth() - 2) / 2.;
-	height = 1. / m_Aspect * width;
-    commandContext->SetShaderResource(mSrcTexture,0,SimpleFramework::GHISRVParam(), SimpleFramework::EShaderStage::PS);
+	height = 1.f / m_Aspect * width;
+
 	m_pImmediateContext->PSSetShader( m_pPixelShaderSrcImage, NULL, 0 );
-	SetupViewport(0.f, 0.f, width, height);
-	m_pImmediateContext->Draw( 3, 0 );
+    commandContext->SetShaderResource(mSrcTexture,0,SimpleFramework::GHISRVParam(), SimpleFramework::EShaderStage::PS);
+    DrawFullScreenTriangle({0.f, 0.f, width, height});
 
     commandContext->SetShaderResource(mFinalTexture,1,SimpleFramework::GHISRVParam(),SimpleFramework::EShaderStage::PS);
 	m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
-	SetupViewport(width + 2.f, 0.f, width, height);
-	m_pImmediateContext->Draw( 3, 0 );
+    DrawFullScreenTriangle({width + 2.f, 0.f, width, height});
 }
 
 void	DX11EffectViewer::RenderSourceImage()
 {
     commandContext->SetShaderResource(mSrcTexture,0,SimpleFramework::GHISRVParam(), SimpleFramework::EShaderStage::PS);
 	m_pImmediateContext->PSSetShader( m_pPixelShaderSrcImage, NULL, 0 );
-	SetupViewport(0.f, 0.f, m_imageWidth, m_imageHeight);
-	m_pImmediateContext->Draw( 3, 0 );
+    DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f});
 }
 
 void	DX11EffectViewer::RenderResultImage()
 {
     commandContext->SetShaderResource(mFinalTexture,0,SimpleFramework::GHISRVParam(),SimpleFramework::EShaderStage::PS);
 	m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
-	SetupViewport(0.f, 0.f, m_imageWidth, m_imageHeight);
-	m_pImmediateContext->Draw( 3, 0 );
+    DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f});
 }
 
 void DX11EffectViewer::Shutdown() 
@@ -193,15 +188,6 @@ bool DX11EffectViewer::CreateCSConstBuffer(ID3D11Device* pd3dDevice)
 	return true;
 }
 
-void  DX11EffectViewer::SetupViewport(float topLeftX, float topLeftY, int width, int height)
-{
-	D3D11_VIEWPORT vp;
-	vp.Width  = (FLOAT)width;
-	vp.Height = (FLOAT)height;
-	vp.TopLeftX = topLeftX; vp.TopLeftY = topLeftY;
-	vp.MinDepth = 0.0f; vp.MaxDepth = 1.0f;
-	m_pImmediateContext->RSSetViewports( 1, &vp );
-}
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////
