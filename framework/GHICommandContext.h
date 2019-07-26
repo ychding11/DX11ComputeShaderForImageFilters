@@ -21,13 +21,6 @@ namespace SimpleFramework
         NUM
     };
 
-    enum EShaderStage
-    {
-        VS,
-        PS,
-        CS,
-    };
-
     struct GHIViewport
     {
         FLOAT TopLeftX = 0;
@@ -56,5 +49,13 @@ namespace SimpleFramework
 		virtual void Dispatch(int nX, int nY, int nZ) = 0;
 		virtual void SetViewport(GHIViewport viewport) = 0;
 		virtual void Draw(int count, int offset) = 0;
+
+		virtual void setPrimitiveTopology(PrimitiveTopology topology) = 0;
+
+        virtual GHIVertexShader*  CreateVertexShader(std::string file, std::string entrypoint) = 0;
+        virtual GHIPixelShader*   CreatePixelShader(std::string file, std::string entrypoint) = 0;
+        virtual GHIShader* CreateComputeShader(std::string file) = 0;
+        virtual GHIShader* CreateShader(std::string file) = 0;
+        virtual void SetShader(GHIShader* shader) = 0;
 	};
 }

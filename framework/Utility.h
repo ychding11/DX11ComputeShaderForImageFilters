@@ -15,15 +15,14 @@
 namespace SimpleFramework
 {
 
-// Converts an ANSI string to a std::wstring
-inline std::wstring StrToWstring(const char* ansiString)
+inline std::wstring StrToWstr(const char* ansiString)
 {
     wchar buffer[512];
     Win32Call(MultiByteToWideChar(CP_ACP, 0, ansiString, -1, buffer, 512));
     return std::wstring(buffer);
 }
 
-inline std::string WstringToStr(const wchar* wideString)
+inline std::string WstrToStr(const wchar* wideString)
 {
     char buffer[512];
     Win32Call(WideCharToMultiByte(CP_ACP, 0, wideString, -1, buffer, 612, NULL, NULL));
@@ -122,18 +121,24 @@ template<typename T> inline std::string ToAnsiString(const T& val)
 void WriteLog(const wchar* format, ...);
 void WriteLog(const char* format, ...);
 
+#if defined(_DEBUG)
+#define DLOG  WriteLog
+#else
+#define DLOG  
+#endif
+
 std::wstring MakeString(const wchar* format, ...);
 std::string MakeString(const char* format, ...);
 
 std::wstring SampleFrameworkDir();
 
-// Outputs a string to the debugger output and stdout
-inline void DebugPrint(const std::wstring& str)
+inline void toOutputWindow(const std::wstring& str)
 {
-    std::wstring output = str + L"\n";
+    std::wstring output = L"Error:" + str + L"\n";
     OutputDebugStringW(output.c_str());
     std::printf("%ls", output.c_str());
 }
+
 
 // Gets an index from an index buffer
 inline uint32 GetIndex(const void* indices, uint32 idx, uint32 indexSize)

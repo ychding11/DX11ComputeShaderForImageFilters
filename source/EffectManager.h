@@ -3,9 +3,6 @@
 #include <windows.h>
 #include <d3d11.h>
 #include <d3dcompiler.h>
-#if D3D_COMPILER_VERSION < 46
-#include <d3dx11.h>
-#endif
 
 #include <map>
 #include <vector>
@@ -66,6 +63,4 @@ private:
     int LoadEffectFileList(std::string dir);
 
     void ClearEffects(void);
-
-    
 };

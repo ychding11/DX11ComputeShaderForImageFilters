@@ -1,19 +1,9 @@
 #pragma once
-#include <windows.h>
-#include <d3d11.h>
-#include <d3dcompiler.h>
-#if D3D_COMPILER_VERSION < 46
-#include <d3dx11.h>
-#endif
-
-#include <cstdio>
 
 // code migration. https://msdn.microsoft.com/en-us/library/windows/desktop/ee418730(v=vs.85).aspx
-// #include <xnamath.h> //has been replaced
-#include <DirectXMath.h>
+//#include <DirectXMath.h>
 
 #include "imgui.h"
-#include "EffectManager.h"
 #include "Utils.h"
 #include "App.h"
 
@@ -33,6 +23,8 @@ enum DisplayMode
     SOURCE_RESULT = 2,
     ALL_MODE      = 3,
 };
+
+#define SHADERS_REPO "..\\effects"
 
 class DX11EffectViewer : public SimpleFramework::App
 {
@@ -70,11 +62,13 @@ public:
 		Render();
 	}
 
+
 	virtual void Initialize() override
 	{
-		m_pd3dDevice = Device();
-		m_pImmediateContext = ImmediateContext();
 		initialize();
+		std::vector<std::string> files;
+		getFiles(SHADERS_REPO, files);
+		shaderCache->InitComputeCache(files);
 	}
 
     virtual void Shutdown() override;
@@ -83,12 +77,14 @@ public:
 	
     void NextEffect(std::string &name)
     {
-        ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->NextEffect(name));
+        ActiveEffect(shaderCache->Current());
+        shaderCache->Next();
     }
 
     void PrevEffect(std::string &name)
     {
-        ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->PrevEffect(name));
+        ActiveEffect(shaderCache->Current());
+        shaderCache->Prev();
     }
 
     void NextImage(std::string &name)
@@ -108,21 +104,16 @@ public:
 	    mDstTexture = commandContext->CreateTextureByAnother(mSrcTexture);
 	    mFinalTexture = commandContext->CreateTextureByAnother(mSrcTexture);
         UpdateCSConstBuffer();
-        ActiveEffect(EffectManager::GetEffectManager(m_pd3dDevice)->NextEffect(name));
+        ActiveEffect(shaderCache->Current());
     }
 
     void PrevImage(std::string &name)
     {
     }
-    void UpdateEffects()
-    {
-        EffectManager::GetEffectManager(m_pd3dDevice)->BuildEffects();
-    }
 
-    std::string    CurrentEffectName()
-    {
-        return EffectManager::GetEffectManager(m_pd3dDevice)->CurrentEffectName();
-    }
+    //! when shader code changes
+    void UpdateEffects()
+    { }
 
     int     imageHeight() const { return m_imageHeight; }
     int     imageWidth()  const { return m_imageWidth; }
@@ -139,12 +130,12 @@ private:
     std::vector<std::string>::iterator mCurrentImage;
 
     void    BuildImageList(const std::string &dir);
-    void    ActiveEffect(ID3D11ComputeShader* computeShader);
+    void    ActiveEffect(SimpleFramework::GHIShader* computeShader);
     void    UpdateCSConstBuffer();
 
-	bool InitGraphics(ID3D11Device* pd3dDevice);
+	bool InitGraphics();
 	bool LoadImageAsSrcTexture();
-	bool CreateCSConstBuffer(ID3D11Device* pd3dDevice);
+	bool CreateCSConstBuffer();
 
 	void	RenderMultiViewport();
 	void	RenderSourceImage();
@@ -155,23 +146,15 @@ private:
 	// Fields
 	int	m_imageWidth = 0;
 	int	m_imageHeight = 0;
-	double m_Aspect = 1.f;
+	float m_Aspect = 1.f;
 	UINT m_textureSizeInBytes;
 
 	SimpleFramework::GHIBuffer *mConstBuffer = nullptr;
 	SimpleFramework::GHITexture *mSrcTexture = nullptr;
 	SimpleFramework::GHITexture *mDstTexture = nullptr;
 	SimpleFramework::GHITexture *mFinalTexture = nullptr;
+	SimpleFramework::GHIVertexShader *mVS = nullptr;
+	SimpleFramework::GHIPixelShader *mPSs = nullptr;
+	SimpleFramework::GHIPixelShader *mPSd = nullptr;
 
-	ID3D11Device*				m_pd3dDevice = nullptr;
-	ID3D11DeviceContext*		m_pImmediateContext = nullptr;
-
-	ID3D11VertexShader*			m_pVertexShader = nullptr;
-	ID3D11PixelShader*			m_pPixelShaderSrcImage = nullptr;
-	ID3D11PixelShader*			m_pPixelShaderResultImage = nullptr;
-
-
-    // Used to copy result to CPU buffer
-	ID3D11Texture2D *m_resultGPUCopy = nullptr;
-	byte *m_resultCPUCopy = nullptr;
 };

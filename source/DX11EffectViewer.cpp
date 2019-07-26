@@ -1,6 +1,4 @@
 #include "DX11EffectViewer.h"
-#include "WICTextureLoader.h"
-#include "EffectManager.h"
 #include "Utils.h"
 
 #define STBI_MSC_SECURE_CRT
@@ -26,48 +24,37 @@ void   DX11EffectViewer::BuildImageList(const std::string &dir)
 
 int	DX11EffectViewer::initialize()
 {
-	InitGraphics(m_pd3dDevice);
+	InitGraphics();
 
 	LoadImageAsSrcTexture(); //< Load source image as texture and upate image size.
 	mFinalTexture = commandContext->CreateTextureByAnother(mSrcTexture);
 	mDstTexture = commandContext->CreateTextureByAnother(mSrcTexture);
 
-	CreateCSConstBuffer(m_pd3dDevice);
+	CreateCSConstBuffer();
 
     BuildImageList(IMAGE_REPO);
 
-    EffectManager::GetEffectManager(m_pd3dDevice)->CheckEffect();
 	Info("DX11EffectViewer Initialized OK. image [%s]\n", m_imageName.c_str());
 	return 0;
 }
 
-void  DX11EffectViewer::ActiveEffect(ID3D11ComputeShader* computeShader)
+void  DX11EffectViewer::ActiveEffect(SimpleFramework::GHIShader* computeShader)
 {
-	ID3D11UnorderedAccessView *ppUAViewNULL[2] = { NULL, NULL };
-	ID3D11ShaderResourceView  *ppSRVNULL[2]    = { NULL, NULL };
-
     if (computeShader == NULL) return;
-	m_pImmediateContext->CSSetShader( computeShader, NULL, 0 );
 
 	//SimpleFramework::GHIUAVParam uav;
+    commandContext->SetShader(computeShader);
 	commandContext->SetShaderResource(mDstTexture, 0, SimpleFramework::GHIUAVParam());
 	commandContext->SetShaderResource(mSrcTexture, 0, SimpleFramework::GHISRVParam());
     commandContext->SetSampler(linearSampler, 0, SimpleFramework::EShaderStage::CS);
 	commandContext->SetConstBuffer(mConstBuffer, 0);
 	commandContext->Dispatch( (m_imageWidth + 31) / 32, (m_imageHeight + 31) / 32, 1 );
-
-	m_pImmediateContext->CSSetShader( NULL, NULL, 0 );
-	m_pImmediateContext->CSSetUnorderedAccessViews( 0, 1, ppUAViewNULL, NULL );
-	m_pImmediateContext->CSSetShaderResources( 0, 1, ppSRVNULL );
-
-    //m_pImmediateContext->CopyResource(m_resultImageTexture, tempCSOutputTexture); //< dst <-- src
     commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src
 }
 
 void DX11EffectViewer::Render() 
 {
-	m_pImmediateContext->IASetPrimitiveTopology( D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP );
-	m_pImmediateContext->VSSetShader( m_pVertexShader, NULL, 0 );
+	commandContext->SetShader(mVS);
     commandContext->SetSampler(linearSampler, 0, SimpleFramework::EShaderStage::PS);
 
     if (mDisplayMode == DisplayMode::ONLY_RESULT)
@@ -85,11 +72,11 @@ void DX11EffectViewer::Render()
     else
     {
         commandContext->SetShaderResource(mSrcTexture,0,SimpleFramework::GHISRVParam(),SimpleFramework::EShaderStage::PS);
-        m_pImmediateContext->PSSetShader( m_pPixelShaderSrcImage, NULL, 0 );
+		commandContext->SetShader(mPSs);
         DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f});
 
         commandContext->SetShaderResource(mFinalTexture,1,SimpleFramework::GHISRVParam(),SimpleFramework::EShaderStage::PS);
-        m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
+		commandContext->SetShader(mPSd);
         DrawFullScreenTriangle({m_imageWidth + 1.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f});
     }
 }
@@ -97,80 +84,48 @@ void DX11EffectViewer::Render()
 void DX11EffectViewer::RenderMultiViewport()
 {
 	float width, height;
-	width = float(SwapchainWidth() - 2) / 2.;
+	width = float(SwapchainWidth() - 2) / 2.f;
 	height = 1.f / m_Aspect * width;
 
-	m_pImmediateContext->PSSetShader( m_pPixelShaderSrcImage, NULL, 0 );
+	commandContext->SetShader(mPSs);
     commandContext->SetShaderResource(mSrcTexture,0,SimpleFramework::GHISRVParam(), SimpleFramework::EShaderStage::PS);
     DrawFullScreenTriangle({0.f, 0.f, width, height});
 
+	commandContext->SetShader(mPSd);
     commandContext->SetShaderResource(mFinalTexture,1,SimpleFramework::GHISRVParam(),SimpleFramework::EShaderStage::PS);
-	m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
     DrawFullScreenTriangle({width + 2.f, 0.f, width, height});
 }
 
-void	DX11EffectViewer::RenderSourceImage()
+void DX11EffectViewer::RenderSourceImage()
 {
     commandContext->SetShaderResource(mSrcTexture,0,SimpleFramework::GHISRVParam(), SimpleFramework::EShaderStage::PS);
-	m_pImmediateContext->PSSetShader( m_pPixelShaderSrcImage, NULL, 0 );
+	commandContext->SetShader(mPSs);
     DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f});
 }
 
-void	DX11EffectViewer::RenderResultImage()
+void DX11EffectViewer::RenderResultImage()
 {
     commandContext->SetShaderResource(mFinalTexture,0,SimpleFramework::GHISRVParam(),SimpleFramework::EShaderStage::PS);
-	m_pImmediateContext->PSSetShader( m_pPixelShaderResultImage, NULL, 0 );
+	commandContext->SetShader(mPSd);
     DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f});
 }
 
 void DX11EffectViewer::Shutdown() 
 {
-	SafeRelease(&m_pVertexShader);
-	SafeRelease(&m_pPixelShaderSrcImage);
-	SafeRelease(&m_pPixelShaderResultImage);
 }
 
-#define GRAPHICS_SHADER L"../data/fullQuad.fx" 
-/**
- *	Load full screen quad for rendering both src and dest texture.
- */
-bool DX11EffectViewer::InitGraphics(ID3D11Device* pd3dDevice)
+#define FULL_TRIANGLE "../data/fullQuad.fx" 
+
+bool DX11EffectViewer::InitGraphics()
 {
-	HRESULT hr;
-	DWORD dwShaderFlags = D3DCOMPILE_ENABLE_STRICTNESS;
-
-#if defined( DEBUG ) || defined( _DEBUG )
-	dwShaderFlags |= D3DCOMPILE_DEBUG;
-#endif
-	
-	ID3DBlob* pErrorBlob = NULL;
-	ID3DBlob* pVSBlob = NULL;
-	D3D11_COMPILE_CALL_CHECK(D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "VS", "vs_4_0", dwShaderFlags, 0, &pVSBlob, &pErrorBlob));
-	D3D11_CALL_CHECK(pd3dDevice->CreateVertexShader( pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &m_pVertexShader));
-	if( pErrorBlob ) pErrorBlob->Release(),pErrorBlob = nullptr ; // is this check a must ?
-	if (pVSBlob) pVSBlob->Release(), pVSBlob = nullptr;
-
-	Info("- Create  vertex Shader OK.\n");
-
-	// Compile pixel shader
-	ID3DBlob* pPSBlob = nullptr;
-	D3D11_COMPILE_CALL_CHECK(D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "psSampleSrcImage", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob));
-	D3D11_CALL_CHECK(pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShaderSrcImage ));
-	if (pPSBlob) pPSBlob->Release(), pPSBlob = nullptr;
-	if (pErrorBlob) pErrorBlob->Release(), pErrorBlob = nullptr;
-
-	// Compile pixel shader
-	D3D11_COMPILE_CALL_CHECK ( D3DCompileFromFile(GRAPHICS_SHADER, NULL, NULL, "psSampleResultImage", "ps_4_0", dwShaderFlags, 0, &pPSBlob, &pErrorBlob)) ;
-	D3D11_CALL_CHECK(pd3dDevice->CreatePixelShader( pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &m_pPixelShaderResultImage));
-	if (pPSBlob) pPSBlob->Release(), pPSBlob = nullptr;
-	if (pErrorBlob) pErrorBlob->Release(), pErrorBlob = nullptr;
-
-	Info("- Create  pixel Shader OK.\n");
-
+	mVS = commandContext->CreateVertexShader(FULL_TRIANGLE ,"VS");
+	mPSs = commandContext->CreatePixelShader(FULL_TRIANGLE ,"psSampleSrcImage");
+	mPSd = commandContext->CreatePixelShader(FULL_TRIANGLE ,"psSampleResultImage");
 	Info("InitGraphics OK. @%s:%d\n", __FILE__, __LINE__);
+    return true;
 }
 
-void    DX11EffectViewer::UpdateCSConstBuffer()
+void DX11EffectViewer::UpdateCSConstBuffer()
 {
 	CB data;
 	data.iHeight = m_imageHeight;
@@ -179,7 +134,7 @@ void    DX11EffectViewer::UpdateCSConstBuffer()
 	Info("- Update Constant buffer.\n");
 }
 
-bool DX11EffectViewer::CreateCSConstBuffer(ID3D11Device* pd3dDevice)
+bool DX11EffectViewer::CreateCSConstBuffer()
 {
 	CB cb = { m_imageWidth, m_imageHeight };
 	mConstBuffer = commandContext->CreateConstBuffer(sizeof(cb), &cb);

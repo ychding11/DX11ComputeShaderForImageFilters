@@ -20,7 +20,7 @@ namespace SimpleFramework
 
 	void FDX11GHITexture::LoadFromFile(std::string filename)
 	{
-		std::wstring wName = StrToWstring(filename.c_str());
+		std::wstring wName = StrToWstr(filename.c_str());
 		DXCall(CreateWICTextureFromFile(DX11::Device(), wName.c_str(), (ID3D11Resource **)&rawTexture, &rawSRV));
 		D3D11_TEXTURE2D_DESC desc;
 		rawTexture->GetDesc(&desc);

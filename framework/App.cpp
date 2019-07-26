@@ -195,6 +195,7 @@ void App::Initialize_private()
 {
 	DX11::Initialize(D3D_FEATURE_LEVEL_11_0);
     commandContext = new FDX11IGHIComputeCommandCotext;
+	shaderCache = new ShaderCache(commandContext);
 	GHISamplerDesc desc;
 	linearSampler = (commandContext->CreateSampler(desc));
 	swapchain.Initialize(window);
@@ -266,12 +267,13 @@ uint32 App::SwapchainHeight() const
 
 std::string App::Name() const
 {
-	return WstringToStr(applicationName.c_str());
+	return ToStr(applicationName);
 }
 
 
 void App::DrawFullScreenTriangle(GHIViewport viewport)
 {
+	commandContext->setPrimitiveTopology(PrimitiveTopology::TOPOLOGY_TRIANGLESTRIP);
     commandContext->SetViewport(viewport);
     commandContext->Draw(3, 0);
 }

@@ -8,6 +8,7 @@
 #include "SwapChain.h"
 #include "GHIResources.h"
 #include "GHICommandContext.h"
+#include "ShaderCache.h"
 
 namespace SimpleFramework
 {
@@ -78,14 +79,15 @@ protected:
     IGHIComputeCommandCotext *commandContext = nullptr;
 	GHISampler *linearSampler = nullptr;
     //std::unique_ptr<GHISampler> linearSampler;
+	ShaderCache *shaderCache = nullptr;
 
-    inline std::wstring ToWstr(const std::string &str)
+    inline std::wstring ToWstr(const std::string &str) const
     {
-        return StrToWstring(str.c_str());
+        return StrToWstr(str.c_str());
     }
-    inline std::string ToStr(const std::wstring &wstr)
+    inline std::string ToStr(const std::wstring &wstr) const
     {
-        return WstringToStr(wstr.c_str());
+        return WstrToStr(wstr.c_str());
     }
 
     void DrawFullScreenTriangle(GHIViewport viewport);

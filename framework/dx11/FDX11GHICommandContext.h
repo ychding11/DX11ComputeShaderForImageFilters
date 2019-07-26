@@ -155,7 +155,14 @@ namespace SimpleFramework
             DX11::ImmediateContext()->Dispatch( nX, nY, nZ);
         }
 
+		virtual void setPrimitiveTopology(PrimitiveTopology topology) override;
         virtual void SetViewport(GHIViewport viewport) override;
         virtual void Draw(int count, int offset) override;
+
+        virtual GHIVertexShader*  CreateVertexShader(std::string file, std::string entrypoint) override;
+        virtual GHIPixelShader*   CreatePixelShader(std::string file, std::string entrypoint) override;
+        virtual GHIShader* CreateComputeShader(std::string file) override;
+        virtual GHIShader* CreateShader(std::string file) override;
+        virtual void SetShader(GHIShader* shader) override;
 	};
 }

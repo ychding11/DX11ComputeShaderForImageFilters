@@ -53,7 +53,7 @@ typedef uint32_t bool32;
 #endif
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
-#define STRICT                          // Use strict declarations for Windows types
+//#define STRICT                          // Use strict declarations for Windows types
 
 // Windows Header Files:
 #include <windows.h>

@@ -81,11 +81,15 @@ namespace SimpleFramework
 		}
         virtual void release() override
         {
-            WriteLog("Begin, DXRelease() texture");
+            DLOG("Begin, DXRelease() texture");
             DXRelease(rawTexture);
             DXRelease(rawSRV);
             DXRelease(rawUAV);
             DXRelease(rawRTV);
+            AssertMsg_(rawTexture==nullptr, "Fault, DXRelease()");
+            AssertMsg_(rawSRV==nullptr, "Fault, DXRelease()");
+            AssertMsg_(rawUAV==nullptr, "Fault, DXRelease()");
+            AssertMsg_(rawRTV==nullptr, "Fault, DXRelease()");
         }
 
 		void LoadFromFile(std::string filename);
@@ -103,8 +107,9 @@ namespace SimpleFramework
 		}
         virtual void release() override
         {
-            WriteLog("Begin, DXRelease() buffer");
+            DLOG("Begin, DXRelease() buffer");
             DXRelease(rawBuffer);
+            AssertMsg_(rawBuffer==nullptr, "Fault, DXRelease()");
         }
 		virtual void Update(void* data, int size) override;
 	};
@@ -120,11 +125,79 @@ namespace SimpleFramework
 		}
         virtual void release() override
         {
-            WriteLog("Begin, DXRelease(), sampler");
+            DLOG("Begin, DXRelease(), sampler");
             DXRelease(rawSampler);
             AssertMsg_(rawSampler==nullptr, "Fault, DXRelease()");
         }
 	};
+
+
+    class FDX11GHIComputeShader : public GHIComputeShader
+    {
+    public:
+        ID3D11ComputeShader*  rawPtr = nullptr;
+    public:
+        FDX11GHIComputeShader(ID3D11ComputeShader*  ptr)
+            :rawPtr(ptr)
+        {
+            list.push_back(this);
+        }
+
+        virtual void release() override
+        {
+            DLOG("Begin, DXRelease(), compute shader");
+            DXRelease(rawPtr);
+            AssertMsg_(rawPtr==nullptr, "Fault, DXRelease()");
+        }
+
+		virtual std::string str() override
+		{
+			return info.shaderfile;
+		}
+    };
+    class FDX11GHIVertexShader : public GHIVertexShader
+    {
+    public:
+	    ID3D11VertexShader *rawPtr = nullptr;
+    public:
+        FDX11GHIVertexShader(ID3D11VertexShader*  ptr)
+            :rawPtr(ptr)
+        {
+            list.push_back(this);
+        }
+        virtual void release() override
+        {
+            DLOG("Begin, DXRelease(), vertex shader");
+            DXRelease(rawPtr);
+            AssertMsg_(rawPtr==nullptr, "Fault, DXRelease()");
+        }
+		virtual std::string str() override
+		{
+			return info.shaderfile;
+		}
+    };
+    class FDX11GHIPixelShader : public GHIPixelShader
+    {
+    public:
+	    ID3D11PixelShader *rawPtr= nullptr;
+    public:
+        FDX11GHIPixelShader(ID3D11PixelShader*  ptr)
+            :rawPtr(ptr)
+        {
+            list.push_back(this);
+        }
+        virtual void release() override
+        {
+            DLOG("Begin, DXRelease(), pixel shader");
+            DXRelease(rawPtr);
+            AssertMsg_(rawPtr==nullptr, "Fault, DXRelease()");
+        }
+
+		virtual std::string str() override
+		{
+			return info.shaderfile;
+		}
+    };
 
     // Cast
     template<class T>
@@ -148,6 +221,24 @@ namespace SimpleFramework
     struct TD3D11ResourceTraits<GHISampler>
     {
         typedef FDX11GHISampler TConcreteType;
+    };
+
+    template<>
+    struct TD3D11ResourceTraits<GHIComputeShader>
+    {
+        typedef FDX11GHIComputeShader TConcreteType;
+    };
+
+    template<>
+    struct TD3D11ResourceTraits<GHIVertexShader>
+    {
+        typedef FDX11GHIVertexShader TConcreteType;
+    };
+
+    template<>
+    struct TD3D11ResourceTraits<GHIPixelShader>
+    {
+        typedef FDX11GHIPixelShader TConcreteType;
     };
 
     #define FORCEINLINE __forceinline									/* Force code to be inline */

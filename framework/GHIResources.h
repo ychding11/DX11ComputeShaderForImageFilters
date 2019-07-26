@@ -13,6 +13,16 @@
 
 namespace SimpleFramework
 {
+	enum PrimitiveTopology
+	{
+		TOPOLOGY_UNDEFINED = 0,
+		TOPOLOGY_POINTLIST = 1,
+		TOPOLOGY_LINELIST = 2,
+		TOPOLOGY_LINESTRIP = 3,
+		TOPOLOGY_TRIANGLELIST = 4,
+		TOPOLOGY_TRIANGLESTRIP = 5,
+	};
+
 	enum EPixelFormat
 	{
 		PixelFormat_R8G8B8A8_UNORM,
@@ -91,8 +101,8 @@ namespace SimpleFramework
 		uint32_t MaxAnisotropy = 0;
 		ComparisonFunc ComparisonFunc = ComparisonFunc::COMPARISON_NEVER;
 		float BorderColor[4] = {0, 0, 0, 0};
-		float MinLOD = 0;
-		float MaxLOD = 1e20;
+		float MinLOD = 0.f;
+		float MaxLOD = 1e20f;
 	};
 
     struct GHIUAVParam
@@ -180,11 +190,48 @@ namespace SimpleFramework
 	class GHISampler :public GHIResource
 	{
 
-    public:
-        ~GHISampler()
-        {
-
-        }
 	};
 
+    enum EShaderStage
+    {
+        ShaderStageInvalid,
+        VS,
+        PS,
+        CS,
+        ShaderStageNum
+    };
+
+	struct ShaderInfo
+	{
+        EShaderStage shaderstage;
+        std::string shaderfile;
+        std::string entrypoint;
+		std::string bytecode;
+	};
+
+	class GHIShader :public GHIResource
+	{
+    public:
+        ShaderInfo info;
+		virtual std::string str() = 0;
+
+	};
+	class GHIVertexShader :public GHIShader
+	{
+
+	};
+	class GHIPixelShader :public GHIShader
+	{
+
+	};
+	class GHIComputeShader :public GHIShader
+	{
+
+	};
+
+
+	class GHIShaderProgram
+	{
+		std::list<GHIShader*> shaders;
+	};
 }
