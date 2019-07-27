@@ -89,16 +89,15 @@ public:
 
     void NextImage(std::string &name)
     {
-        auto imageItr = mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
-		m_imageName = (*imageItr);
-		Info("- Switch to image [%s]\n", m_imageName.c_str());
+        mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
+		m_imageName = (*mCurrentImage);
+		INFO("Switch to image [%s]\n", m_imageName.c_str());
 
-		//! All resource related need to rebuild 
 		while (!LoadImageAsSrcTexture())
 		{
-			auto imageItr = mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
-			m_imageName = (*imageItr);
-			Info("- Switch to image [%s]\n", m_imageName.c_str());
+			mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
+			m_imageName = (*mCurrentImage);
+			INFO("Switch to image [%s]\n", m_imageName.c_str());
 		}
 
 	    mDstTexture = commandContext->CreateTextureByAnother(mSrcTexture);

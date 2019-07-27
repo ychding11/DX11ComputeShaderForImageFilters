@@ -55,57 +55,21 @@ do{                                                   \
     }                                                 \
 } while(0)
 
-
-inline void Error(const char *format, ...)
+inline void output(const char *format, ...)
 {
 	va_list ptr_arg;
 	va_start(ptr_arg, format);
 
-	static char tmps[1024];
+	char tmps[1024];
 	vsprintf(tmps, format, ptr_arg);
 
-    //static char info[256];
-    //sprintf_s(info, 256, "- Error @%s:%d\t",__FILE__,__LINE__);
-	//Logger::getLogger() << info;
-
-	Logger::getLogger() << tmps;
-
-	va_end(ptr_arg);
-}
-
-
-inline void Info(const char *format, ...)
-{
-	va_list ptr_arg;
-	va_start(ptr_arg, format);
-
-	static char tmps[1024];
-	vsprintf(tmps, format, ptr_arg);
-
-    //static char info[256];
-    //sprintf_s(info, 256, "- Info @%s:%d\t",__FILE__,__LINE__);
-	//Logger::getLogger() << info;
 	OutputDebugStringA(tmps);
 	OutputDebugStringA("\n");
 
-	//Logger::getLogger() << tmps;
-
 	va_end(ptr_arg);
 }
 
-
-// locations used to store image files
-#define IMAGE_REPO "..\\images"
-
-// locations used to store effect files
-#define EFFECT_REPO "..\\effects"
-
-inline wchar_t* CharPtrToLPCWSTR(const char* charArray)
-{
-    wchar_t* wString = new wchar_t[4096];
-    MultiByteToWideChar(CP_ACP, 0, charArray, -1, wString, 4096);
-    return wString;
-}
+#define INFO output
 
 //! It requires c++17 
 struct path_leaf_string

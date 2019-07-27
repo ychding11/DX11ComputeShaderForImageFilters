@@ -5,6 +5,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#define IMAGE_REPO "..\\images"
+
 // Safe Release Function
 template <class T>
 void SafeRelease(T **ppT)
@@ -34,7 +36,7 @@ int	DX11EffectViewer::initialize()
 
     BuildImageList(IMAGE_REPO);
 
-	Info("DX11EffectViewer Initialized OK. image [%s]\n", m_imageName.c_str());
+	INFO("DX11EffectViewer Initialized OK, default image:%s\n", m_imageName.c_str());
 	return 0;
 }
 
@@ -121,7 +123,6 @@ bool DX11EffectViewer::InitGraphics()
 	mVS = commandContext->CreateVertexShader(FULL_TRIANGLE ,"VS");
 	mPSs = commandContext->CreatePixelShader(FULL_TRIANGLE ,"psSampleSrcImage");
 	mPSd = commandContext->CreatePixelShader(FULL_TRIANGLE ,"psSampleResultImage");
-	Info("InitGraphics OK. @%s:%d\n", __FILE__, __LINE__);
     return true;
 }
 
@@ -131,7 +132,6 @@ void DX11EffectViewer::UpdateCSConstBuffer()
 	data.iHeight = m_imageHeight;
 	data.iWidth = m_imageWidth;
 	commandContext->UpdateBuffer(mConstBuffer,&data, sizeof(data));
-	Info("- Update Constant buffer.\n");
 }
 
 bool DX11EffectViewer::CreateCSConstBuffer()
@@ -139,7 +139,6 @@ bool DX11EffectViewer::CreateCSConstBuffer()
 	CB cb = { m_imageWidth, m_imageHeight };
 	mConstBuffer = commandContext->CreateConstBuffer(sizeof(cb), &cb);
 	commandContext->SetConstBuffer(mConstBuffer, 0);
-	Info("- Create Constant buffer and Bind to CS OK.\n");
 	return true;
 }
 
@@ -187,7 +186,6 @@ byte* DX11EffectViewer::GetResultImage()
 	if (!m_resultCPUCopy)
 	{
 		m_resultCPUCopy = new byte[m_textureSizeInBytes];
-		if (!m_resultCPUCopy) Info("- New CPU buffer failed.\n");
 	}
 
 	m_pImmediateContext->CopyResource(m_resultGPUCopy, m_resultImageTexture); // Copy resource by GPU
