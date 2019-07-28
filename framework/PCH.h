@@ -77,7 +77,7 @@ typedef uint32_t bool32;
 
 #include <dxgi.h>
 #include <d3d11.h>
-#include <D3Dcompiler.h>
+#include <d3dcompiler.h>
 #include <d3d9.h>
 
 // DirectX Math

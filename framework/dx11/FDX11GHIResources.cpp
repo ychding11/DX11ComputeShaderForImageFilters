@@ -52,7 +52,7 @@ namespace SimpleFramework
 	void FDX11GHIResourceView::CreateSRV(const GHISRVParam &param)
 	{
 		FDX11GHITexture *res = ResourceCast(resource);
-		if (res->rawRTV)
+		if (res->rawSRV)
         {
         }
 		else
@@ -69,7 +69,7 @@ namespace SimpleFramework
 	void FDX11GHIResourceView::CreateUAV(const GHIUAVParam &param)
 	{
 		FDX11GHITexture *res = ResourceCast(resource);
-		if (res->rawRTV)
+		if (res->rawUAV)
         {
         }
 		else

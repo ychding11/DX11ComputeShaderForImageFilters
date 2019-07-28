@@ -42,11 +42,21 @@ namespace SimpleFramework
 		mCurIt = mComputeShaders.begin();
 	}
 
-	void ShaderCache::enumCache()
+	void ShaderCache::AddGraphicShader(std::string name, GHIShader* shader)
+	{
+		mShaders[name] = shader;
+	}
+
+	void ShaderCache::EnumCache()
 	{
 		for (auto it = mShaders.begin(); it != mShaders.end(); ++it)
 		{
 			DLOG("%s --> %s",it->first.c_str(), it->second->str().c_str());
+		}
+
+		for (auto it = mComputeShaders.begin(); it != mComputeShaders.end(); ++it)
+		{
+			DLOG("compute shader --> %s", (*it)->info.shaderfile.c_str());
 		}
 	}
 

@@ -97,7 +97,7 @@ namespace SimpleFramework
         DXCall(D3DCompileFromFile(filename, NULL, NULL, entrypoint, "ps_4_0", dwShaderFlags, 0, pBlob, pErrorBlob));
         DXCall(DX11::Device()->CreatePixelShader((*pBlob)->GetBufferPointer(), (*pBlob)->GetBufferSize(), NULL, shader));
 
-        DLOG("- Build pixel Shader['%ls'] OK.\n", filename);
+        DLOG("Build pixel Shader['%ls'] OK.\n", filename);
 
         return true;
     }
@@ -111,9 +111,63 @@ namespace SimpleFramework
 #endif
         DXCall(D3DCompileFromFile(filename, NULL, NULL, entrypoint, "vs_4_0", dwShaderFlags, 0, pBlob, pErrorBlob));
         DXCall(DX11::Device()->CreateVertexShader((*pBlob)->GetBufferPointer(), (*pBlob)->GetBufferSize(), NULL, shader));
-        DLOG("- Build vertex Shader['%ls'] OK.\n", filename);
+        DLOG("Build vertex Shader['%ls'] OK.\n", filename);
         
         return true;
+    }
+
+    static void EnumRelection(GHIShader *shader)
+    {
+        ID3D11ShaderReflection* reflection = nullptr;
+        D3DReflect(shader->info.bytecode.data(), shader->info.bytecode.size(), IID_ID3D11ShaderReflection, (void**)&reflection);
+
+        D3D11_SHADER_DESC desc;
+        reflection->GetDesc(&desc);
+
+        DLOG("Shader file:%s",shader->info.shaderfile.c_str());
+        for (unsigned int i = 0; i < desc.ConstantBuffers; ++i)
+        {
+            unsigned int register_index = 0;
+            ID3D11ShaderReflectionConstantBuffer* cb = nullptr;
+            cb = reflection->GetConstantBufferByIndex(i);
+
+            D3D11_SHADER_BUFFER_DESC cbDesc;
+            cb->GetDesc(&cbDesc);
+
+            for (unsigned int k = 0; k < desc.BoundResources; ++k)
+            {
+                D3D11_SHADER_INPUT_BIND_DESC ibdesc;
+                reflection->GetResourceBindingDesc(k, &ibdesc);
+
+                DLOG("\tparam name:%s",ibdesc.Name);
+                DLOG("\tbind point:%d",ibdesc.BindPoint);
+                DLOG("\tbind count:%d",ibdesc.BindCount);
+                DLOG("\tparam type:%d",ibdesc.Type);
+                if (!strcmp(ibdesc.Name, cbDesc.Name))
+                {
+                    register_index = ibdesc.BindPoint;
+                    for (unsigned int j = 0; j < cbDesc.Variables; ++j)
+                    {
+                        ID3D11ShaderReflectionVariable* variable = NULL;
+                        variable = cb->GetVariableByIndex(j);
+
+                        D3D11_SHADER_VARIABLE_DESC vdesc;
+                        variable->GetDesc(&vdesc);
+                        DLOG("\tvariable name:%s", vdesc.Name);
+                        DLOG("\tstart offset:%d", vdesc.StartOffset);
+                        DLOG("\tvariable size:%d", vdesc.Size);
+#if 0
+                        ShaderVariable* shadervariable = new ShaderVariable();
+                        shadervariable->name = Engine::String.ConvertToWideStr(vdesc.Name);
+                        shadervariable->length = vdesc.Size;
+                        shadervariable->offset = vdesc.StartOffset;
+                        mSize += vdesc.Size;
+                        mVariables.push_back(shadervariable);
+#endif
+                    }
+                }
+            }
+        }
     }
 
     GHIVertexShader*  FDX11IGHIComputeCommandCotext::CreateVertexShader(std::string file, std::string entrypoint)
@@ -158,6 +212,7 @@ namespace SimpleFramework
 		shader->info.entrypoint = entrypoint;
         shader->info.shaderstage = EShaderStage::CS;
 		shader->info.bytecode += std::string((char*)(pBlob->GetBufferPointer()), pBlob->GetBufferSize());
+        EnumRelection(shader);
 		return shader;
     }
 
@@ -174,6 +229,7 @@ namespace SimpleFramework
 		shader->info.entrypoint = entrypoint;
         shader->info.shaderstage = EShaderStage::CS;
 		shader->info.bytecode += std::string((char*)(pBlob->GetBufferPointer()), pBlob->GetBufferSize());
+        EnumRelection(shader);
 		return shader;
 	}
 

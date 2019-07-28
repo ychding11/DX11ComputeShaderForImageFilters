@@ -131,151 +131,174 @@ namespace SimpleFramework
 		}
 	} // namespace
 
-App* GlobalApp = nullptr;
+	App* GlobalApp = nullptr;
 
 
-App::App(const wchar* appName, const wchar* iconResource) : 
-	window(NULL, appName, WS_OVERLAPPEDWINDOW, WS_EX_APPWINDOW, 1280, 720, iconResource, iconResource),
-    currentTimeDeltaSample(0),
-    fps(0),
-	applicationName(appName),
-    createConsole(true),
-	showWindow(true),
-	returnCode(0)
-{
-    GlobalApp = this;
-    for(uint32 i = 0; i < NumTimeDeltaSamples; ++i)
-        timeDeltaBuffer[i] = 0;
+	App::App(const wchar* appName, const wchar* iconResource) : 
+		window(NULL, appName, WS_OVERLAPPEDWINDOW, WS_EX_APPWINDOW, 1280, 720, iconResource, iconResource),
+		currentTimeDeltaSample(0),
+		fps(0),
+		applicationName(appName),
+		createConsole(true),
+		showWindow(true),
+		returnCode(0)
+	{
+		GlobalApp = this;
+		for(uint32 i = 0; i < NumTimeDeltaSamples; ++i)
+			timeDeltaBuffer[i] = 0;
 
-}
+	}
 
-int32 App::Run()
-{
-    try
-    {
-        window.SetClientArea(swapchain.Width(), swapchain.Height());
-        if(showWindow) window.ShowWindow();
-        window.RegisterMessageCallback(OnWindowResized, this);
+	int32 App::Run()
+	{
+		try
+		{
+			window.SetClientArea(swapchain.Width(), swapchain.Height());
+			if(showWindow) window.ShowWindow();
+			window.RegisterMessageCallback(OnWindowResized, this);
 
-        Initialize_private();
+			Initialize_private();
 		
-		Initialize(); // pure virtual
+			Initialize(); // pure virtual
 
-        while(window.IsAlive())
-        {
-            if(!window.IsMinimized())
-            {
-                timer.Update();
+			while(window.IsAlive())
+			{
+				if(!window.IsMinimized())
+				{
+					timer.Update();
 
-                CalculateFPS();
+					CalculateFPS();
 
-                BeginFrame_private();
+					BeginFrame_private();
 
-                Update(timer); // pure virtual
-                Render(timer); // pure virtual
+					Update(timer); // pure virtual
+					Render(timer); // pure virtual
 
-                EndFrame_private();
-            }
-            window.MessageLoop();
-        }
+					EndFrame_private();
+				}
+				window.MessageLoop();
+			}
 
-		Shutdown();
-		Shutdown_private();
-    }
-	catch(SimpleFramework::Exception exception)
-    {
-        exception.ShowErrorMessage();
-        return -1;
-    }
+			Shutdown();
+			Shutdown_private();
+		}
+		catch(SimpleFramework::Exception exception)
+		{
+			exception.ShowErrorMessage();
+			return -1;
+		}
 
-    return returnCode;
-}
+		return returnCode;
+	}
 
-void App::Initialize_private()
-{
-	DX11::Initialize(D3D_FEATURE_LEVEL_11_0);
-    commandContext = new FDX11IGHIComputeCommandCotext;
-	shaderCache = new ShaderCache(commandContext);
-	GHISamplerDesc desc;
-	linearSampler = (commandContext->CreateSampler(desc));
-	swapchain.Initialize(window);
-	imgui::Initialize(window);
-}
+	void App::Initialize_private()
+	{
+		DX11::Initialize(D3D_FEATURE_LEVEL_11_0);
+		commandContext = new FDX11IGHIComputeCommandCotext;
+		shaderCache = new ShaderCache(commandContext);
+		GHISamplerDesc desc;
+		linearSampler = (commandContext->CreateSampler(desc));
+		swapchain.Initialize(window);
+		imgui::Initialize(window);
 
-void App::BeginFrame_private()
-{
-	DX11::ImmediateContext()->OMSetRenderTargets(1, swapchain.RTV(), nullptr);
-	DX11::ImmediateContext()->ClearRenderTargetView((swapchain.RTV())[0], clearColor);
-	imgui::BeginFrame();
-}
+		LoadShaderProgram("../data/fullQuad.fx");
+	}
 
-void App::EndFrame_private()
-{
-	imgui::EndFrame();
-	swapchain.D3DSwapChain()->Present(0,0);
-}
+	void App::BeginFrame_private()
+	{
+		DX11::ImmediateContext()->OMSetRenderTargets(1, swapchain.RTV(), nullptr);
+		DX11::ImmediateContext()->ClearRenderTargetView((swapchain.RTV())[0], clearColor);
+		imgui::BeginFrame();
+	}
 
-void App::Shutdown_private()
-{
-    for (auto it = GHIResource::list.begin(); it != GHIResource::list.end(); ++it)
-    {
-        (*it)->release();
-    }
-	imgui::Shutdown();
-	swapchain.Shutdown();
-	DX11::Shutdown();
-}
+	void App::EndFrame_private()
+	{
+		imgui::EndFrame();
+		swapchain.D3DSwapChain()->Present(0,0);
+	}
 
-App::~App()
-{
-}
+	void App::Shutdown_private()
+	{
+		for (auto it = GHIResource::list.begin(); it != GHIResource::list.end(); ++it)
+		{
+			(*it)->release();
+		}
+		imgui::Shutdown();
+		swapchain.Shutdown();
+		DX11::Shutdown();
+	}
 
-void App::CalculateFPS()
-{
-}
+	App::~App()
+	{
+	}
 
-void App::OnWindowResized(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    App* app = reinterpret_cast<App*>(context);
-}
+	void App::CalculateFPS()
+	{
+	}
 
-void App::Exit()
-{
-    window.Destroy();
-}
+	void App::OnWindowResized(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+	{
+		App* app = reinterpret_cast<App*>(context);
+	}
 
-void App::ToggleFullScreen(bool fullScreen)
-{
-}
-ID3D11Device* App::Device()
-{
-	return DX11::Device();
-}
-ID3D11DeviceContext* App::ImmediateContext()
-{
-	return DX11::ImmediateContext();
-}
-uint32 App::SwapchainWidth() const
-{
-	return swapchain.Width();
-}
+	void App::Exit()
+	{
+		window.Destroy();
+	}
 
-uint32 App::SwapchainHeight() const
-{
-	return swapchain.Height();
-}
+	void App::ToggleFullScreen(bool fullScreen)
+	{
+	}
+	ID3D11Device* App::Device()
+	{
+		return DX11::Device();
+	}
+	ID3D11DeviceContext* App::ImmediateContext()
+	{
+		return DX11::ImmediateContext();
+	}
+	uint32 App::SwapchainWidth() const
+	{
+		return swapchain.Width();
+	}
 
-std::string App::Name() const
-{
-	return ToStr(applicationName);
-}
+	uint32 App::SwapchainHeight() const
+	{
+		return swapchain.Height();
+	}
 
+	std::string App::Name() const
+	{
+		return ToStr(applicationName);
+	}
 
-void App::DrawFullScreenTriangle(GHIViewport viewport)
-{
-	commandContext->setPrimitiveTopology(PrimitiveTopology::TOPOLOGY_TRIANGLESTRIP);
-    commandContext->SetViewport(viewport);
-    commandContext->Draw(3, 0);
-}
+	void App::DrawFullScreenTriangle(GHIViewport viewport)
+	{
+		commandContext->setPrimitiveTopology(PrimitiveTopology::TOPOLOGY_TRIANGLESTRIP);
+		commandContext->SetViewport(viewport);
+		commandContext->Draw(3, 0);
+	}
 
+	void App::LoadShaderProgram(std::string file)
+	{
+		std::ifstream in(file);
+		std::string str;
+		while (std::getline(in, str))
+		{
+			if (str.size() <= 0)
+				break;
+			std::vector<std::string> symbols = Split(str);
+			if (symbols[1] == "VS")
+			{
+				GHIVertexShader* vs = commandContext->CreateVertexShader(file, symbols[2]);
+				shaderCache->AddGraphicShader(symbols[2], vs);
+			}
+			else if (symbols[1] == "PS")
+			{
+				GHIPixelShader* ps = commandContext->CreatePixelShader(file, symbols[2]);
+				shaderCache->AddGraphicShader(symbols[2], ps);
+			}
+		}
+		in.close();
+	}
 }

@@ -91,6 +91,7 @@ protected:
     }
 
     void DrawFullScreenTriangle(GHIViewport viewport);
+	void LoadShaderProgram(std::string file);
 };
 
 extern App* GlobalApp;

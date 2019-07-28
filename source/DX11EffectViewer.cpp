@@ -120,9 +120,16 @@ void DX11EffectViewer::Shutdown()
 
 bool DX11EffectViewer::InitGraphics()
 {
+#if 0
 	mVS = commandContext->CreateVertexShader(FULL_TRIANGLE ,"VS");
 	mPSs = commandContext->CreatePixelShader(FULL_TRIANGLE ,"psSampleSrcImage");
 	mPSd = commandContext->CreatePixelShader(FULL_TRIANGLE ,"psSampleResultImage");
+#endif
+
+	mVS = (*shaderCache)["VS"];
+	mPSs = (*shaderCache)["psSampleSrcImage"];
+	mPSd = (*shaderCache)["psSampleResultImage"];
+
     return true;
 }
 

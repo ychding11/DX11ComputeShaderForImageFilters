@@ -1,3 +1,7 @@
+// VS VS
+// PS psSampleSrcImage
+// PS psSampleResultImage
+
 Texture2D srcTexture  : register( t0 );
 Texture2D destTexture : register( t1 );
 SamplerState samLinear: register( s0 );

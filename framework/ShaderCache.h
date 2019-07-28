@@ -36,7 +36,6 @@ namespace SimpleFramework
 			, mShaderFiles(shaders)
         {
             buildCache();
-			enumCache();
         }
 
         virtual ~ShaderCache()
@@ -60,12 +59,17 @@ namespace SimpleFramework
 		}
 
 		void InitComputeCache(const std::vector<std::string> &files);
+		void AddGraphicShader(std::string name, GHIShader* shader);
+        void EnumCache();
 
+		GHIShader* operator[](std::string name)
+		{
+			return mShaders[name];
+		}
 
 
     private:
         void buildCache();
-        void enumCache();
 
         void release(void)
         {
