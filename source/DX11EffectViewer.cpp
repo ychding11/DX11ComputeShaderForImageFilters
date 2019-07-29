@@ -44,6 +44,7 @@ void  DX11EffectViewer::ActiveEffect(SimpleFramework::GHIShader* computeShader)
 {
     if (computeShader == NULL) return;
 
+    INFO("active compute shader: [%s]", computeShader->info.shaderfile.c_str());
 	//SimpleFramework::GHIUAVParam uav;
     commandContext->SetShader(computeShader);
 	commandContext->SetShaderResource(mDstTexture, 0, SimpleFramework::GHIUAVParam());
@@ -224,18 +225,15 @@ void DX11EffectViewer::WindowMessageCallback(void* context, HWND hWnd, UINT mess
 			char key = tolower((int)wParam);
 			if (wParam == VK_F1)
 			{
-				std::string name;
-				app->NextEffect(name);
+				app->NextEffect();
 			}
 			else if (wParam == VK_F2)
 			{
-				std::string name;
-				app->PrevEffect(name);
+				app->PrevEffect();
 			}
 			else if (wParam == VK_F3)
 			{
-				std::string name;
-				app->NextImage(name);
+				app->NextImage();
 			}
 			else if (wParam == VK_ESCAPE)
 			{
@@ -243,9 +241,8 @@ void DX11EffectViewer::WindowMessageCallback(void* context, HWND hWnd, UINT mess
 			}
 			else if (key == 'u')
 			{
-				std::string name;
 				app->UpdateEffects();
-				app->NextEffect(name);
+				app->NextEffect();
 			}
 			else if (key == 'd')
 			{

@@ -69,7 +69,14 @@ inline void output(const char *format, ...)
 	va_end(ptr_arg);
 }
 
-#define INFO output
+#define INFO(fmt,...)  output("- [Info] " fmt, ##__VA_ARGS__)
+#define ERROR(fmt,...) output("- [Error] " fmt, ##__VA_ARGS__)
+
+#if defined( DEBUG ) || defined( _DEBUG )
+#define DEBUG(fmt,...)  output("- [Debug] " fmt, ##__VA_ARGS__)
+#else
+#define DEBUG(fmt,...)
+#endif
 
 //! It requires c++17 
 struct path_leaf_string

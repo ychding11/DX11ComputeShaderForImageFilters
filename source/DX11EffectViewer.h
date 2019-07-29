@@ -77,19 +77,19 @@ public:
 
 	void SaveResult();
 	
-    void NextEffect(std::string &name)
+    void NextEffect()
     {
         ActiveEffect(shaderCache->Current());
         shaderCache->Next();
     }
 
-    void PrevEffect(std::string &name)
+    void PrevEffect()
     {
         ActiveEffect(shaderCache->Current());
         shaderCache->Prev();
     }
 
-    void NextImage(std::string &name)
+    void NextImage()
     {
         mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
 		m_imageName = (*mCurrentImage);
@@ -108,7 +108,7 @@ public:
         ActiveEffect(shaderCache->Current());
     }
 
-    void PrevImage(std::string &name)
+    void PrevImage()
     {
     }
 
