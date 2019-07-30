@@ -1,9 +1,8 @@
 // VS VS
-// PS psSampleSrcImage
-// PS psSampleResultImage
+// PS PS
 
-Texture2D srcTexture  : register( t0 );
-Texture2D destTexture : register( t1 );
+
+Texture2D inputTex  : register( t0 );
 SamplerState samLinear: register( s0 );
 
 struct PS_INPUT
@@ -37,12 +36,7 @@ PS_INPUT VS( in uint VertexIdx : SV_VertexID)
     return output;
 }
 
-float4 psSampleSrcImage( PS_INPUT input) : SV_Target
+float4 PS( PS_INPUT input) : SV_Target
 {
-    return srcTexture.Sample( samLinear, input.Tex );
-}
-
-float4 psSampleResultImage( PS_INPUT input) : SV_Target
-{
-	return destTexture.Sample( samLinear, input.Tex );
+    return inputTex.Sample( samLinear, input.Tex );
 }

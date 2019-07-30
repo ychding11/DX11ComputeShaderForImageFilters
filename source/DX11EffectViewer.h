@@ -154,13 +154,4 @@ private:
 	SimpleFramework::GHITexture *mSrcTexture = nullptr;
 	SimpleFramework::GHITexture *mDstTexture = nullptr;
 	SimpleFramework::GHITexture *mFinalTexture = nullptr;
-#if 0
-	SimpleFramework::GHIVertexShader *mVS = nullptr;
-	SimpleFramework::GHIPixelShader *mPSs = nullptr;
-	SimpleFramework::GHIPixelShader *mPSd = nullptr;
-#else
-	SimpleFramework::GHIShader *mVS = nullptr;
-	SimpleFramework::GHIShader *mPSs = nullptr;
-	SimpleFramework::GHIShader *mPSd = nullptr;
-#endif
 };

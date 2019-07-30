@@ -26,8 +26,6 @@ void   DX11EffectViewer::BuildImageList(const std::string &dir)
 
 int	DX11EffectViewer::initialize()
 {
-	InitGraphics();
-
 	LoadImageAsSrcTexture(); //< Load source image as texture and upate image size.
 	mFinalTexture = commandContext->CreateTextureByAnother(mSrcTexture);
 	mDstTexture = commandContext->CreateTextureByAnother(mSrcTexture);
@@ -57,9 +55,6 @@ void  DX11EffectViewer::ActiveEffect(SimpleFramework::GHIShader* computeShader)
 
 void DX11EffectViewer::Render() 
 {
-	commandContext->SetShader(mVS);
-    commandContext->SetSampler(linearSampler, 0, SimpleFramework::EShaderStage::PS);
-
     if (mDisplayMode == DisplayMode::ONLY_RESULT)
     {
         RenderResultImage();
@@ -74,13 +69,6 @@ void DX11EffectViewer::Render()
     }
     else
     {
-        commandContext->SetShaderResource(mSrcTexture,0,SimpleFramework::GHISRVParam(),SimpleFramework::EShaderStage::PS);
-		commandContext->SetShader(mPSs);
-        DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f});
-
-        commandContext->SetShaderResource(mFinalTexture,1,SimpleFramework::GHISRVParam(),SimpleFramework::EShaderStage::PS);
-		commandContext->SetShader(mPSd);
-        DrawFullScreenTriangle({m_imageWidth + 1.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f});
     }
 }
 
@@ -90,27 +78,18 @@ void DX11EffectViewer::RenderMultiViewport()
 	width = float(SwapchainWidth() - 2) / 2.f;
 	height = 1.f / m_Aspect * width;
 
-	commandContext->SetShader(mPSs);
-    commandContext->SetShaderResource(mSrcTexture,0,SimpleFramework::GHISRVParam(), SimpleFramework::EShaderStage::PS);
-    DrawFullScreenTriangle({0.f, 0.f, width, height});
-
-	commandContext->SetShader(mPSd);
-    commandContext->SetShaderResource(mFinalTexture,1,SimpleFramework::GHISRVParam(),SimpleFramework::EShaderStage::PS);
-    DrawFullScreenTriangle({width + 2.f, 0.f, width, height});
+    DrawFullScreenTriangle({0.f, 0.f, width, height}, mSrcTexture);
+    DrawFullScreenTriangle({width + 2.f, 0.f, width, height}, mFinalTexture);
 }
 
 void DX11EffectViewer::RenderSourceImage()
 {
-    commandContext->SetShaderResource(mSrcTexture,0,SimpleFramework::GHISRVParam(), SimpleFramework::EShaderStage::PS);
-	commandContext->SetShader(mPSs);
-    DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f});
+    DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f}, mSrcTexture);
 }
 
 void DX11EffectViewer::RenderResultImage()
 {
-    commandContext->SetShaderResource(mFinalTexture,0,SimpleFramework::GHISRVParam(),SimpleFramework::EShaderStage::PS);
-	commandContext->SetShader(mPSd);
-    DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f});
+    DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f}, mFinalTexture);
 }
 
 void DX11EffectViewer::Shutdown() 
@@ -121,16 +100,6 @@ void DX11EffectViewer::Shutdown()
 
 bool DX11EffectViewer::InitGraphics()
 {
-#if 0
-	mVS = commandContext->CreateVertexShader(FULL_TRIANGLE ,"VS");
-	mPSs = commandContext->CreatePixelShader(FULL_TRIANGLE ,"psSampleSrcImage");
-	mPSd = commandContext->CreatePixelShader(FULL_TRIANGLE ,"psSampleResultImage");
-#endif
-
-	mVS = (*shaderCache)["VS"];
-	mPSs = (*shaderCache)["psSampleSrcImage"];
-	mPSd = (*shaderCache)["psSampleResultImage"];
-
     return true;
 }
 

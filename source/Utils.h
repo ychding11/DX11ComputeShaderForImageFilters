@@ -70,7 +70,7 @@ inline void output(const char *format, ...)
 }
 
 #define INFO(fmt,...)  output("- [Info] " fmt, ##__VA_ARGS__)
-#define ERROR(fmt,...) output("- [Error] " fmt, ##__VA_ARGS__)
+//#define ERROR(fmt,...) output("- [Error] " fmt, ##__VA_ARGS__)
 
 #if defined( DEBUG ) || defined( _DEBUG )
 #define DEBUG(fmt,...)  output("- [Debug] " fmt, ##__VA_ARGS__)

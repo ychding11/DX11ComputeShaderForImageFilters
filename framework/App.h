@@ -90,7 +90,7 @@ protected:
         return WstrToStr(wstr.c_str());
     }
 
-    void DrawFullScreenTriangle(GHIViewport viewport);
+    void DrawFullScreenTriangle(GHIViewport viewport, GHITexture *tex);
 	void LoadShaderProgram(std::string file);
 };
 

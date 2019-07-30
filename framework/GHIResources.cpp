@@ -13,4 +13,5 @@ namespace SimpleFramework
 {
     std::list<GHIResource*> GHIResource::list;
 
+
 }

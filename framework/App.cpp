@@ -272,12 +272,16 @@ namespace SimpleFramework
 		return ToStr(applicationName);
 	}
 
-	void App::DrawFullScreenTriangle(GHIViewport viewport)
-	{
+    void App::DrawFullScreenTriangle(GHIViewport viewport, GHITexture *tex)
+    {
+        commandContext->SetShader((*shaderCache)["VS"]);
 		commandContext->setPrimitiveTopology(PrimitiveTopology::TOPOLOGY_TRIANGLESTRIP);
 		commandContext->SetViewport(viewport);
+        commandContext->SetShaderResource(tex, 0, GHISRVParam(), EShaderStage::PS);
+        commandContext->SetSampler(linearSampler, 0, EShaderStage::PS);
+        commandContext->SetShader((*shaderCache)["PS"]);
 		commandContext->Draw(3, 0);
-	}
+    }
 
 	void App::LoadShaderProgram(std::string file)
 	{
