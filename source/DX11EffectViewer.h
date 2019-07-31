@@ -95,7 +95,7 @@ public:
 		m_imageName = (*mCurrentImage);
 		INFO("Switch to image [%s]\n", m_imageName.c_str());
 
-		while (!LoadImageAsSrcTexture())
+		while (!loadImage())
 		{
 			mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
 			m_imageName = (*mCurrentImage);
@@ -135,7 +135,7 @@ private:
     void    UpdateCSConstBuffer();
 
 	bool InitGraphics();
-	bool LoadImageAsSrcTexture();
+	bool loadImage();
 	bool CreateCSConstBuffer();
 
 	void	RenderMultiViewport();

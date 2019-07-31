@@ -26,7 +26,7 @@ void   DX11EffectViewer::BuildImageList(const std::string &dir)
 
 int	DX11EffectViewer::initialize()
 {
-	LoadImageAsSrcTexture(); //< Load source image as texture and upate image size.
+	loadImage(); //< Load source image as texture and upate image size.
 	mFinalTexture = commandContext->CreateTextureByAnother(mSrcTexture);
 	mDstTexture = commandContext->CreateTextureByAnother(mSrcTexture);
 
@@ -125,7 +125,7 @@ bool DX11EffectViewer::CreateCSConstBuffer()
 ////// https://github.com/Microsoft/DirectXTK/wiki/WICTextureLoader
 //////
 //////////////////////////////////////////////////////////////////////////////////////////////////
-bool DX11EffectViewer::LoadImageAsSrcTexture()
+bool DX11EffectViewer::loadImage()
 {
 	mSrcTexture = commandContext->CreateTexture(m_imageName);
 	m_imageWidth = mSrcTexture->width;
