@@ -45,17 +45,7 @@ public:
 
 	virtual void Update(const SimpleFramework::Timer& timer) override
 	{
-		ImGui::Begin("UI");
-
-		ImGui::Text("This is experialment."); // Display some text (you can use a format strings too)
-		ImGui::ColorEdit4("clear color", clearColor, ImGuiColorEditFlags_Float); // floats representing a color
-
-		if (ImGui::Button("Save")) // Buttons return true when clicked (most widgets return true when edited/activated)
-		{
-		}
-		ImGui::SameLine();
-		ImGui::Text("Application Average: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		ImGui::End();
+		updateUI();
 	}
 	virtual void Render(const SimpleFramework::Timer& timer) override
 	{
@@ -137,6 +127,21 @@ private:
 	bool InitGraphics();
 	bool loadImage();
 	bool CreateCSConstBuffer();
+
+	void updateUI()
+	{
+		ImGui::Begin("UI");
+
+		ImGui::Text("This is experialment."); // Display some text (you can use a format strings too)
+		ImGui::ColorEdit4("clear color", clearColor, ImGuiColorEditFlags_Float); // floats representing a color
+
+		if (ImGui::Button("Save")) // Buttons return true when clicked (most widgets return true when edited/activated)
+		{
+		}
+		ImGui::SameLine();
+		ImGui::Text("Application Average: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		ImGui::End();
+	}
 
 	void	RenderMultiViewport();
 	void	RenderSourceImage();

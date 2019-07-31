@@ -35,8 +35,77 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <cassert>
-#include <ctime>
+#include <list>
+#include <vector>
 
+#include "GHIResources.h"
+#include "GHICommandContext.h"
+
+class FilterParam
+{
+public:
+	std::string name;
+	SimpleFramework::GHITexture *res;
+
+	SimpleFramework::GHITexture * operator() ()
+	{
+		return res;
+	}
+};
+
+class IutputParam : public FilterParam
+{
+};
+class OutputParam : public FilterParam
+{
+};
+
+class Filter
+{
+public:
+	std::vector<FilterParam*> mInputs;
+	std::vector<FilterParam*> mOutputs;
+	std::string mShaderFile;
+	std::string mDescription = "an image filter";
+
+	Filter(std::string shaderFile)
+		: mShaderFile(mShaderFile)
+	{
+
+	}
+
+	virtual void UpdateUI() = 0;
+	virtual void Active(SimpleFramework::IGHIComputeCommandCotext *commandContext) = 0;
+
+};
+
+class BilaterialFilter : public Filter
+{
+	SimpleFramework::GHIShader* computeShader = nullptr;
+	SimpleFramework::GHIBuffer* constBuffer = nullptr;
+
+	BilaterialFilter(std::string filename)
+		: Filter(filename)
+	{
+
+	}
+	virtual void UpdateUI() override
+	{
+
+	}
+
+	virtual void Active(SimpleFramework::IGHIComputeCommandCotext *commandContext) override
+	{
+		//INFO("active compute shader: [%s]", computeShader->info.shaderfile.c_str());
+		//SimpleFramework::GHIUAVParam uav;
+		int imageWidth = (*mInputs[0])()->width;
+		int imageHeight = (*mOutputs[0])()->height;
+		commandContext->SetConstBuffer(constBuffer, 0);
+		commandContext->SetShader(computeShader);
+		commandContext->SetShaderResource((*mInputs[0])(), 0, SimpleFramework::GHISRVParam());
+		commandContext->SetShaderResource((*mOutputs[0])(), 0, SimpleFramework::GHIUAVParam());
+		commandContext->Dispatch((imageWidth + 31) / 32, (imageHeight + 31) / 32, 1);
+	}
+};
 
 #endif /* FILTER_H_*/
