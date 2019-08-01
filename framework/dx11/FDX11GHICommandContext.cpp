@@ -128,9 +128,7 @@ namespace SimpleFramework
         for (unsigned int i = 0; i < desc.ConstantBuffers; ++i)
         {
             unsigned int register_index = 0;
-            ID3D11ShaderReflectionConstantBuffer* cb = nullptr;
-            cb = reflection->GetConstantBufferByIndex(i);
-
+            ID3D11ShaderReflectionConstantBuffer* cb = reflection->GetConstantBufferByIndex(i);
             D3D11_SHADER_BUFFER_DESC cbDesc;
             cb->GetDesc(&cbDesc);
 
@@ -148,9 +146,7 @@ namespace SimpleFramework
                     register_index = ibdesc.BindPoint;
                     for (unsigned int j = 0; j < cbDesc.Variables; ++j)
                     {
-                        ID3D11ShaderReflectionVariable* variable = NULL;
-                        variable = cb->GetVariableByIndex(j);
-
+                        ID3D11ShaderReflectionVariable* variable = cb->GetVariableByIndex(j);
                         D3D11_SHADER_VARIABLE_DESC vdesc;
                         variable->GetDesc(&vdesc);
                         DLOG("\tvariable name:%s", vdesc.Name);

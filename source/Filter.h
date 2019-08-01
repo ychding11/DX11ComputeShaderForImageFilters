@@ -38,6 +38,7 @@
 #include <list>
 #include <vector>
 
+#include "imgui.h"
 #include "GHIResources.h"
 #include "GHICommandContext.h"
 
@@ -74,7 +75,8 @@ public:
 
 	}
 
-	virtual void UpdateUI() = 0;
+	virtual void Init(SimpleFramework::IGHIComputeCommandCotext *commandContext) = 0;
+	virtual void UpdateUI(SimpleFramework::IGHIComputeCommandCotext *commandContext) = 0;
 	virtual void Active(SimpleFramework::IGHIComputeCommandCotext *commandContext) = 0;
 
 };
@@ -84,14 +86,31 @@ class BilaterialFilter : public Filter
 	SimpleFramework::GHIShader* computeShader = nullptr;
 	SimpleFramework::GHIBuffer* constBuffer = nullptr;
 
-	BilaterialFilter(std::string filename)
+	BilaterialFilter(std::string filename = "..\effects\bilateral.hlsl")
 		: Filter(filename)
 	{
-
+        
 	}
-	virtual void UpdateUI() override
-	{
 
+    virtual void Init(SimpleFramework::IGHIComputeCommandCotext *commandContext) override
+    {
+        // Generate const buffer definition & create Const buffer
+
+    }
+
+	virtual void UpdateUI(SimpleFramework::IGHIComputeCommandCotext *commandContext) override
+	{
+        int windowWdith = 15;
+        ImGui::Begin("Bilaterial UI");
+        ImGui::Text("Parameter tweak."); // Display some text (you can use a format strings too)
+        ImGui::SameLine();
+        if (ImGui::SliderInt("Filter Window",&windowWdith, 3, 17))
+        {
+            windowWdith & 0x1 ? windowWdith : windowWdith += 1;
+        }
+        ImGui::End();
+
+        //Here update Constant buffer
 	}
 
 	virtual void Active(SimpleFramework::IGHIComputeCommandCotext *commandContext) override
