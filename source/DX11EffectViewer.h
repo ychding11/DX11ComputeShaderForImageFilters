@@ -4,6 +4,9 @@
 //#include <DirectXMath.h>
 
 #include "imgui.h"
+#include "ImNodes.h"
+#include "ImNodesEz.h"
+#include "Filter.h"
 #include "Utils.h"
 #include "App.h"
 
@@ -43,16 +46,6 @@ public:
 		window.RegisterMessageCallback(WindowMessageCallback,this);
 	}
 
-	virtual void Update(const SimpleFramework::Timer& timer) override
-	{
-		updateUI();
-	}
-	virtual void Render(const SimpleFramework::Timer& timer) override
-	{
-		Render();
-	}
-
-
 	virtual void Initialize() override
 	{
 		initialize();
@@ -61,7 +54,24 @@ public:
 		shaderCache->InitComputeCache(files);
 
 		shaderCache->EnumCache();
+		mFilter = new BilaterialFilter();
+		mFilter->Init(commandContext);
+		mFilter->addInput(mSrcTexture);
+		mFilter->addOutput(mDstTexture);
 	}
+
+	virtual void Update(const SimpleFramework::Timer& timer) override
+	{
+		updateUI();
+		mFilter->UpdateUI(commandContext);
+		mFilter->Active(commandContext);
+		commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src
+	}
+	virtual void Render(const SimpleFramework::Timer& timer) override
+	{
+		Render();
+	}
+
 
     virtual void Shutdown() override;
 
@@ -141,6 +151,43 @@ private:
 		ImGui::SameLine();
 		ImGui::Text("Application Average: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::End();
+
+		static ImNodes::CanvasState canvas;
+
+		if (ImGui::Begin("ImNodes", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
+		{
+			ImNodes::BeginCanvas(&canvas);
+
+			struct Node
+			{
+				ImVec2 pos{};
+				bool selected{};
+				ImNodes::Ez::SlotInfo inputs[1];
+				ImNodes::Ez::SlotInfo outputs[1];
+			};
+
+			static Node nodes[3] = {
+				{{50, 100}, false, {{"In", 1}}, {{"Out", 1}}},
+				{{250, 50}, false, {{"In", 1}}, {{"Out", 1}}},
+				{{250, 100}, false, {{"In", 1}}, {{"Out", 1}}},
+			};
+
+			for (Node& node : nodes)
+			{
+				if (ImNodes::Ez::BeginNode(&node, "Node Title", &node.pos, &node.selected))
+				{
+					ImNodes::Ez::InputSlots(node.inputs, 1);
+					ImNodes::Ez::OutputSlots(node.outputs, 1);
+					ImNodes::Ez::EndNode();
+				}
+			}
+
+			ImNodes::Connection(&nodes[1], "In", &nodes[0], "Out");
+			ImNodes::Connection(&nodes[2], "In", &nodes[1], "Out");
+
+			ImNodes::EndCanvas();
+		}
+		ImGui::End();
 	}
 
 	void	RenderMultiViewport();
@@ -159,4 +206,5 @@ private:
 	SimpleFramework::GHITexture *mSrcTexture = nullptr;
 	SimpleFramework::GHITexture *mDstTexture = nullptr;
 	SimpleFramework::GHITexture *mFinalTexture = nullptr;
+	Filter *mFilter = nullptr;
 };

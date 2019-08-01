@@ -133,6 +133,7 @@ namespace SimpleFramework
 
 	App* GlobalApp = nullptr;
 
+	extern ShaderCache *gShaderCache;
 
 	App::App(const wchar* appName, const wchar* iconResource) : 
 		window(NULL, appName, WS_OVERLAPPEDWINDOW, WS_EX_APPWINDOW, 1280, 720, iconResource, iconResource),
@@ -195,7 +196,10 @@ namespace SimpleFramework
 	{
 		DX11::Initialize(D3D_FEATURE_LEVEL_11_0);
 		commandContext = new FDX11IGHIComputeCommandCotext;
-		shaderCache = new ShaderCache(commandContext);
+		gShaderCache = new ShaderCache(commandContext);
+		//shaderCache = new ShaderCache(commandContext);
+		shaderCache = gShaderCache;
+
 		GHISamplerDesc desc;
 		linearSampler = (commandContext->CreateSampler(desc));
 		swapchain.Initialize(window);

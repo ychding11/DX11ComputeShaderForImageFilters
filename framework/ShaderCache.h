@@ -67,6 +67,17 @@ namespace SimpleFramework
 			return mShaders[name];
 		}
 
+		GHIShader* GetComputerShader(std::string file)
+		{
+
+			for (auto it = mComputeShaders.begin(); it != mComputeShaders.end(); ++it)
+			{
+			
+				if ((*it)->info.shaderfile == file)
+					return *it;
+			}
+			return nullptr;
+		}
 
     private:
         void buildCache();

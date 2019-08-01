@@ -48,6 +48,11 @@ public:
 	std::string name;
 	SimpleFramework::GHITexture *res;
 
+	FilterParam(std::string parname, SimpleFramework::GHITexture *tex)
+		: name(parname)
+		, res(tex)
+	{}
+
 	SimpleFramework::GHITexture * operator() ()
 	{
 		return res;
@@ -63,38 +68,57 @@ class OutputParam : public FilterParam
 
 class Filter
 {
-public:
+protected:
 	std::vector<FilterParam*> mInputs;
 	std::vector<FilterParam*> mOutputs;
+
+public:
 	std::string mShaderFile;
 	std::string mDescription = "an image filter";
 
 	Filter(std::string shaderFile)
-		: mShaderFile(mShaderFile)
+		: mShaderFile(shaderFile)
 	{
 
+	}
+
+	void addInput(SimpleFramework::GHITexture *res)
+	{
+		mInputs.push_back(new FilterParam("input image",res));
+	}
+	void addOutput(SimpleFramework::GHITexture *res)
+	{
+		mOutputs.push_back(new FilterParam("output image",res));
 	}
 
 	virtual void Init(SimpleFramework::IGHIComputeCommandCotext *commandContext) = 0;
 	virtual void UpdateUI(SimpleFramework::IGHIComputeCommandCotext *commandContext) = 0;
 	virtual void Active(SimpleFramework::IGHIComputeCommandCotext *commandContext) = 0;
-
 };
 
 class BilaterialFilter : public Filter
 {
 	SimpleFramework::GHIShader* computeShader = nullptr;
 	SimpleFramework::GHIBuffer* constBuffer = nullptr;
-
-	BilaterialFilter(std::string filename = "..\effects\bilateral.hlsl")
+public:
+	BilaterialFilter(std::string filename = "..\\effects\\test.hlsl")
 		: Filter(filename)
 	{
         
 	}
 
+	struct alignas(16) FilterSize
+	{
+		unsigned int wSize;
+	};
+
     virtual void Init(SimpleFramework::IGHIComputeCommandCotext *commandContext) override
     {
         // Generate const buffer definition & create Const buffer
+		FilterSize cb = { 15 };
+		constBuffer = commandContext->CreateConstBuffer(sizeof(cb), &cb);
+		commandContext->SetConstBuffer(constBuffer, 0);
+		computeShader = commandContext->GetComputeShader(mShaderFile);
 
     }
 
@@ -110,7 +134,10 @@ class BilaterialFilter : public Filter
         }
         ImGui::End();
 
-        //Here update Constant buffer
+		//Here update Constant buffer
+		FilterSize data;
+		data.wSize = windowWdith;
+		commandContext->UpdateBuffer(constBuffer, &data, sizeof(data));
 	}
 
 	virtual void Active(SimpleFramework::IGHIComputeCommandCotext *commandContext) override
@@ -118,8 +145,8 @@ class BilaterialFilter : public Filter
 		//INFO("active compute shader: [%s]", computeShader->info.shaderfile.c_str());
 		//SimpleFramework::GHIUAVParam uav;
 		int imageWidth = (*mInputs[0])()->width;
-		int imageHeight = (*mOutputs[0])()->height;
-		commandContext->SetConstBuffer(constBuffer, 0);
+		int imageHeight = (*mInputs[0])()->height;
+		commandContext->SetConstBuffer(constBuffer, 1);
 		commandContext->SetShader(computeShader);
 		commandContext->SetShaderResource((*mInputs[0])(), 0, SimpleFramework::GHISRVParam());
 		commandContext->SetShaderResource((*mOutputs[0])(), 0, SimpleFramework::GHIUAVParam());

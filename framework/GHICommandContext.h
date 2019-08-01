@@ -57,5 +57,8 @@ namespace SimpleFramework
         virtual GHIShader* CreateComputeShader(std::string file) = 0;
         virtual GHIShader* CreateShader(std::string file) = 0;
         virtual void SetShader(GHIShader* shader) = 0;
+
+        GHIShader* GetComputeShader(std::string file);
 	};
+
 }

@@ -81,7 +81,10 @@ namespace SimpleFramework
     #endif
 
         LPCSTR pTarget = (DX11::Device()->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0) ? "cs_5_0" : "cs_4_0";
-	    DXCall(D3DCompileFromFile(filename, NULL, NULL, entrypoint, pTarget, dwShaderFlags, NULL, pBlob, pErrorBlob));
+		if (!SUCCEEDED(D3DCompileFromFile(filename, NULL, NULL, entrypoint, pTarget, dwShaderFlags, NULL, pBlob, pErrorBlob)))
+		{
+			DLOG("Shader Compile Error: %s", (char*)((*pErrorBlob)->GetBufferPointer()) );
+		}
 	    DXCall(DX11::Device()->CreateComputeShader((*pBlob)->GetBufferPointer(), (*pBlob)->GetBufferSize(), NULL, computeShader));
 	    return true;
     }
@@ -202,7 +205,7 @@ namespace SimpleFramework
         ID3D11ComputeShader *csPtr = nullptr;
         ID3DBlob* pErrorBlob = nullptr;
         ID3DBlob* pBlob = nullptr;
-        BuildComputeShader(wfile.c_str(), entrypoint.c_str(), &csPtr, &pBlob, &pErrorBlob);
+        if (!BuildComputeShader(wfile.c_str(), entrypoint.c_str(), &csPtr, &pBlob, &pErrorBlob)) return nullptr;
         GHIShader *shader = new FDX11GHIComputeShader(csPtr);
 		shader->info.shaderfile = file;
 		shader->info.entrypoint = entrypoint;
