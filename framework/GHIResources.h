@@ -18,6 +18,12 @@ typedef uint8_t uint8;
 
 namespace SimpleFramework
 {
+    enum VertexDataType 
+    {
+        PER_VERTEX_DATA = 0,
+        PER_INSTANCE_DATA = 1
+    };
+
 	enum PrimitiveTopology
 	{
 		TOPOLOGY_UNDEFINED = 0,

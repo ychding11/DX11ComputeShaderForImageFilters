@@ -188,4 +188,59 @@ namespace SimpleFramework
         //void AddResourceTableEntriesRecursive(const char* UniformBufferName, const char* Prefix, uint16& ResourceIndex, TMap<FString, FResourceTableEntry>& ResourceTableMap) const;
     };
 
+    struct IStructReflection
+    {
+        virtual void Start(const char* StructName) = 0;
+        virtual void Add(const char* Type, const char* Name) = 0;
+        virtual void End() = 0;
+    };
+
+    template <class T> const char* GetHLSL();
+
+    template <> inline const char* GetHLSL<float>() { return "float"; }
+    template <> inline const char* GetHLSL<uint32_t>() { return "uint"; }
+
+    #define START_STRUCT(cbname)\
+     struct cbname { static void Reflection(IStructReflection& r)\
+     { r.Start(#cbname);
+
+    #define ENTRY(type, name)\
+     _Refl_##name(r); }\
+     public:\
+     type name;\
+     private:\
+     static void _Refl_##name(IStructReflection& r)\
+     { r.Add(GetHLSL<type>(),#name);
+
+    #define END_STRUCT() r.End(); } };
+
+    struct SStructReflection : public IStructReflection
+    {
+        FILE* out;
+        SStructReflection(FILE* InOut) : out(InOut) {}
+
+        virtual void Start(const char* StructName)
+        {
+            fprintf(out, "\r\ncbuffer %s\r\n{\r\n", StructName);
+        }
+        virtual void Add(const char* Type, const char* Name)
+        {
+            fprintf(out, "\t%s %s;\r\n", Type, Name);
+        }
+        virtual void End()
+        {
+            fprintf(out, "};\r\n");
+        }
+    };
+    void GenerateAutoCommon()
+    {
+        FILE* out = 0;
+        if (_wfopen_s(&out, L"Shaders\\AutoCommon.hlsl", L"wb") == 0)
+        {
+            SStructReflection Refl(out);
+
+            fclose(out);
+        }
+    }
+
 }
