@@ -30,6 +30,7 @@ namespace GHI
             width = height = textureSizeInBytes = 0;
             aspect = 0.;
             WriteLog("Texutre format != DXGI_FORMAT_R8G8B8A8_UNORM");
+			return;
         }
 		width = desc.Width;
 		height = desc.Height;

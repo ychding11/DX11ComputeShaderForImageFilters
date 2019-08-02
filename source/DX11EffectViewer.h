@@ -35,13 +35,13 @@ class DX11EffectViewer : public GHI::App
 public:
     //DisplayMode mDisplayMode = DisplayMode::ONLY_SOURCE;
     DisplayMode mDisplayMode = DisplayMode::SOURCE_RESULT;
-	std::string m_imageName;
+	std::string m_defaultImage;
 
 	DX11EffectViewer() 
 		: App(L"Sample")
 		, m_imageWidth(0)
 		, m_imageHeight(0)
-        , m_imageName ("../images/test.png")
+        , m_defaultImage("../images/test.png")
 	{
 		window.RegisterMessageCallback(WindowMessageCallback,this);
 	}
@@ -91,15 +91,14 @@ public:
 
     void NextImage()
     {
-        mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
-		m_imageName = (*mCurrentImage);
-		INFO("Switch to image [%s]\n", m_imageName.c_str());
+        mCurrentImage+1 == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
+		DEBUG("Switch to image [%s]\n", (*mCurrentImage).c_str());
 
-		while (!loadImage())
+		while (!loadImage((*mCurrentImage)))
 		{
-			mCurrentImage == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
-			m_imageName = (*mCurrentImage);
-			INFO("Switch to image [%s]\n", m_imageName.c_str());
+			DEBUG("image [%s] load failed.\n", (*mCurrentImage).c_str());
+			mCurrentImage+1 == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
+			DEBUG("Switch to image [%s]\n", (*mCurrentImage).c_str());
 		}
 
 	    mDstTexture = commandContext->CreateTextureByAnother(mSrcTexture);
@@ -135,7 +134,7 @@ private:
     void    UpdateCSConstBuffer();
 
 	bool InitGraphics();
-	bool loadImage();
+	bool loadImage(std::string imagefile);
 	bool CreateCSConstBuffer();
 
 	void updateUI()
