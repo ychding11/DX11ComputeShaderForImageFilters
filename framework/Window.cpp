@@ -11,7 +11,7 @@
 
 #include "Window.h"
 
-namespace SimpleFramework
+namespace GHI
 {
 
 Window::Window(	HINSTANCE hinstance,

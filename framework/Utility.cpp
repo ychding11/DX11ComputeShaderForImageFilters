@@ -9,7 +9,7 @@
 #include "Exceptions.h"
 #include "App.h"
 
-namespace SimpleFramework
+namespace GHI
 {
 
     void WriteLog(const wchar* format, ...)

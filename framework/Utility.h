@@ -12,7 +12,7 @@
 #include "Exceptions.h"
 #include "DXassert.h"
 
-namespace SimpleFramework
+namespace GHI
 {
 
     inline std::wstring StrToWstr(const char* ansiString)

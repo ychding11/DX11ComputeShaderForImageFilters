@@ -29,7 +29,7 @@ enum DisplayMode
 
 #define SHADERS_REPO "..\\effects"
 
-class DX11EffectViewer : public SimpleFramework::App
+class DX11EffectViewer : public GHI::App
 {
 
 public:
@@ -60,14 +60,14 @@ public:
 		mFilter->addOutput(mDstTexture);
 	}
 
-	virtual void Update(const SimpleFramework::Timer& timer) override
+	virtual void Update(const GHI::Timer& timer) override
 	{
-		updateUI();
+		this->updateUI();
 		mFilter->UpdateUI(commandContext);
 		mFilter->Active(commandContext);
 		commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src
 	}
-	virtual void Render(const SimpleFramework::Timer& timer) override
+	virtual void Render(const GHI::Timer& timer) override
 	{
 		Render();
 	}
@@ -131,7 +131,7 @@ private:
     std::vector<std::string>::iterator mCurrentImage;
 
     void    BuildImageList(const std::string &dir);
-    void    ActiveEffect(SimpleFramework::GHIShader* computeShader);
+    void    ActiveEffect(GHI::GHIShader* computeShader);
     void    UpdateCSConstBuffer();
 
 	bool InitGraphics();
@@ -202,9 +202,9 @@ private:
 	float m_Aspect = 1.f;
 	UINT m_textureSizeInBytes;
 
-	SimpleFramework::GHIBuffer *mConstBuffer = nullptr;
-	SimpleFramework::GHITexture *mSrcTexture = nullptr;
-	SimpleFramework::GHITexture *mDstTexture = nullptr;
-	SimpleFramework::GHITexture *mFinalTexture = nullptr;
+	GHI::GHIBuffer *mConstBuffer = nullptr;
+	GHI::GHITexture *mSrcTexture = nullptr;
+	GHI::GHITexture *mDstTexture = nullptr;
+	GHI::GHITexture *mFinalTexture = nullptr;
 	Filter *mFilter = nullptr;
 };

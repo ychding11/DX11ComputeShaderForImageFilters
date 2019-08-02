@@ -13,7 +13,7 @@
 #include "Exceptions.h" 
 #include "DX11.h" 
 
-namespace SimpleFramework
+namespace GHI
 {
 	
 	inline D3D11_SAMPLER_DESC  DX11SamplerCast(const GHISamplerDesc  &desc)

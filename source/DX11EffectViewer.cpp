@@ -38,16 +38,16 @@ int	DX11EffectViewer::initialize()
 	return 0;
 }
 
-void  DX11EffectViewer::ActiveEffect(SimpleFramework::GHIShader* computeShader)
+void  DX11EffectViewer::ActiveEffect(GHI::GHIShader* computeShader)
 {
     if (computeShader == NULL) return;
 
     INFO("active compute shader: [%s]", computeShader->info.shaderfile.c_str());
-	//SimpleFramework::GHIUAVParam uav;
+	//GHI::GHIUAVParam uav;
     commandContext->SetShader(computeShader);
-	commandContext->SetShaderResource(mDstTexture, 0, SimpleFramework::GHIUAVParam());
-	commandContext->SetShaderResource(mSrcTexture, 0, SimpleFramework::GHISRVParam());
-    commandContext->SetSampler(linearSampler, 0, SimpleFramework::EShaderStage::CS);
+	commandContext->SetShaderResource(mDstTexture, 0, GHI::GHIUAVParam());
+	commandContext->SetShaderResource(mSrcTexture, 0, GHI::GHISRVParam());
+    commandContext->SetSampler(linearSampler, 0, GHI::EShaderStage::CS);
 	commandContext->SetConstBuffer(mConstBuffer, 0);
 	commandContext->Dispatch( (m_imageWidth + 31) / 32, (m_imageHeight + 31) / 32, 1 );
     commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src

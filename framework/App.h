@@ -10,7 +10,7 @@
 #include "GHICommandContext.h"
 #include "ShaderCache.h"
 
-namespace SimpleFramework
+namespace GHI
 {
 
 class Window;

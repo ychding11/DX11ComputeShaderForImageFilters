@@ -11,7 +11,7 @@
 #include "ShaderCache.h" 
 #include "Utility.h" 
 
-namespace SimpleFramework
+namespace GHI
 {
 
 	ShaderCache *gShaderCache = nullptr;

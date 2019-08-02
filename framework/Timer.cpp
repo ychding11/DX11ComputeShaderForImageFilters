@@ -14,7 +14,7 @@
 #include "DXassert.h"
 #include "Exceptions.h"
 
-namespace SimpleFramework
+namespace GHI
 {
 
 Timer::Timer()

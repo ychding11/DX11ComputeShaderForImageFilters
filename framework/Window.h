@@ -13,7 +13,7 @@
 
 #include "Exceptions.h"
 
-namespace SimpleFramework
+namespace GHI
 {
 
 class Window

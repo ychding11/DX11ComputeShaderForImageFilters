@@ -15,7 +15,7 @@
 
 using namespace DirectX;
 
-namespace SimpleFramework
+namespace GHI
 {
 
 	void FDX11GHITexture::LoadFromFile(std::string filename)

@@ -10,7 +10,7 @@
 
 #include "PCH.h"
 
-namespace SimpleFramework
+namespace GHI
 {
 
 class SwapChain

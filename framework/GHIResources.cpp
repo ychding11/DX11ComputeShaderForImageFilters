@@ -9,7 +9,7 @@
 
 #include "GHIResources.h" 
 
-namespace SimpleFramework
+namespace GHI
 {
     std::list<GHIResource*> GHIResource::list;
 

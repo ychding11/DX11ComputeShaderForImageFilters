@@ -14,7 +14,7 @@
 
 using std::wstring;
 
-namespace SimpleFramework
+namespace GHI
 {
 
 SwapChain::SwapChain()

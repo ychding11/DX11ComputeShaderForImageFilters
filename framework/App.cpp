@@ -17,7 +17,7 @@
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
 
-namespace SimpleFramework
+namespace GHI
 {
 	namespace imgui
 	{
@@ -183,7 +183,7 @@ namespace SimpleFramework
 			Shutdown();
 			Shutdown_private();
 		}
-		catch(SimpleFramework::Exception exception)
+		catch(GHI::Exception exception)
 		{
 			exception.ShowErrorMessage();
 			return -1;

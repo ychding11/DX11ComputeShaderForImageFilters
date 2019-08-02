@@ -16,7 +16,7 @@ typedef uint32_t uint32;
 typedef uint16_t uint16;
 typedef uint8_t uint8;
 
-namespace SimpleFramework
+namespace GHI
 {
     /** The base type of a value in a uniform buffer. */
     enum EUniformBufferBaseType
@@ -232,7 +232,7 @@ namespace SimpleFramework
             fprintf(out, "};\r\n");
         }
     };
-    void GenerateAutoCommon()
+    void GenerateUniformBuffer()
     {
         FILE* out = 0;
         if (_wfopen_s(&out, L"Shaders\\AutoCommon.hlsl", L"wb") == 0)

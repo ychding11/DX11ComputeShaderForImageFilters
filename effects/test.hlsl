@@ -17,7 +17,7 @@ cbuffer CB : register( b0 )
 
 cbuffer windowSize : register( b1 )
 {
-    unsigned int wSize;
+    unsigned int wSize = 5;
 };
 
 Texture2D<float4>   InputMap  : register(t0);
@@ -25,7 +25,7 @@ RWTexture2D<float4> OutputMap : register(u0);
 
 #define SIGMA 10.0
 #define BSIGMA 0.1
-#define MSIZE 15
+#define MSIZE 19
 
 
 //--------------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 {
     uint3 uv = dispatchThreadID.xyz;
 	float3 c = InputMap.Load(uv).rgb; // current pixel
-	const int kSize = (MSIZE-1) / 2;
+	const int kSize = (wSize-1) / 2;
 	float kernel[MSIZE];
 	float3 final_colour;
 		

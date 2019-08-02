@@ -10,7 +10,7 @@
 #include "GHIResources.h" 
 #include "GHIUniformBuffer.h" 
 
-namespace SimpleFramework
+namespace GHI
 {
     std::list<FUniformBufferStruct*>& FUniformBufferStruct::GetStructList()
     {

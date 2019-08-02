@@ -10,7 +10,7 @@
 #include "ShaderCache.h"
 #include "Utility.h"
 
-namespace SimpleFramework
+namespace GHI
 {
 
 	void ShaderCache::InitComputeCache(const std::vector<std::string> &files)

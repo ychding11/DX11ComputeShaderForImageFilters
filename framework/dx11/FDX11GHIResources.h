@@ -13,7 +13,7 @@
 #include "DXassert.h" 
 #include "Utility.h" 
 
-namespace SimpleFramework
+namespace GHI
 {
     // Safe Release Function
     template <class T>

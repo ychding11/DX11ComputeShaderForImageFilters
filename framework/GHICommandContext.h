@@ -9,7 +9,7 @@
 
 #include "GHIResources.h" 
 
-namespace SimpleFramework
+namespace GHI
 {
     typedef float               FLOAT;
 

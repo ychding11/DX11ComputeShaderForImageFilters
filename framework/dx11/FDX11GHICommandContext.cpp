@@ -11,7 +11,7 @@
 #include "FDX11GHICommandContext.h" 
 #include "FDX11GHIResources.h" 
 
-namespace SimpleFramework
+namespace GHI
 {
 	void FDX11IGHIComputeCommandCotext::setPrimitiveTopology(PrimitiveTopology topology)
 	{

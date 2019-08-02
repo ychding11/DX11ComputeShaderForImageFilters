@@ -20,7 +20,7 @@
     #define UseGPUValidation_ 0
 #endif
 
-namespace SimpleFramework
+namespace GHI
 {
 
 namespace DX11

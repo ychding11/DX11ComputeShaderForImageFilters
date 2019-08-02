@@ -12,7 +12,7 @@
 #include "DXErr.h"
 #include "DXassert.h"
 
-namespace SimpleFramework
+namespace GHI
 {
 
 // Error string functions
