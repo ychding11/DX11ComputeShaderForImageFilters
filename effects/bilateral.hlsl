@@ -4,17 +4,6 @@
 // https://www.shadertoy.com/view/4dfGDH
 //--------------------------------------------------------------------------------------
 
-SamplerState samLinear: register( s0 );
-
-//--------------------------------------------------------------------------------------
-// Constant Buffers
-//--------------------------------------------------------------------------------------
-cbuffer CB : register( b0 )
-{
-    unsigned int g_iWidth;
-    unsigned int g_iHeight;
-};
-
 Texture2D<float4>   InputMap  : register(t0);
 RWTexture2D<float4> OutputMap : register(u0);
 

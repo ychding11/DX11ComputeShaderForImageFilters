@@ -79,6 +79,11 @@ namespace GHI
 			return nullptr;
 		}
 
+		void AddComputeShader(GHIShader* shader)
+		{
+			mComputeShaders.push_back(shader);
+		}
+
     private:
         void buildCache();
 

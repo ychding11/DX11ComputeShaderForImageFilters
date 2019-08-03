@@ -3,6 +3,7 @@
 // code migration. https://msdn.microsoft.com/en-us/library/windows/desktop/ee418730(v=vs.85).aspx
 //#include <DirectXMath.h>
 
+#include <vector> 
 #include "imgui.h"
 #include "ImNodes.h"
 #include "ImNodesEz.h"
@@ -51,27 +52,32 @@ public:
 		initialize();
 		std::vector<std::string> files;
 		getFiles(SHADERS_REPO, files);
-		shaderCache->InitComputeCache(files);
 
-		shaderCache->EnumCache();
-		mFilter = new BilaterialFilter();
-		mFilter->Init(commandContext);
-		mFilter->addInput(mSrcTexture);
-		mFilter->addOutput(mDstTexture);
+		Filter *filter = nullptr;
+		for (auto it = files.begin(); it != files.end() && (*it) != "..\\effects\\test.hlsl"; ++it)
+		{
+			filter = new Filter(*it);
+			filter->Init(commandContext);
+			filter->setSampler(linearSampler);
+			mFilters.push_back(filter);
+		}
+		filter = new BilaterialFilter();
+		filter->Init(commandContext);
+		filter->setSampler(linearSampler);
+		
+		mFilters.push_back(filter);
+		mCurFilter = mFilters.begin();
 	}
 
 	virtual void Update(const GHI::Timer& timer) override
 	{
 		this->updateUI();
-		mFilter->UpdateUI(commandContext);
-		mFilter->Active(commandContext);
-		commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src
+		(*mCurFilter)->UpdateUI(commandContext);
 	}
 	virtual void Render(const GHI::Timer& timer) override
 	{
 		Render();
 	}
-
 
     virtual void Shutdown() override;
 
@@ -79,14 +85,24 @@ public:
 	
     void NextEffect()
     {
-        ActiveEffect(shaderCache->Current());
-        shaderCache->Next();
+       // ActiveEffect(shaderCache->Current());
+       // shaderCache->Next();
+		(*mCurFilter)->addInput(mSrcTexture);
+		(*mCurFilter)->addOutput(mDstTexture);
+		(*mCurFilter)->Active(commandContext);
+		commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src
+		mCurFilter+1 == mFilters.end() ? mCurFilter = mFilters.begin() : mCurFilter++;
     }
 
     void PrevEffect()
     {
-        ActiveEffect(shaderCache->Current());
-        shaderCache->Prev();
+        //ActiveEffect(shaderCache->Current());
+        //shaderCache->Prev();
+		(*mCurFilter)->addInput(mSrcTexture);
+		(*mCurFilter)->addOutput(mDstTexture);
+		(*mCurFilter)->Active(commandContext);
+		commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src
+		mCurFilter == mFilters.begin() ? mCurFilter = mFilters.end()-1 : mCurFilter--;
     }
 
     void NextImage()
@@ -100,11 +116,16 @@ public:
 			mCurrentImage+1 == mImageList.end() ? mCurrentImage = mImageList.begin() : mCurrentImage++;
 			DEBUG("Switch to image [%s]\n", (*mCurrentImage).c_str());
 		}
-
 	    mDstTexture = commandContext->CreateTextureByAnother(mSrcTexture);
 	    mFinalTexture = commandContext->CreateTextureByAnother(mSrcTexture);
-        UpdateCSConstBuffer();
-        ActiveEffect(shaderCache->Current());
+
+        //UpdateCSConstBuffer();
+        //ActiveEffect(shaderCache->Current());
+
+		(*mCurFilter)->addInput(mSrcTexture);
+		(*mCurFilter)->addOutput(mDstTexture);
+		(*mCurFilter)->Active(commandContext);
+		commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src
     }
 
     void PrevImage()
@@ -206,4 +227,6 @@ private:
 	GHI::GHITexture *mDstTexture = nullptr;
 	GHI::GHITexture *mFinalTexture = nullptr;
 	Filter *mFilter = nullptr;
+	std::vector<Filter*> mFilters;
+	std::vector<Filter*>::iterator mCurFilter;
 };

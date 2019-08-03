@@ -22,6 +22,12 @@ namespace GHI
         {
             ELOG("shader file extension is NOT qualified.");
         }
-		return gShaderCache ? gShaderCache->GetComputerShader(file) : nullptr;
+		GHIShader *ret = gShaderCache ? gShaderCache->GetComputerShader(file) : nullptr;
+		if (ret == nullptr)
+		{
+			ret = this->CreateComputeShader(file);
+			gShaderCache->AddComputeShader(ret);
+		}
+		return ret;
 	}
 }

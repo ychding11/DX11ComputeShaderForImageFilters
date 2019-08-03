@@ -72,6 +72,8 @@ class Filter
 protected:
 	std::vector<FilterParam*> mInputs;
 	std::vector<FilterParam*> mOutputs;
+	GHI::GHISampler *sampler = nullptr;
+	GHI::GHIShader* computeShader = nullptr;
 
 public:
 	std::string mShaderFile;
@@ -83,6 +85,10 @@ public:
 
 	}
 
+	void setSampler(GHI::GHISampler *samp)
+	{
+		sampler = samp;
+	}
 	void addInput(GHI::GHITexture *res)
 	{
 		mInputs.push_back(new FilterParam("input image",res));
@@ -92,14 +98,31 @@ public:
 		mOutputs.push_back(new FilterParam("output image",res));
 	}
 
-	virtual void Init(GHI::IGHIComputeCommandCotext *commandContext) = 0;
-	virtual void UpdateUI(GHI::IGHIComputeCommandCotext *commandContext) = 0;
-	virtual void Active(GHI::IGHIComputeCommandCotext *commandContext) = 0;
+	virtual void Init(GHI::IGHIComputeCommandCotext *commandContext)
+	{
+		computeShader = commandContext->GetComputeShader(mShaderFile);
+	}
+
+	virtual void UpdateUI(GHI::IGHIComputeCommandCotext *commandContext)
+	{
+
+	}
+	virtual void Active(GHI::IGHIComputeCommandCotext *commandContext)
+	{
+		DEBUG("active compute shader: [%s]", computeShader->info.shaderfile.c_str());
+		int imageWidth = (*mInputs[0])()->width;
+		int imageHeight = (*mInputs[0])()->height;
+
+		commandContext->SetSampler(sampler, 0, GHI::EShaderStage::CS);
+		commandContext->SetShader(computeShader);
+		commandContext->SetShaderResource((*mInputs[0])(), 0, GHI::GHISRVParam());
+		commandContext->SetShaderResource((*mOutputs[0])(), 0, GHI::GHIUAVParam());
+		commandContext->Dispatch((imageWidth + 31) / 32, (imageHeight + 31) / 32, 1);
+	}
 };
 
 class BilaterialFilter : public Filter
 {
-	GHI::GHIShader* computeShader = nullptr;
 	GHI::GHIBuffer* constBuffer = nullptr;
     int windowWdith = 5;
 public:
@@ -121,7 +144,6 @@ public:
 		constBuffer = commandContext->CreateConstBuffer(sizeof(cb), &cb);
 		commandContext->SetConstBuffer(constBuffer, 0);
 		computeShader = commandContext->GetComputeShader(mShaderFile);
-
     }
 
 	virtual void UpdateUI(GHI::IGHIComputeCommandCotext *commandContext) override
@@ -135,19 +157,18 @@ public:
 			DEBUG("Filter Size:%d", windowWdith);
         }
         ImGui::End();
-
-		//Here update Constant buffer
-		FilterSize data;
-		data.wSize = windowWdith;
-		commandContext->UpdateBuffer(constBuffer, &data, sizeof(data));
 	}
 
 	virtual void Active(GHI::IGHIComputeCommandCotext *commandContext) override
 	{
-		//INFO("active compute shader: [%s]", computeShader->info.shaderfile.c_str());
-		//GHI::GHIUAVParam uav;
+		DEBUG("active compute shader: [%s]", computeShader->info.shaderfile.c_str());
+		FilterSize data;
+		data.wSize = windowWdith;
+		commandContext->UpdateBuffer(constBuffer, &data, sizeof(data));
+
 		int imageWidth = (*mInputs[0])()->width;
 		int imageHeight = (*mInputs[0])()->height;
+		commandContext->SetSampler(sampler, 0, GHI::EShaderStage::CS);
 		commandContext->SetConstBuffer(constBuffer, 1);
 		commandContext->SetShader(computeShader);
 		commandContext->SetShaderResource((*mInputs[0])(), 0, GHI::GHISRVParam());
