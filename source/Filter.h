@@ -93,11 +93,11 @@ public:
 	}
 	void addInput(GHI::GHITexture *res)
 	{
-		mInputs.push_back(new FilterParam("input image",res));
+		mInputs.size() <=0 ? mInputs.push_back(new FilterParam("input image",res)) : mInputs[0] = new FilterParam("input image",res);
 	}
 	void addOutput(GHI::GHITexture *res)
 	{
-		mOutputs.push_back(new FilterParam("output image",res));
+		mOutputs.size() <= 0 ? mOutputs.push_back(new FilterParam("output image",res)) : mOutputs[0] = new FilterParam("output image",res);
 	}
 
 	virtual void Init(GHI::IGHIComputeCommandCotext *commandContext)
