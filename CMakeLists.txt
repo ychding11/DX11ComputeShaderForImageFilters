@@ -18,11 +18,27 @@ file(GLOB EXT_FILES
 	${CMAKE_SOURCE_DIR}/thirdparty/imgui/*.cpp
 )
 
+file(GLOB FRAMEWORK_FILES
+    ${CMAKE_SOURCE_DIR}/framework/*.h
+	${CMAKE_SOURCE_DIR}/framework/*.cpp
+	${CMAKE_SOURCE_DIR}/framework/dx11/*.h
+	${CMAKE_SOURCE_DIR}/framework/dx11/*.cpp
+)
+
 include_directories(
   ${CMAKE_SOURCE_DIR}/Source/
   ${CMAKE_SOURCE_DIR}/thirdparty/
   ${CMAKE_SOURCE_DIR}/thirdparty/imgui/
+  ${CMAKE_SOURCE_DIR}/framework/
+  ${CMAKE_SOURCE_DIR}/framework/dx11
 )
+
+## Output include directory for debug
+#######################################################################################
+get_property(includes DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${includes})
+    message(STATUS "include dir='${dir}'")
+endforeach()
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/")
 find_package(DirectX)
@@ -63,6 +79,20 @@ foreach(f ${EXT_FILES})
     # then alter it (not compulsory)
     file(RELATIVE_PATH SRCGR ${CMAKE_SOURCE_DIR} ${f})
     set(SRCGR "External/${SRCGR}")
+
+    # Extract the folder, ie remove the filename part
+    string(REGEX REPLACE "(.*)(/[^/]*)$" "\\1" SRCGR ${SRCGR})
+
+    # Source_group expects \\ (double antislash), not / (slash)
+    string(REPLACE / \\ SRCGR ${SRCGR})
+    source_group("${SRCGR}" FILES ${f})
+endforeach()
+
+foreach(f ${FRAMEWORK_FILES})
+    # Get the path of the file relative to ${DIRECTORY},
+    # then alter it (not compulsory)
+    file(RELATIVE_PATH SRCGR ${CMAKE_SOURCE_DIR} ${f})
+    set(SRCGR "Framework/${SRCGR}")
 
     # Extract the folder, ie remove the filename part
     string(REGEX REPLACE "(.*)(/[^/]*)$" "\\1" SRCGR ${SRCGR})
@@ -114,7 +144,7 @@ SET(LINK_OPTIONS " ")
 
 SET(EXE_NAME "ImageEffects")
 
-ADD_EXECUTABLE(${EXE_NAME} ${SRC_FILES} ${EXT_FILES})
+ADD_EXECUTABLE(${EXE_NAME} ${SRC_FILES} ${FRAMEWORK_FILES} ${EXT_FILES})
 TARGET_LINK_LIBRARIES(${EXE_NAME} ${DirectX_D3D11_LIBRARY} ${DirectX_D3D11_COMPILER})
 
 

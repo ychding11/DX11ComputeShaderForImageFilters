@@ -1,11 +1,4 @@
-//--------------------------------------------------------------------------------------
-// Constant Buffers
-//--------------------------------------------------------------------------------------
-cbuffer CB : register( b0 )
-{
-    unsigned int g_iWidth;
-    unsigned int g_iHeight;
-};
+
 
 float threashold = 2.90;
 Texture2D<float4>   InputMap  : register(t0);
@@ -24,8 +17,8 @@ void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 	{
 		for( float alpha = 0; alpha < 360; alpha += 1 )
 		{
-			int X = clamp(x + cos(alpha) * 5, 0, g_iWidth);
-            int Y = clamp(y + sin(alpha) * 5, 0, g_iHeight);
+			int X = clamp(x + cos(alpha) * 5, 0, 10);
+            int Y = clamp(y + sin(alpha) * 5, 0, 10);
             OutputMap[int2(X, Y)] = float4(1.0, 0, 0, 1.0);
 		}
 	}

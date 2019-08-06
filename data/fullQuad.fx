@@ -1,12 +1,9 @@
-Texture2D srcTexture  : register( t0 );
-Texture2D destTexture : register( t1 );
-SamplerState samLinear: register( s0 );
+// VS VS
+// PS PS
 
-struct VS_INPUT
-{
-    float4 Pos : POSITION;
-    float2 Tex : TEXCOORD0;
-};
+
+Texture2D inputTex  : register( t0 );
+SamplerState samLinear: register( s0 );
 
 struct PS_INPUT
 {
@@ -17,20 +14,29 @@ struct PS_INPUT
 //--------------------------------------------------------------------------------------
 // Vertex Shader
 //--------------------------------------------------------------------------------------
-PS_INPUT VS( VS_INPUT input )
+PS_INPUT VS( in uint VertexIdx : SV_VertexID)
 {
 	PS_INPUT output;
-    output.Pos = input.Pos;
-    output.Tex = input.Tex;
+    
+	if(VertexIdx == 0)
+    {
+        output.Pos = float4(-1.0f, 1.0f, 1.0f, 1.0f);
+        output.Tex = float2(0.0f, 0.0f);
+    }
+    else if(VertexIdx == 1)
+    {
+        output.Pos = float4(3.0f, 1.0f, 1.0f, 1.0f);
+        output.Tex = float2(2.0f, 0.0f);
+    }
+    else
+    {
+        output.Pos = float4(-1.0f, -3.0f, 1.0f, 1.0f);
+        output.Tex = float2(0.0f, 2.0f);
+    }
     return output;
 }
 
 float4 PS( PS_INPUT input) : SV_Target
 {
-    return srcTexture.Sample( samLinear, input.Tex );
-}
-
-float4 psSampleResultImage( PS_INPUT input) : SV_Target
-{
-	return destTexture.Sample( samLinear, input.Tex );
+    return inputTex.Sample( samLinear, input.Tex );
 }

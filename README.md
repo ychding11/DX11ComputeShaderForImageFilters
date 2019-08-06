@@ -2,24 +2,17 @@
 
 9 Jan 2017 By ychding
 
-It is used as an image effect testing framework, For example filters.
+It is an image filter viewing & testing framework.
 
 ## Overview
-- ImGUI.
-- HLSL filters.
-- DX11 Compute Shader.
-- Build By CMake.
+- ImGUI based UI.
+- GHI(Graphic Hardware Interface) framework
+- Node based data flow representation
+- CMake build system.
 
-## Demo
+## Screensnap
 
-Wating for update...
-
-![Lens Circle effect](./demo/lensCircle.png)
-
-![swirl effect](./demo/swirl.png)
-
-![fish eye effect](./demo/fishEye.png)
-
+![screen](./demo/screen.png)
 
 ## Controls
 
@@ -32,7 +25,7 @@ Wating for update...
   - only display result image
   - display both source and result image
 
-- All images put in *image* folder are looped.
-- All effects put in *effect* folder are looped.
+- All images put in *image* folder.
+
  
 
