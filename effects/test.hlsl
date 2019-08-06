@@ -3,19 +3,10 @@
 // Adapted From: 
 // https://www.shadertoy.com/view/4dfGDH
 //--------------------------------------------------------------------------------------
-
-SamplerState samLinear: register( s0 );
-
 //--------------------------------------------------------------------------------------
 // Constant Buffers
 //--------------------------------------------------------------------------------------
-cbuffer CB : register( b0 )
-{
-    unsigned int g_iWidth;
-    unsigned int g_iHeight;
-};
-
-cbuffer windowSize : register( b1 )
+cbuffer windowSize : register( b0 )
 {
     unsigned int wSize = 5;
 };

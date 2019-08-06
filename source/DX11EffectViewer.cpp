@@ -18,91 +18,48 @@ void SafeRelease(T **ppT)
 	}
 }
 
-void   DX11EffectViewer::BuildImageList(const std::string &dir)
-{
-    getFiles(dir, mImageList);
-    mCurrentImage = mImageList.begin();
-}
-
 int	DX11EffectViewer::initialize()
 {
 	loadImage(m_defaultImage); //< Load source image as texture and upate image size.
 	mFinalTexture = commandContext->CreateTextureByAnother(mSrcTexture);
 	mDstTexture = commandContext->CreateTextureByAnother(mSrcTexture);
 
-	CreateCSConstBuffer();
-
-    BuildImageList(IMAGE_REPO);
+    getFiles(IMAGE_REPO , mImageList);
+    mCurrentImage = mImageList.begin();
 
 	INFO("DX11EffectViewer Initialized, default image:%s\n", m_defaultImage.c_str());
 	return 0;
 }
 
-void  DX11EffectViewer::ActiveEffect(GHI::GHIShader* computeShader)
-{
-    if (computeShader == NULL) return;
-
-    INFO("active compute shader: [%s]", computeShader->info.shaderfile.c_str());
-	//GHI::GHIUAVParam uav;
-    commandContext->SetShader(computeShader);
-	commandContext->SetShaderResource(mDstTexture, 0, GHI::GHIUAVParam());
-	commandContext->SetShaderResource(mSrcTexture, 0, GHI::GHISRVParam());
-    commandContext->SetSampler(linearSampler, 0, GHI::EShaderStage::CS);
-	commandContext->SetConstBuffer(mConstBuffer, 0);
-	commandContext->Dispatch( (m_imageWidth + 31) / 32, (m_imageHeight + 31) / 32, 1 );
-    commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src
-}
-
-void DX11EffectViewer::Render() 
+void DX11EffectViewer::render() 
 {
     if (mDisplayMode == DisplayMode::ONLY_RESULT)
     {
-        RenderResultImage();
+        DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f}, mFinalTexture);
     }
     else if (mDisplayMode == DisplayMode::ONLY_SOURCE)
     {
-        RenderSourceImage();
+        DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f}, mSrcTexture);
     }
     else if (mDisplayMode == DisplayMode::SOURCE_RESULT)
     {
-        RenderMultiViewport();
+	    float width, height;
+	    width = float(SwapchainWidth() - 2) / 2.f;
+	    height = 1.f / m_Aspect * width;
+
+        DrawFullScreenTriangle({0.f, 0.f, width, height}, mSrcTexture);
+        DrawFullScreenTriangle({width + 2.f, 0.f, width, height}, mFinalTexture);
     }
     else
     {
     }
 }
 
-void DX11EffectViewer::RenderMultiViewport()
-{
-	float width, height;
-	width = float(SwapchainWidth() - 2) / 2.f;
-	height = 1.f / m_Aspect * width;
-
-    DrawFullScreenTriangle({0.f, 0.f, width, height}, mSrcTexture);
-    DrawFullScreenTriangle({width + 2.f, 0.f, width, height}, mFinalTexture);
-}
-
-void DX11EffectViewer::RenderSourceImage()
-{
-    DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f}, mSrcTexture);
-}
-
-void DX11EffectViewer::RenderResultImage()
-{
-    DrawFullScreenTriangle({0.f, 0.f, m_imageWidth+0.f, m_imageHeight+0.f}, mFinalTexture);
-}
-
 void DX11EffectViewer::Shutdown() 
 {
 }
 
-#define FULL_TRIANGLE "../data/fullQuad.fx" 
-
-bool DX11EffectViewer::InitGraphics()
-{
-    return true;
-}
-
+#if 0
 void DX11EffectViewer::UpdateCSConstBuffer()
 {
 	CB data;
@@ -118,7 +75,7 @@ bool DX11EffectViewer::CreateCSConstBuffer()
 	commandContext->SetConstBuffer(mConstBuffer, 0);
 	return true;
 }
-
+#endif
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //////

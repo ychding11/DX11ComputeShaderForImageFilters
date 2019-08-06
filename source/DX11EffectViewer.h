@@ -47,62 +47,18 @@ public:
 		window.RegisterMessageCallback(WindowMessageCallback,this);
 	}
 
-	virtual void Initialize() override
-	{
-		initialize();
-		std::vector<std::string> files;
-		getFiles(SHADERS_REPO, files);
-
-		Filter *filter = nullptr;
-		for (auto it = files.begin(); it != files.end() && (*it) != "..\\effects\\test.hlsl"; ++it)
-		{
-			filter = new Filter(*it);
-			filter->Init(commandContext);
-			filter->setSampler(linearSampler);
-			mFilters.push_back(filter);
-		}
-		filter = new BilaterialFilter();
-		filter->Init(commandContext);
-		filter->setSampler(linearSampler);
-		
-		mFilters.push_back(filter);
-		mCurFilter = mFilters.begin();
-	}
-
-	virtual void Update(const GHI::Timer& timer) override
-	{
-		this->updateUI();
-		(*mCurFilter)->UpdateUI(commandContext);
-	}
-	virtual void Render(const GHI::Timer& timer) override
-	{
-		Render();
-	}
-
-    virtual void Shutdown() override;
-
 	void SaveResult();
 	
     void NextEffect()
     {
-       // ActiveEffect(shaderCache->Current());
-       // shaderCache->Next();
-		(*mCurFilter)->addInput(mSrcTexture);
-		(*mCurFilter)->addOutput(mDstTexture);
-		(*mCurFilter)->Active(commandContext);
-		commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src
 		mCurFilter+1 == mFilters.end() ? mCurFilter = mFilters.begin() : mCurFilter++;
+        activeCurFilter();
     }
 
     void PrevEffect()
     {
-        //ActiveEffect(shaderCache->Current());
-        //shaderCache->Prev();
-		(*mCurFilter)->addInput(mSrcTexture);
-		(*mCurFilter)->addOutput(mDstTexture);
-		(*mCurFilter)->Active(commandContext);
-		commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src
 		mCurFilter == mFilters.begin() ? mCurFilter = mFilters.end()-1 : mCurFilter--;
+        activeCurFilter();
     }
 
     void NextImage()
@@ -119,20 +75,9 @@ public:
 	    mDstTexture = commandContext->CreateTextureByAnother(mSrcTexture);
 	    mFinalTexture = commandContext->CreateTextureByAnother(mSrcTexture);
 
-        //UpdateCSConstBuffer();
-        //ActiveEffect(shaderCache->Current());
-
-		(*mCurFilter)->addInput(mSrcTexture);
-		(*mCurFilter)->addOutput(mDstTexture);
-		(*mCurFilter)->Active(commandContext);
-		commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src
+        activeCurFilter();
     }
 
-    void PrevImage()
-    {
-    }
-
-    //! when shader code changes
     void UpdateEffects()
     { }
 
@@ -140,24 +85,80 @@ public:
     int     imageWidth()  const { return m_imageWidth; }
 
 protected:
-		static void WindowMessageCallback(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+	virtual void Initialize() override
+	{
+		initialize();
+		std::vector<std::string> files;
+		getFiles(SHADERS_REPO, files);
+
+		Filter *filter = nullptr;
+
+#if 0
+		for (auto it = files.begin(); it != files.end() && (*it) != "..\\effects\\test.hlsl"; ++it)
+		{
+			filter = new Filter(*it);
+			filter->Init(commandContext);
+			filter->setSampler(linearSampler);
+			mFilters.push_back(filter);
+		}
+#endif
+
+		filter = new BilaterialFilter();
+		filter->Init(commandContext);
+		filter->setSampler(linearSampler);
+		mFilters.push_back(filter);
+
+		filter = new FishEyeFilter();
+		filter->Init(commandContext);
+		filter->setSampler(linearSampler);
+		mFilters.push_back(filter);
+
+		filter = new SwirlFilter();
+		filter->Init(commandContext);
+		filter->setSampler(linearSampler);
+		mFilters.push_back(filter);
+
+		filter = new LensCircleFilter();
+		filter->Init(commandContext);
+		filter->setSampler(linearSampler);
+		mFilters.push_back(filter);
+
+		mCurFilter = mFilters.begin();
+        activeCurFilter();
+	}
+
+	virtual void Update(const GHI::Timer& timer) override
+	{
+		this->updateUI();
+		(*mCurFilter)->UpdateUI(commandContext);
+	}
+	virtual void Render(const GHI::Timer& timer) override
+	{
+		render();
+	}
+
+    virtual void Shutdown() override;
+
+	static void WindowMessageCallback(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 private:
 
-	void	Render();
+	void	render();
 	int     initialize();
+
+    void activeCurFilter()
+    {
+		(*mCurFilter)->addInput(mSrcTexture);
+		(*mCurFilter)->addOutput(mDstTexture);
+		(*mCurFilter)->Active(commandContext);
+		commandContext->CopyTexture(mFinalTexture, mDstTexture); //< dst <-- src
+    }
 
     std::vector<std::string> mImageList;
     std::vector<std::string>::iterator mCurrentImage;
 
-    void    BuildImageList(const std::string &dir);
-    void    ActiveEffect(GHI::GHIShader* computeShader);
-    void    UpdateCSConstBuffer();
-
-	bool InitGraphics();
 	bool loadImage(std::string imagefile);
-	bool CreateCSConstBuffer();
-
 	void updateUI()
 	{
 		ImGui::Begin("UI");
@@ -171,48 +172,10 @@ private:
 		ImGui::SameLine();
 		ImGui::Text("Application Average: %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 		ImGui::End();
-
-		static ImNodes::CanvasState canvas;
-
-		if (ImGui::Begin("ImNodes", nullptr, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
-		{
-			ImNodes::BeginCanvas(&canvas);
-
-			struct Node
-			{
-				ImVec2 pos{};
-				bool selected{};
-				ImNodes::Ez::SlotInfo inputs[1];
-				ImNodes::Ez::SlotInfo outputs[1];
-			};
-
-			static Node nodes[3] = {
-				{{50, 100}, false, {{"In", 1}}, {{"Out", 1}}},
-				{{250, 50}, false, {{"In", 1}}, {{"Out", 1}}},
-				{{250, 100}, false, {{"In", 1}}, {{"Out", 1}}},
-			};
-
-			for (Node& node : nodes)
-			{
-				if (ImNodes::Ez::BeginNode(&node, "Node Title", &node.pos, &node.selected))
-				{
-					ImNodes::Ez::InputSlots(node.inputs, 1);
-					ImNodes::Ez::OutputSlots(node.outputs, 1);
-					ImNodes::Ez::EndNode();
-				}
-			}
-
-			ImNodes::Connection(&nodes[1], "In", &nodes[0], "Out");
-			ImNodes::Connection(&nodes[2], "In", &nodes[1], "Out");
-
-			ImNodes::EndCanvas();
-		}
-		ImGui::End();
 	}
 
-	void	RenderMultiViewport();
-	void	RenderSourceImage();
-	void	RenderResultImage();
+	//bool CreateCSConstBuffer();
+   // void UpdateCSConstBuffer();
 
 	byte*	GetResultImage();
     
@@ -226,7 +189,6 @@ private:
 	GHI::GHITexture *mSrcTexture = nullptr;
 	GHI::GHITexture *mDstTexture = nullptr;
 	GHI::GHITexture *mFinalTexture = nullptr;
-	Filter *mFilter = nullptr;
 	std::vector<Filter*> mFilters;
 	std::vector<Filter*>::iterator mCurFilter;
 };
