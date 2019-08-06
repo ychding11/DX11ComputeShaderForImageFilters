@@ -39,7 +39,7 @@ public:
 	std::string m_defaultImage;
 
 	DX11EffectViewer() 
-		: App(L"Sample")
+		: App(L"Filters")
 		, m_imageWidth(0)
 		, m_imageHeight(0)
         , m_defaultImage("../images/test.png")
