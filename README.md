@@ -2,15 +2,15 @@
 
 9 Jan 2017 By ychding
 
-It is used as an image effect testing framework, For example filters.
+It is an image filter viewing & testing framework.
 
 ## Overview
-- ImGUI.
-- HLSL filters.
-- DX11 Compute Shader.
-- Build By CMake.
+- ImGUI based UI.
+- GHI(Graphic Hardware Interface) framework
+- Node based data flow representation
+- CMake build system.
 
-## Demo
+## Screensnap
 
 ![screen](./demo/screen.png)
 
