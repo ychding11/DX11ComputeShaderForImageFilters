@@ -13,24 +13,34 @@ file(GLOB SRC_FILES
 )
 
 file(GLOB EXT_FILES
-    ${CMAKE_SOURCE_DIR}/thirdparty/*.h
-	${CMAKE_SOURCE_DIR}/thirdparty/imgui/*.h
-	${CMAKE_SOURCE_DIR}/thirdparty/imgui/*.cpp
 )
 
 file(GLOB FRAMEWORK_FILES
     ${CMAKE_SOURCE_DIR}/framework/*.h
 	${CMAKE_SOURCE_DIR}/framework/*.cpp
-	${CMAKE_SOURCE_DIR}/framework/dx11/*.h
-	${CMAKE_SOURCE_DIR}/framework/dx11/*.cpp
+	${CMAKE_SOURCE_DIR}/framework/d3d/*.h
+	${CMAKE_SOURCE_DIR}/framework/d3d/*.cpp
+	${CMAKE_SOURCE_DIR}/framework/app/*.h
+	${CMAKE_SOURCE_DIR}/framework/app/*.cpp
+	${CMAKE_SOURCE_DIR}/framework/utils/*.h
+	${CMAKE_SOURCE_DIR}/framework/utils/*.cpp
+	${CMAKE_SOURCE_DIR}/framework/GHI/*.h
+	${CMAKE_SOURCE_DIR}/framework/GHI/*.cpp 
+	${CMAKE_SOURCE_DIR}/framework/thirdparty/*.h
+	${CMAKE_SOURCE_DIR}/framework/thirdparty/imgui/*.h
+	${CMAKE_SOURCE_DIR}/framework/thirdparty/imgui/*.cpp
+	
 )
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/Source/
-  ${CMAKE_SOURCE_DIR}/thirdparty/
-  ${CMAKE_SOURCE_DIR}/thirdparty/imgui/
+  ${CMAKE_SOURCE_DIR}/framework/thirdparty/
+  ${CMAKE_SOURCE_DIR}/framework/thirdparty/imgui/
   ${CMAKE_SOURCE_DIR}/framework/
-  ${CMAKE_SOURCE_DIR}/framework/dx11
+  ${CMAKE_SOURCE_DIR}/framework/d3d
+  ${CMAKE_SOURCE_DIR}/framework/GHI
+  ${CMAKE_SOURCE_DIR}/framework/utils
+  ${CMAKE_SOURCE_DIR}/framework/app
 )
 
 ## Output include directory for debug

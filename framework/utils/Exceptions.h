@@ -10,7 +10,7 @@
 
 #include "PCH.h"
 #include "DXErr.h"
-#include "DXassert.h"
+#include "myassert.h"
 
 namespace GHI
 {

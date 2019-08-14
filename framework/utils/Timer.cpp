@@ -11,7 +11,6 @@
 
 #include "Timer.h"
 
-#include "DXassert.h"
 #include "Exceptions.h"
 
 namespace GHI

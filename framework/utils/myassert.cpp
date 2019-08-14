@@ -27,7 +27,7 @@
 
 #include "PCH.h"
 
-#include "DXassert.h"
+#include "myassert.h"
 
 namespace pow2
 {

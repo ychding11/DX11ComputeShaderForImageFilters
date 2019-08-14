@@ -10,7 +10,6 @@
 #include <string>
 #include <d3d11.h>
 #include "GHIResources.h" 
-#include "DXassert.h" 
 #include "Utility.h" 
 
 namespace GHI
