@@ -81,7 +81,7 @@ typedef uint32_t bool32;
 #include <d3d9.h>
 
 // DirectX Math
-#if 0
+#if 1
 #include <DirectXMath.h>
 #include <DirectXPackedVector.h>
 #include <DirectXCollision.h>
@@ -105,11 +105,11 @@ using namespace DirectX::PackedVector;
 #include <memory.h>
 #include <tchar.h>
 #include <assert.h>
-#include <limits.h>
+#include <limits>
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
-#include <string.h>
+#include <cmath>
+#include <string>
 
 #pragma warning(push)
 #pragma warning(disable : 4005)
