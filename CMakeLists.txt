@@ -36,6 +36,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/Source/
   ${CMAKE_SOURCE_DIR}/framework/thirdparty/
   ${CMAKE_SOURCE_DIR}/framework/thirdparty/imgui/
+  ${CMAKE_SOURCE_DIR}/framework/thirdparty/Assimp-3.1.1/include
   ${CMAKE_SOURCE_DIR}/framework/
   ${CMAKE_SOURCE_DIR}/framework/d3d
   ${CMAKE_SOURCE_DIR}/framework/GHI

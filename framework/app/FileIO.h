@@ -11,10 +11,18 @@
 #include "Exceptions.h"
 #include "Utility.h"
 
-namespace SampleFramework11
+#include <filesystem>
+
+namespace GHI
 {
 
 // Utility functions
+inline bool FileExists(const std::string filePath)
+{
+    if(filePath.empty()) return false;
+    return std::filesystem::exists(filePath);
+}
+
 bool FileExists(const wchar* filePath);
 bool DirectoryExists(const wchar* dirPath);
 std::wstring GetDirectoryFromFilePath(const wchar* filePath);
@@ -26,6 +34,7 @@ uint64 GetFileTimestamp(const wchar* filePath);
 
 std::string ReadFileAsString(const wchar* filePath);
 void WriteStringAsFile(const wchar* filePath, const std::string& data);
+
 
 enum class FileOpenMode
 {

@@ -14,8 +14,6 @@
 #include "Serialization.h"
 #include "FileIO.h"
 
-using std::string;
-using std::wstring;
 using std::vector;
 using std::map;
 using std::wifstream;
@@ -358,6 +356,15 @@ void Mesh::InitBox(ID3D11Device* device, const Float3& dimensions, const Float3&
     indices.resize(ibSize, 0);
     memcpy(indices.data(), boxIndices.data(), ibSize);
 
+    meshParts.resize(1);
+
+    MeshPart& part = meshParts[0];
+    part.IndexStart = 0;
+    part.IndexCount = numIndices;
+    part.VertexStart = 0;
+    part.VertexCount = numVertices;
+    part.MaterialIdx = materialIdx;
+
     D3D11_BUFFER_DESC bufferDesc;
     bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
     bufferDesc.ByteWidth = vbSize;
@@ -379,15 +386,6 @@ void Mesh::InitBox(ID3D11Device* device, const Float3& dimensions, const Float3&
 
     initData.pSysMem = indices.data();
     DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
-
-    meshParts.resize(1);
-
-    MeshPart& part = meshParts[0];
-    part.IndexStart = 0;
-    part.IndexCount = numIndices;
-    part.VertexStart = 0;
-    part.VertexCount = numVertices;
-    part.MaterialIdx = materialIdx;
 }
 
 // Initializes the mesh as a plane
@@ -437,6 +435,15 @@ void Mesh::InitPlane(ID3D11Device* device, const Float2& dimensions, const Float
     indices.resize(ibSize, 0);
     memcpy(indices.data(), planeIndices.data(), ibSize);
 
+    meshParts.resize(1);
+
+    MeshPart& part = meshParts[0];
+    part.IndexStart = 0;
+    part.IndexCount = numIndices;
+    part.VertexStart = 0;
+    part.VertexCount = numVertices;
+    part.MaterialIdx = materialIdx;
+
     D3D11_BUFFER_DESC bufferDesc;
     bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
     bufferDesc.ByteWidth = vbSize;
@@ -458,15 +465,6 @@ void Mesh::InitPlane(ID3D11Device* device, const Float2& dimensions, const Float
 
     initData.pSysMem = indices.data();
     DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
-
-    meshParts.resize(1);
-
-    MeshPart& part = meshParts[0];
-    part.IndexStart = 0;
-    part.IndexCount = numIndices;
-    part.VertexStart = 0;
-    part.VertexCount = numVertices;
-    part.MaterialIdx = materialIdx;
 }
 
 static float CorneaZ(float r)
@@ -593,6 +591,15 @@ void Mesh::InitCornea(ID3D11Device* device, uint32 materialIdx)
     indices.resize(ibSize, 0);
     memcpy(indices.data(), corneaIndices.data(), ibSize);
 
+    meshParts.resize(1);
+
+    MeshPart& part = meshParts[0];
+    part.IndexStart = 0;
+    part.IndexCount = numIndices;
+    part.VertexStart = 0;
+    part.VertexCount = numVertices;
+    part.MaterialIdx = materialIdx;
+
     D3D11_BUFFER_DESC bufferDesc;
     bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
     bufferDesc.ByteWidth = vbSize;
@@ -614,15 +621,6 @@ void Mesh::InitCornea(ID3D11Device* device, uint32 materialIdx)
 
     initData.pSysMem = indices.data();
     DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
-
-    meshParts.resize(1);
-
-    MeshPart& part = meshParts[0];
-    part.IndexStart = 0;
-    part.IndexCount = numIndices;
-    part.VertexStart = 0;
-    part.VertexCount = numVertices;
-    part.MaterialIdx = materialIdx;
 }
 
 
@@ -866,8 +864,8 @@ void Model::CreateFromSDKMeshFile(ID3D11Device* device, LPCWSTR fileName, const 
     {
         MeshMaterial material;
         SDKMESH_MATERIAL* mat = sdkMesh.GetMaterial(i);
-        material.DiffuseMapName = AnsiToWString(mat->DiffuseTexture);
-        material.NormalMapName = AnsiToWString(mat->NormalTexture);
+        material.DiffuseMapName = StrToWstr(mat->DiffuseTexture);
+        material.NormalMapName  = StrToWstr(mat->NormalTexture);
 
         // Add the normal map prefix
         if (normalMapSuffix && material.DiffuseMapName.length() > 0
@@ -889,11 +887,11 @@ void Model::CreateFromSDKMeshFile(ID3D11Device* device, LPCWSTR fileName, const 
         meshes[meshIdx].InitFromSDKMesh(device, sdkMesh, meshIdx, generateTangentFrame);
 }
 
-void Model::CreateWithAssimp(ID3D11Device* device, const wchar* fileName, bool forceSRGB)
+void Model::CreateWithAssimp(IGHIComputeCommandCotext* commandcontext, const char* fileName, bool forceSRGB)
 {
     Assert_(FileExists(fileName));
 
-    std::string fileNameAnsi = WStringToAnsi(fileName);
+    std::string fileNameAnsi(fileName);
 
     Assimp::Importer importer;
     uint32 flags = aiProcess_CalcTangentSpace |
@@ -908,14 +906,13 @@ void Model::CreateWithAssimp(ID3D11Device* device, const wchar* fileName, bool f
     const aiScene* scene = importer.ReadFile(fileNameAnsi, flags);
 
     if(scene == nullptr)
-        throw Exception(L"Failed to load scene " + std::wstring(fileName) +
-                        L": " + AnsiToWString(importer.GetErrorString()));
+        throw Exception("Failed to load scene " + std::string(fileName) + ": " + (importer.GetErrorString()));
 
     if(scene->mNumMeshes == 0)
-        throw Exception(L"Scene " + std::wstring(fileName) + L" has no meshes");
+        throw Exception("Scene " + std::string(fileName) + " has no meshes");
 
     if(scene->mNumMaterials == 0)
-        throw Exception(L"Scene " + std::wstring(fileName) + L" has no materials");
+        throw Exception("Scene " + std::string(fileName) + " has no materials");
 
     fileDirectory = GetDirectoryFromFilePath(fileName);
 
@@ -931,19 +928,19 @@ void Model::CreateWithAssimp(ID3D11Device* device, const wchar* fileName, bool f
         aiString roughnessMapPath;
         aiString metallicMapPath;
         if(mat.GetTexture(aiTextureType_DIFFUSE, 0, &diffuseTexPath) == aiReturn_SUCCESS)
-            material.DiffuseMapName = GetFileName(AnsiToWString(diffuseTexPath.C_Str()).c_str());
+            material.DiffuseMapName = GetFileName(StrToWstr(diffuseTexPath.C_Str()).c_str());
 
         if(mat.GetTexture(aiTextureType_NORMALS, 0, &normalMapPath) == aiReturn_SUCCESS
            || mat.GetTexture(aiTextureType_HEIGHT, 0, &normalMapPath) == aiReturn_SUCCESS)
-            material.NormalMapName = GetFileName(AnsiToWString(normalMapPath.C_Str()).c_str());
+            material.NormalMapName = GetFileName(StrToWstr(normalMapPath.C_Str()).c_str());
 
         if(mat.GetTexture(aiTextureType_SHININESS, 0, &roughnessMapPath) == aiReturn_SUCCESS)
-            material.RoughnessMapName = GetFileName(AnsiToWString(roughnessMapPath.C_Str()).c_str());
+            material.RoughnessMapName = GetFileName(StrToWstr(roughnessMapPath.C_Str()).c_str());
 
         if(mat.GetTexture(aiTextureType_AMBIENT, 0, &metallicMapPath) == aiReturn_SUCCESS)
-            material.MetallicMapName = GetFileName(AnsiToWString(metallicMapPath.C_Str()).c_str());
+            material.MetallicMapName = GetFileName(StrToWstr(metallicMapPath.C_Str()).c_str());
 
-        LoadMaterialResources(material, fileDirectory, device, forceSRGB);
+        LoadMaterialResources(material, fileDirectory, commandcontext, forceSRGB);
 
         meshMaterials.push_back(material);
     }
@@ -952,122 +949,122 @@ void Model::CreateWithAssimp(ID3D11Device* device, const wchar* fileName, bool f
     const uint64 numMeshes = scene->mNumMeshes;
     meshes.resize(numMeshes);
     for(uint64 i = 0; i < numMeshes; ++i)
-        meshes[i].InitFromAssimpMesh(device, *scene->mMeshes[i]);
+        meshes[i].InitFromAssimpMesh(commandcontext, *scene->mMeshes[i]);
 }
 
-void Model::CreateFromMeshData(ID3D11Device* device, const wchar* fileName, bool forceSRGB)
+void Model::CreateFromMeshData(IGHIComputeCommandCotext* commandcontext, const wchar* fileName, bool forceSRGB)
 {
+#if 0
     FileReadSerializer serializer(fileName);
     Serialize(serializer, device, forceSRGB);
+#endif
 }
 
-void Model::GenerateBoxScene(ID3D11Device* device, const Float3& dimensions, const Float3& position,
-                             const Quaternion& orientation, const wchar* colorMap,
-                             const wchar* normalMap)
+void Model::GenerateBoxScene(IGHIComputeCommandCotext* commandcontext, const Float3& dimensions, const Float3& position,
+                             const Quaternion& orientation, const char* colorMap, const char* normalMap)
 {
     MeshMaterial material;
     material.DiffuseMapName = colorMap;
     material.NormalMapName = normalMap;
-    fileDirectory = L"..\\Content\\Textures\\";
-    LoadMaterialResources(material, L"..\\Content\\Textures\\", device, false);
+    fileDirectory = "..\\Content\\Textures\\";
+    LoadMaterialResources(material, "..\\Content\\Textures\\", commandcontext, false);
     meshMaterials.push_back(material);
 
     meshes.resize(1);
-    meshes[0].InitBox(device, dimensions, position, orientation, 0);
+    meshes[0].InitBox(commandcontext, dimensions, position, orientation, 0);
 }
 
-void Model::GenerateBoxTestScene(ID3D11Device* device)
+void Model::GenerateBoxTestScene(IGHIComputeCommandCotext* commandcontext)
 {
     MeshMaterial material;
-    material.DiffuseMapName = L"White.png";
-    material.NormalMapName = L"Hex.png";
-    fileDirectory = L"..\\Content\\Textures\\";
-    LoadMaterialResources(material, L"..\\Content\\Textures\\", device, false);
+    material.DiffuseMapName = "White.png";
+    material.NormalMapName = "Hex.png";
+    fileDirectory = "..\\Content\\Textures\\";
+    LoadMaterialResources(material, "..\\Content\\Textures\\", commandcontext, false);
     meshMaterials.push_back(material);
 
     meshes.resize(2);
-    meshes[0].InitBox(device, Float3(2.0f), Float3(0.0f, 1.5f, 0.0f), Quaternion(), 0);
-    meshes[1].InitBox(device, Float3(10.0f, 0.25f, 10.0f), Float3(0.0f), Quaternion(), 0);
+    meshes[0].InitBox(commandcontext, Float3(2.0f), Float3(0.0f, 1.5f, 0.0f), Quaternion(), 0);
+    meshes[1].InitBox(commandcontext, Float3(10.0f, 0.25f, 10.0f), Float3(0.0f), Quaternion(), 0);
 }
 
 
-void Model::GeneratePlaneScene(ID3D11Device* device, const Float2& dimensions, const Float3& position,
-                               const Quaternion& orientation, const wchar* colorMap,
-                               const wchar* normalMap)
+void Model::GeneratePlaneScene(IGHIComputeCommandCotext* commandcontext, const Float2& dimensions, const Float3& position,
+                               const Quaternion& orientation, const char* colorMap, const char* normalMap)
 {
     MeshMaterial material;
     material.DiffuseMapName = colorMap;
     material.NormalMapName = normalMap;
-    fileDirectory = L"..\\Content\\Textures\\";
-    LoadMaterialResources(material, L"..\\Content\\Textures\\", device, false);
+    fileDirectory = "..\\Content\\Textures\\";
+    LoadMaterialResources(material, "..\\Content\\Textures\\", commandcontext, false);
     meshMaterials.push_back(material);
 
     meshes.resize(1);
-    meshes[0].InitPlane(device, dimensions, position, orientation, 0);
+    meshes[0].InitPlane(commandcontext, dimensions, position, orientation, 0);
 }
 
-void Model::GenerateCorneaScene(ID3D11Device* device)
+void Model::GenerateCorneaScene(IGHIComputeCommandCotext* commandcontext)
 {
     MeshMaterial material;
-    material.DiffuseMapName = L"Eyeball.png";
-    material.NormalMapName = L"";
-    fileDirectory = L"..\\Content\\Textures\\";
-    LoadMaterialResources(material, L"..\\Content\\Textures\\", device, false);
+    material.DiffuseMapName = "Eyeball.png";
+    material.NormalMapName = "";
+    fileDirectory = "..\\Content\\Textures\\";
+    LoadMaterialResources(material, "..\\Content\\Textures\\", commandcontext, false);
     meshMaterials.push_back(material);
 
     meshes.resize(1);
-    meshes[0].InitCornea(device, 0);
+    meshes[0].InitCornea(commandcontext, 0);
 }
 
-void Model::LoadMaterialResources(MeshMaterial& material, const wstring& directory, ID3D11Device* device, bool forceSRGB)
+void Model::LoadMaterialResources(MeshMaterial& material, const std::string& directory, IGHIComputeCommandCotext* commandcontext, bool forceSRGB)
 {
     // Load the diffuse map
-    wstring diffuseMapPath = directory + material.DiffuseMapName;
-    if(material.DiffuseMapName.length() > 1 && FileExists(diffuseMapPath.c_str()))
-        material.DiffuseMap = LoadTexture(device, diffuseMapPath.c_str(), forceSRGB);
+    std::string diffuseMapPath = directory + material.DiffuseMapName;
+    if (material.DiffuseMapName.length() > 1 && FileExists(diffuseMapPath))
+        material.DiffuseMap = commandcontext->CreateTexture(diffuseMapPath.c_str());
     else
     {
-        static ID3D11ShaderResourceViewPtr defaultDiffuse;
-        if(defaultDiffuse == nullptr)
-            defaultDiffuse = LoadTexture(device, L"..\\Content\\Textures\\Default.dds");
+        GHITexture *defaultDiffuse = nullptr;
+        if (defaultDiffuse == nullptr)
+            defaultDiffuse = commandcontext->CreateTexture("..\\Content\\Textures\\Default.dds");
         material.DiffuseMap = defaultDiffuse;
     }
 
     // Load the normal map
-    wstring normalMapPath = directory + material.NormalMapName;
-    if(material.NormalMapName.length() > 1 && FileExists(normalMapPath.c_str()))
-        material.NormalMap = LoadTexture(device, normalMapPath.c_str());
+    std::string normalMapPath = directory + material.NormalMapName;
+    if(material.NormalMapName.length() > 1 && FileExists(normalMapPath) )
+        material.NormalMap = commandcontext->CreateTexture(normalMapPath);
     else
     {
-        static ID3D11ShaderResourceViewPtr defaultNormalMap;
+        GHITexture *defaultNormalMap = nullptr;
         if(defaultNormalMap == nullptr)
-            defaultNormalMap = LoadTexture(device, L"..\\Content\\Textures\\DefaultNormalMap.dds");
+            defaultNormalMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultNormalMap.dds");
         material.NormalMap = defaultNormalMap;
     }
 
      // Load the roughness map
-    wstring roughnessMapPath = directory + material.RoughnessMapName;
-    if(material.RoughnessMapName.length() > 1 && FileExists(roughnessMapPath.c_str()))
-        material.RoughnessMap = LoadTexture(device, roughnessMapPath.c_str());
+    std::string roughnessMapPath = directory + material.RoughnessMapName;
+    if (material.RoughnessMapName.length() > 1 && FileExists(roughnessMapPath))
+        material.RoughnessMap = commandcontext->CreateTexture(roughnessMapPath);
     else
     {
-        static ID3D11ShaderResourceViewPtr defaultRoughnessMap;
+        GHITexture *defaultRoughnessMap = nullptr;
         if(defaultRoughnessMap == nullptr)
-            defaultRoughnessMap = LoadTexture(device, L"..\\Content\\Textures\\DefaultRoughness.dds");
+            defaultRoughnessMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultRoughness.dds");
         material.RoughnessMap = defaultRoughnessMap;
     }
 
      // Load the metallic map
-    wstring metallicMapPath = directory + material.MetallicMapName;
-    if(material.MetallicMapName.length() > 1 && FileExists(metallicMapPath.c_str()))
-        material.MetallicMap = LoadTexture(device, metallicMapPath.c_str());
+    std::string metallicMapPath = directory + material.MetallicMapName;
+    if (material.MetallicMapName.length() > 1 && FileExists(metallicMapPath) )
+        material.MetallicMap = commandcontext->CreateTexture(metallicMapPath);
     else
     {
-        static ID3D11ShaderResourceViewPtr defaultMetallicMap;
+        GHITexture *defaultMetallicMap = nullptr;
         if(defaultMetallicMap == nullptr)
-            defaultMetallicMap = LoadTexture(device, L"..\\Content\\Textures\\DefaultBlack.dds");
+            defaultMetallicMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultBlack.dds");
         material.MetallicMap = defaultMetallicMap;
     }
 }
 
-}
+} //namespace

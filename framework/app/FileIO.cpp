@@ -4,11 +4,9 @@
 //
 //=================================================================================================
 
-#include "PCH.h"
-
 #include "FileIO.h"
 
-namespace SampleFramework11
+namespace GHI
 {
 
 // Returns true if a file exits

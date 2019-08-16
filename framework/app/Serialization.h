@@ -14,7 +14,7 @@
 #include "Exceptions.h"
 #include "FileIO.h"
 
-namespace SampleFramework11
+namespace GHI
 {
 
 class FileReadSerializer

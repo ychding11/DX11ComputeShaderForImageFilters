@@ -15,7 +15,7 @@
 
 #include "mymath.h"
 
-namespace SampleFramework11
+namespace GHI
 {
 
 //--------------------------------------------------------------------------------------
@@ -76,6 +76,7 @@ enum FRAME_TRANSFORM_TYPE
 
 //--------------------------------------------------------------------------------------
 // Structures.  Unions with pointers are forced to 64bit.
+// File header
 //--------------------------------------------------------------------------------------
 struct SDKMESH_HEADER
 {

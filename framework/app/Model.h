@@ -8,9 +8,16 @@
 
 #include "PCH.h"
 
-#include "InterfacePointers.h"
 #include "mymath.h"
 #include "Serialization.h"
+
+#include "GHIResources.h"
+#include "GHICommandContext.h"
+
+// Assimp
+#include "Importer.hpp"
+#include "scene.h"
+#include "postprocess.h"
 
 struct aiMesh;
 
@@ -21,14 +28,15 @@ class SDKMesh;
 
 struct MeshMaterial
 {
-    std::wstring DiffuseMapName;
-    std::wstring NormalMapName;
-    std::wstring RoughnessMapName;
-    std::wstring MetallicMapName;
-    ID3D11ShaderResourceViewPtr DiffuseMap;
-    ID3D11ShaderResourceViewPtr NormalMap;
-    ID3D11ShaderResourceViewPtr RoughnessMap;
-    ID3D11ShaderResourceViewPtr MetallicMap;
+    std::string DiffuseMapName;
+    std::string NormalMapName;
+    std::string RoughnessMapName;
+    std::string MetallicMapName;
+
+    GHITexture *DiffuseMap;
+    GHITexture *NormalMap;
+    GHITexture *RoughnessMap;
+    GHITexture *MetallicMap;
 
     template<typename TSerializer> void Serialize(TSerializer& serializer)
     {
@@ -131,8 +139,8 @@ protected:
     void CreateInputElements(const D3DVERTEXELEMENT9* declaration);
     void CreateVertexAndIndexBuffers(ID3D11Device* device);
 
-    ID3D11BufferPtr vertexBuffer;
-    ID3D11BufferPtr indexBuffer;
+    GHIBuffer *vertexBuffer = nullptr;
+    GHIBuffer *indexBuffer = nullptr;
 
     std::vector<MeshPart> meshParts;
     std::vector<D3D11_INPUT_ELEMENT_DESC> inputElements;
@@ -153,31 +161,33 @@ class Model
 public:
 
     // Loading from file formats
-    void CreateFromSDKMeshFile(ID3D11Device* device, const wchar* fileName,
-                                const wchar* normalMapSuffix = NULL,
+    void CreateFromSDKMeshFile(IGHIComputeCommandCotext* commandcontext,
+                                const char* fileName,
+                                const char* normalMapSuffix = NULL,
                                 bool generateTangentFrame = false,
                                 bool overrideNormalMaps = false,
                                 bool forceSRGB = false);
 
-    void CreateWithAssimp(ID3D11Device* device, const wchar* fileName, bool forceSRGB = false);
+    void CreateWithAssimp(IGHIComputeCommandCotext* commandcontext, const char* fileName, bool forceSRGB = false);
 
-    void CreateFromMeshData(ID3D11Device* device, const wchar* fileName, bool forceSRGB = false);
+    void CreateFromMeshData(IGHIComputeCommandCotext* commandcontext, const char* fileName, bool forceSRGB = false);
 
     // Procedural generation
-    void GenerateBoxScene(ID3D11Device* device,
+    void GenerateBoxScene(IGHIComputeCommandCotext* commandcontext,
                           const Float3& dimensions = Float3(1.0f, 1.0f, 1.0f),
                           const Float3& position = Float3(),
                           const Quaternion& orientation = Quaternion(),
-                          const wchar* colorMap = L"",
-                          const wchar* normalMap = L"");
-    void GenerateBoxTestScene(ID3D11Device* device);
-    void GeneratePlaneScene(ID3D11Device* device,
+                          const char* colorMap = "",
+                          const char* normalMap = "");
+    void GenerateBoxTestScene(IGHIComputeCommandCotext* commandcontext);
+    void GeneratePlaneScene(IGHIComputeCommandCotext* commandcontext,
                             const Float2& dimensions = Float2(1.0f, 1.0f),
                             const Float3& position = Float3(),
                             const Quaternion& orientation = Quaternion(),
-                            const wchar* colorMap = L"",
-                            const wchar* normalMap = L"");
-    void GenerateCorneaScene(ID3D11Device* device);
+                            const char* colorMap = "",
+                            const char* normalMap = "");
+
+    void GenerateCorneaScene(IGHIComputeCommandCotext* commandcontext);
 
     // Accessors
     std::vector<MeshMaterial>& Materials() { return meshMaterials; };
@@ -188,8 +198,9 @@ public:
 
     // Serialization
     template<typename TSerializer>
-    void Serialize(TSerializer& serializer, ID3D11Device* device, bool forceSRGB = false)
+    void Serialize(TSerializer& serializer, IGHIComputeCommandCotext* commandcontext, bool forceSRGB = false)
     {
+#if 0
         SerializeItem(serializer, meshes);
         SerializeItem(serializer, meshMaterials);
         SerializeItem(serializer, fileDirectory);
@@ -202,15 +213,16 @@ public:
             for(uint64 i = 0; i < meshMaterials.size(); ++i)
                 LoadMaterialResources(meshMaterials[i], fileDirectory, device, forceSRGB);
         }
+#endif
     }
 
 protected:
 
-    static void LoadMaterialResources(MeshMaterial& material, const std::wstring& directory, ID3D11Device* device, bool forceSRGB);
+    static void LoadMaterialResources(MeshMaterial& material, const std::string& directory, IGHIComputeCommandCotext* commandcontext, bool forceSRGB);
 
     std::vector<Mesh> meshes;
     std::vector<MeshMaterial> meshMaterials;
-    std::wstring fileDirectory;
+    std::string fileDirectory;
 };
 
 }

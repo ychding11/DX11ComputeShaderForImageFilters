@@ -22,7 +22,7 @@
 #define SAFE_RELEASE(p)      { if (p) { (p)->Release(); (p)=NULL; } }
 #endif
 
-namespace SampleFramework11
+namespace GHI
 {
 
 //--------------------------------------------------------------------------------------
