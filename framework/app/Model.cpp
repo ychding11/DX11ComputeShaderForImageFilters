@@ -63,16 +63,16 @@ static const D3D11_INPUT_ELEMENT_DESC VertexInputs[5] =
     { "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 };
 
-void Mesh::InitFromSDKMesh(ID3D11Device* device, SDKMesh& sdkMesh, uint32 meshIdx, bool generateTangents)
+void Mesh::InitFromSDKMesh(IGHIComputeCommandCotext* commandcontext, SDKMesh& sdkMesh, uint32 meshIdx, bool generateTangents)
 {
     const SDKMESH_MESH& sdkMeshData = *sdkMesh.GetMesh(meshIdx);
 
     uint32 indexSize = 2;
-    indexType = IndexType::Index16Bit;
+    indexType = GHIIndexType::Index16Bit;
     if(sdkMesh.GetIndexType(meshIdx) == IT_32BIT)
     {
         indexSize = 4;
-        indexType = IndexType::Index32Bit;
+        indexType = GHIIndexType::Index32Bit;
     }
 
     vertexStride = sdkMesh.GetVertexStride(meshIdx, 0);
@@ -92,7 +92,7 @@ void Mesh::InitFromSDKMesh(ID3D11Device* device, SDKMesh& sdkMesh, uint32 meshId
     if(generateTangents)
         GenerateTangentFrame();
 
-    CreateVertexAndIndexBuffers(device);
+    CreateVertexAndIndexBuffers(commandcontext);
 
     const uint32 numSubsets = sdkMesh.GetNumSubsets(meshIdx);
     meshParts.resize(numSubsets);
@@ -108,30 +108,30 @@ void Mesh::InitFromSDKMesh(ID3D11Device* device, SDKMesh& sdkMesh, uint32 meshId
     }
 }
 
-void Mesh::InitFromAssimpMesh(ID3D11Device* device, const aiMesh& assimpMesh)
+void Mesh::InitFromAssimpMesh(IGHIComputeCommandCotext* commandcontext, const aiMesh& assimpMesh)
 {
     numVertices = assimpMesh.mNumVertices;
     numIndices = assimpMesh.mNumFaces * 3;
 
     uint32 indexSize = 2;
-    indexType = IndexType::Index16Bit;
+    indexType = GHIIndexType::Index16Bit;
     if(numVertices > 0xFFFF)
     {
         indexSize = 4;
-        indexType = IndexType::Index32Bit;
+        indexType = GHIIndexType::Index32Bit;
     }
 
     // Figure out the vertex layout
     uint32 currOffset = 0;
-    D3D11_INPUT_ELEMENT_DESC elemDesc;
+    GHIInputElementInfo elemDesc;
     elemDesc.InputSlot = 0;
-    elemDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+    elemDesc.InputSlotClass = PER_VERTEX_DATA;
     elemDesc.InstanceDataStepRate = 0;
     std::vector<const aiVector3D*> vertexData;
 
     if(assimpMesh.HasPositions())
     {
-        elemDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+        elemDesc.Format = DATA_FORMAT_R32G32B32_FLOAT;
         elemDesc.AlignedByteOffset = currOffset;
         elemDesc.SemanticName = "POSITION";
         elemDesc.SemanticIndex = 0;
@@ -142,7 +142,7 @@ void Mesh::InitFromAssimpMesh(ID3D11Device* device, const aiMesh& assimpMesh)
 
     if(assimpMesh.HasNormals())
     {
-        elemDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+        elemDesc.Format = DATA_FORMAT_R32G32B32_FLOAT;
         elemDesc.AlignedByteOffset = currOffset;
         elemDesc.SemanticName = "NORMAL";
         elemDesc.SemanticIndex = 0;
@@ -155,7 +155,7 @@ void Mesh::InitFromAssimpMesh(ID3D11Device* device, const aiMesh& assimpMesh)
     {
         if(assimpMesh.HasTextureCoords(i))
         {
-            elemDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
+            elemDesc.Format = DATA_FORMAT_R32G32_FLOAT;
             elemDesc.AlignedByteOffset = currOffset;
             elemDesc.SemanticName = "TEXCOORD";
             elemDesc.SemanticIndex = i;
@@ -167,7 +167,7 @@ void Mesh::InitFromAssimpMesh(ID3D11Device* device, const aiMesh& assimpMesh)
 
     if(assimpMesh.HasTangentsAndBitangents())
     {
-        elemDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+        elemDesc.Format = DATA_FORMAT_R32G32B32_FLOAT;
         elemDesc.AlignedByteOffset = currOffset;
         elemDesc.SemanticName = "TANGENT";
         elemDesc.SemanticIndex = 0;
@@ -175,7 +175,7 @@ void Mesh::InitFromAssimpMesh(ID3D11Device* device, const aiMesh& assimpMesh)
         currOffset += 12;
         vertexData.push_back(assimpMesh.mTangents);
 
-        elemDesc.Format = DXGI_FORMAT_R32G32B32_FLOAT;
+        elemDesc.Format = DATA_FORMAT_R32G32B32_FLOAT;
         elemDesc.AlignedByteOffset = currOffset;
         elemDesc.SemanticName = "BITANGENT";
         elemDesc.SemanticIndex = 0;
@@ -211,7 +211,7 @@ void Mesh::InitFromAssimpMesh(ID3D11Device* device, const aiMesh& assimpMesh)
     {
         void* triStart = &indices[triIdx * 3 * indexSize];
         const aiFace& tri = assimpMesh.mFaces[triIdx];
-        if(indexType == IndexType::Index32Bit)
+        if(indexType == GHIIndexType::Index32Bit)
             memcpy(triStart, tri.mIndices, sizeof(uint32) * 3);
         else
         {
@@ -221,7 +221,7 @@ void Mesh::InitFromAssimpMesh(ID3D11Device* device, const aiMesh& assimpMesh)
         }
     }
 
-    CreateVertexAndIndexBuffers(device);
+    CreateVertexAndIndexBuffers(commandcontext);
 
     const uint32 numSubsets = 1;
     meshParts.resize(numSubsets);
@@ -237,8 +237,7 @@ void Mesh::InitFromAssimpMesh(ID3D11Device* device, const aiMesh& assimpMesh)
 }
 
 // Initializes the mesh as a box
-void Mesh::InitBox(ID3D11Device* device, const Float3& dimensions, const Float3& position,
-                   const Quaternion& orientation, uint32 materialIdx)
+void Mesh::InitBox(IGHIComputeCommandCotext* commandcontext, const Float3& dimensions, const Float3& position, const Quaternion& orientation, uint32 materialIdx)
 {
     const uint64 NumBoxVerts = 24;
     const uint64 NumBoxIndices = 36;
@@ -338,7 +337,7 @@ void Mesh::InitBox(ID3D11Device* device, const Float3& dimensions, const Float3&
     boxIndices[iIdx++] = 20 + 0;
 
     const uint32 indexSize = 2;
-    indexType = IndexType::Index16Bit;
+    indexType = GHIIndexType::Index16Bit;
 
     vertexStride = sizeof(Vertex);
     numVertices = uint32(NumBoxVerts);
@@ -365,6 +364,7 @@ void Mesh::InitBox(ID3D11Device* device, const Float3& dimensions, const Float3&
     part.VertexCount = numVertices;
     part.MaterialIdx = materialIdx;
 
+#if 0
     D3D11_BUFFER_DESC bufferDesc;
     bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
     bufferDesc.ByteWidth = vbSize;
@@ -386,11 +386,14 @@ void Mesh::InitBox(ID3D11Device* device, const Float3& dimensions, const Float3&
 
     initData.pSysMem = indices.data();
     DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
+#endif
+
+    commandcontext->CreateVertexBuffer(vbSize, vertices.data());
+    commandcontext->CreateIndexBuffer(ibSize, indices.data());
 }
 
 // Initializes the mesh as a plane
-void Mesh::InitPlane(ID3D11Device* device, const Float2& dimensions, const Float3& position,
-                   const Quaternion& orientation, uint32 materialIdx)
+void Mesh::InitPlane(IGHIComputeCommandCotext* commandcontext, const Float2& dimensions, const Float3& position, const Quaternion& orientation, uint32 materialIdx)
 {
     const uint64 NumPlaneVerts = 4;
     const uint64 NumPlaneIndices = 6;
@@ -417,7 +420,7 @@ void Mesh::InitPlane(ID3D11Device* device, const Float2& dimensions, const Float
     planeIndices[iIdx++] = 0;
 
     const uint32 indexSize = 2;
-    indexType = IndexType::Index16Bit;
+    indexType = GHIIndexType::Index16Bit;
 
     vertexStride = sizeof(Vertex);
     numVertices = uint32(NumPlaneVerts);
@@ -444,6 +447,7 @@ void Mesh::InitPlane(ID3D11Device* device, const Float2& dimensions, const Float
     part.VertexCount = numVertices;
     part.MaterialIdx = materialIdx;
 
+#if 0
     D3D11_BUFFER_DESC bufferDesc;
     bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
     bufferDesc.ByteWidth = vbSize;
@@ -465,6 +469,10 @@ void Mesh::InitPlane(ID3D11Device* device, const Float2& dimensions, const Float
 
     initData.pSysMem = indices.data();
     DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
+#endif
+
+    commandcontext->CreateVertexBuffer(vbSize, vertices.data());
+    commandcontext->CreateIndexBuffer(ibSize, indices.data());
 }
 
 static float CorneaZ(float r)
@@ -474,7 +482,7 @@ static float CorneaZ(float r)
 }
 
 // Initializes the mesh as a plane
-void Mesh::InitCornea(ID3D11Device* device, uint32 materialIdx)
+void Mesh::InitCornea(IGHIComputeCommandCotext* commandcontext, uint32 materialIdx)
 {
     const float R = 5.5f;
     const float IrisDepth = 2.18f;
@@ -575,7 +583,7 @@ void Mesh::InitCornea(ID3D11Device* device, uint32 materialIdx)
     numIndices = uint32(NumIndices);
 
     const uint32 indexSize = 4;
-    indexType = IndexType::Index32Bit;
+    indexType = GHIIndexType::Index32Bit;
 
     vertexStride = sizeof(Vertex);
 
@@ -600,6 +608,7 @@ void Mesh::InitCornea(ID3D11Device* device, uint32 materialIdx)
     part.VertexCount = numVertices;
     part.MaterialIdx = materialIdx;
 
+#if 0
     D3D11_BUFFER_DESC bufferDesc;
     bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
     bufferDesc.ByteWidth = vbSize;
@@ -612,15 +621,22 @@ void Mesh::InitCornea(ID3D11Device* device, uint32 materialIdx)
     initData.pSysMem = vertices.data();
     initData.SysMemPitch = 0;
     initData.SysMemSlicePitch = 0;
-    DXCall(device->CreateBuffer(&bufferDesc, &initData, &vertexBuffer));
+#endif
 
+    
+    //DXCall(device->CreateBuffer(&bufferDesc, &initData, &vertexBuffer));
+
+#if 0
     bufferDesc.ByteWidth = ibSize;
     bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
     bufferDesc.MiscFlags = 0;
     bufferDesc.StructureByteStride = 0;
 
     initData.pSysMem = indices.data();
-    DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
+#endif
+    commandcontext->CreateVertexBuffer(vbSize, vertices.data());
+    commandcontext->CreateIndexBuffer(ibSize, indices.data());
+    //DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
 }
 
 
@@ -666,7 +682,7 @@ void Mesh::GenerateTangentFrame()
     std::vector<Float3> bitangents(numVertices);
 
     // Loop through each triangle
-    const uint32 indexSize = indexType == IndexType::Index16Bit ? 2 : 4;
+    const uint32 indexSize = indexType == GHIIndexType::Index16Bit ? 2 : 4;
     for (uint32 i = 0; i < numIndices; i += 3)
     {
         uint32 i1 = GetIndex(indices.data(), i + 0, indexSize);
@@ -798,11 +814,12 @@ void Mesh::CreateInputElements(const D3DVERTEXELEMENT9* declaration)
     }
 }
 
-void Mesh::CreateVertexAndIndexBuffers(ID3D11Device* device)
+void Mesh::CreateVertexAndIndexBuffers(IGHIComputeCommandCotext* commandcontext)
 {
     Assert_(numVertices > 0);
     Assert_(numIndices > 0);
 
+#if 0
     D3D11_BUFFER_DESC bufferDesc;
     bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
     bufferDesc.ByteWidth = vertexStride * numVertices;
@@ -815,39 +832,44 @@ void Mesh::CreateVertexAndIndexBuffers(ID3D11Device* device)
     initData.pSysMem = vertices.data();
     initData.SysMemPitch = 0;
     initData.SysMemSlicePitch = 0;
-    DXCall(device->CreateBuffer(&bufferDesc, &initData, &vertexBuffer));
-
+#endif
+    commandcontext->CreateVertexBuffer(vertexStride*numVertices, vertices.data());
+    //DXCall(device->CreateBuffer(&bufferDesc, &initData, &vertexBuffer));
+#if 0
     bufferDesc.ByteWidth = IndexSize() * numIndices;
     bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
     bufferDesc.MiscFlags = 0;
     bufferDesc.StructureByteStride = 0;
 
     initData.pSysMem = indices.data();
-    DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
+#endif
+
+    commandcontext->CreateIndexBuffer(IndexSize() * numIndices, indices.data());
+    //DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
 }
 
 // Does a basic draw of all parts
-void Mesh::Render(ID3D11DeviceContext* context)
+void Mesh::Render(IGHIComputeCommandCotext* commandcontext)
 {
     // Set the vertices and indices
-    ID3D11Buffer* vertexBuffers[1] = { vertexBuffer };
-    uint32 vertexStrides[1] = { vertexStride };
-    uint32 offsets[1] = { 0 };
-    context->IASetVertexBuffers(0, 1, vertexBuffers, vertexStrides, offsets);
-    context->IASetIndexBuffer(indexBuffer, IndexBufferFormat(), 0);
-    context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    GHIBuffer* vertexBuffers[1] = { vertexBuffer };
+    int strides[1] = { vertexStride };
+    int offsets[1] = { 0 };
+    commandcontext->SetVertexBuffers(0, 1, vertexBuffers, strides, offsets);
+    commandcontext->SetIndexBuffer(indexBuffer, indexType, 0);
+    commandcontext->setPrimitiveTopology(TOPOLOGY_TRIANGLELIST);
 
     // Draw each MeshPart
     for(size_t i = 0; i < meshParts.size(); ++i)
     {
         MeshPart& meshPart = meshParts[i];
-        context->DrawIndexed(meshPart.IndexCount, meshPart.IndexStart, 0);
+        commandcontext->DrawIndexed(meshPart.IndexCount, meshPart.IndexStart, 0);
     }
 }
 
 // == Model =======================================================================================
 
-void Model::CreateFromSDKMeshFile(ID3D11Device* device, LPCWSTR fileName, const wchar* normalMapSuffix,
+void Model::CreateFromSDKMeshFile(IGHIComputeCommandCotext* commandcontext, const char *fileName, const char* normalMapSuffix,
                                   bool generateTangentFrame, bool overrideNormalMaps, bool forceSRGB)
 {
     Assert_(FileExists(fileName));
@@ -864,19 +886,19 @@ void Model::CreateFromSDKMeshFile(ID3D11Device* device, LPCWSTR fileName, const 
     {
         MeshMaterial material;
         SDKMESH_MATERIAL* mat = sdkMesh.GetMaterial(i);
-        material.DiffuseMapName = StrToWstr(mat->DiffuseTexture);
-        material.NormalMapName  = StrToWstr(mat->NormalTexture);
+        material.DiffuseMapName = (mat->DiffuseTexture);
+        material.NormalMapName  = (mat->NormalTexture);
 
         // Add the normal map prefix
         if (normalMapSuffix && material.DiffuseMapName.length() > 0
-                && (material.NormalMapName.length() == 0 || overrideNormalMaps))
+            && (material.NormalMapName.length() == 0 || overrideNormalMaps))
         {
-            wstring base = GetFilePathWithoutExtension(material.DiffuseMapName.c_str());
-            wstring extension = GetFileExtension(material.DiffuseMapName.c_str());
-            material.NormalMapName = base + normalMapSuffix + L"." + extension;
+            std::string base = GetFilePathWithoutExtension(material.DiffuseMapName.c_str());
+            std::string extension = GetFileExtension(material.DiffuseMapName.c_str());
+            material.NormalMapName = base + normalMapSuffix + "." + extension;
         }
 
-        LoadMaterialResources(material, fileDirectory, device, forceSRGB);
+        LoadMaterialResources(material, fileDirectory, commandcontext, forceSRGB);
 
         meshMaterials.push_back(material);
     }
@@ -884,7 +906,7 @@ void Model::CreateFromSDKMeshFile(ID3D11Device* device, LPCWSTR fileName, const 
     uint32 numMeshes = sdkMesh.GetNumMeshes();
     meshes.resize(numMeshes);
     for(uint32 meshIdx = 0; meshIdx < numMeshes; ++meshIdx)
-        meshes[meshIdx].InitFromSDKMesh(device, sdkMesh, meshIdx, generateTangentFrame);
+        meshes[meshIdx].InitFromSDKMesh(commandcontext, sdkMesh, meshIdx, generateTangentFrame);
 }
 
 void Model::CreateWithAssimp(IGHIComputeCommandCotext* commandcontext, const char* fileName, bool forceSRGB)
@@ -952,7 +974,7 @@ void Model::CreateWithAssimp(IGHIComputeCommandCotext* commandcontext, const cha
         meshes[i].InitFromAssimpMesh(commandcontext, *scene->mMeshes[i]);
 }
 
-void Model::CreateFromMeshData(IGHIComputeCommandCotext* commandcontext, const wchar* fileName, bool forceSRGB)
+void Model::CreateFromMeshData(IGHIComputeCommandCotext* commandcontext, const char* fileName, bool forceSRGB)
 {
 #if 0
     FileReadSerializer serializer(fileName);

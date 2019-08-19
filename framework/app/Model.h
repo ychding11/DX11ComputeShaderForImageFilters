@@ -60,12 +60,6 @@ struct MeshPart
     }
 };
 
-enum class IndexType
-{
-    Index16Bit = 0,
-    Index32Bit = 1
-};
-
 class Mesh
 {
     friend class Model;
@@ -73,24 +67,20 @@ class Mesh
 public:
 
     // Init from loaded files
-    void InitFromSDKMesh(ID3D11Device* device, SDKMesh& sdkmesh, uint32 meshIdx, bool generateTangents);
-    void InitFromAssimpMesh(ID3D11Device* device, const aiMesh& assimpMesh);
+    void InitFromSDKMesh(IGHIComputeCommandCotext* commandcontext, SDKMesh& sdkmesh, uint32 meshIdx, bool generateTangents);
+    void InitFromAssimpMesh(IGHIComputeCommandCotext* commandcontext, const aiMesh& assimpMesh);
 
     // Procedural generation
-    void InitBox(ID3D11Device* device, const Float3& dimensions, const Float3& position,
+    void InitBox(IGHIComputeCommandCotext* commandcontext, const Float3& dimensions, const Float3& position,
                  const Quaternion& orientation, uint32 materialIdx);
 
-    void InitPlane(ID3D11Device* device, const Float2& dimensions, const Float3& position,
+    void InitPlane(IGHIComputeCommandCotext* commandcontext, const Float2& dimensions, const Float3& position,
                    const Quaternion& orientation, uint32 materialIdx);
 
-    void InitCornea(ID3D11Device* device, uint32 materialIdx);
+    void InitCornea(IGHIComputeCommandCotext* commandcontext, uint32 materialIdx);
 
     // Rendering
-    void Render(ID3D11DeviceContext* context);
-
-    // Accessors
-    ID3D11Buffer* VertexBuffer() const { return vertexBuffer; }
-    ID3D11Buffer* IndexBuffer() const { return indexBuffer; }
+    void Render(IGHIComputeCommandCotext* commandcontext);
 
     std::vector<MeshPart>& MeshParts() { return meshParts; }
     const std::vector<MeshPart>& MeshParts() const { return meshParts; }
@@ -102,15 +92,22 @@ public:
     uint32 NumVertices() const { return numVertices; }
     uint32 NumIndices() const { return numIndices; }
 
-    IndexType IndexBufferType() const { return indexType; }
-    DXGI_FORMAT IndexBufferFormat() const { return indexType == IndexType::Index32Bit ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT; }
-    uint32 IndexSize() const { return indexType == IndexType::Index32Bit ? 4 : 2; }
+    GHIIndexType IndexBufferType() const
+    { return indexType; }
+
+    uint32 IndexSize() const
+    { return indexType == GHIIndexType::Index32Bit ? 4 : 2; }
 
     const uint8* Vertices() const { return vertices.data(); }
     const uint8* Indices() const { return indices.data(); }
 
+    // Accessors
+    GHIBuffer* VertexBuffer() const { return vertexBuffer; }
+    GHIBuffer* IndexBuffer() const { return indexBuffer; }
+
     template<typename TSerializer> void Serialize(TSerializer& serializer)
     {
+#if 0
         SerializeRawVector(serializer, meshParts);
 
         inputElementStrings.resize(inputElements.size());
@@ -131,26 +128,27 @@ public:
         indexType = IndexType(idxType);
         SerializeRawVector(serializer, vertices);
         SerializeRawVector(serializer, indices);
+#endif
     }
 
 protected:
 
     void GenerateTangentFrame();
     void CreateInputElements(const D3DVERTEXELEMENT9* declaration);
-    void CreateVertexAndIndexBuffers(ID3D11Device* device);
+    void CreateVertexAndIndexBuffers(IGHIComputeCommandCotext* commandcontext);
 
     GHIBuffer *vertexBuffer = nullptr;
     GHIBuffer *indexBuffer = nullptr;
 
     std::vector<MeshPart> meshParts;
-    std::vector<D3D11_INPUT_ELEMENT_DESC> inputElements;
+    std::vector<GHIInputElementInfo> inputElements;
     std::vector<std::string> inputElementStrings;
 
     uint32 vertexStride = 0;
     uint32 numVertices = 0;
     uint32 numIndices = 0;
 
-    IndexType indexType = IndexType::Index16Bit;
+    GHIIndexType indexType = GHIIndexType::Index16Bit;
 
     std::vector<uint8> vertices;
     std::vector<uint8> indices;
