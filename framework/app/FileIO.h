@@ -17,19 +17,32 @@ namespace GHI
 {
 
 // Utility functions
+
+// Test whtere the specific file or directory exist.
 inline bool FileExists(const std::string filePath)
 {
     if(filePath.empty()) return false;
     return std::filesystem::exists(filePath);
 }
 
-bool FileExists(const wchar* filePath);
-bool DirectoryExists(const wchar* dirPath);
+//bool FileExists(const wchar* filePath);
+//bool DirectoryExists(const wchar* dirPath);
+
 std::wstring GetDirectoryFromFilePath(const wchar* filePath);
+std::string GetDirectoryFromFilePath(const std::string & filePath);
+
 std::wstring GetFileName(const wchar* filePath);
+std::string GetFileName(const std::string & filePath);
+
 std::wstring GetFileNameWithoutExtension(const wchar* filePath);
+std::string GetFileNameWithoutExtension(const std::string & filePath);
+
 std::wstring GetFilePathWithoutExtension(const wchar* filePath);
+std::string GetFilePathWithoutExtension(const std::string& filePath);
+
 std::wstring GetFileExtension(const wchar* filePath);
+std::string GetFileExtension(const std::string & filePath);
+
 uint64 GetFileTimestamp(const wchar* filePath);
 
 std::string ReadFileAsString(const wchar* filePath);

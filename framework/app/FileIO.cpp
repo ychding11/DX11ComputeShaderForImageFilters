@@ -9,6 +9,7 @@
 namespace GHI
 {
 
+#if 0
 // Returns true if a file exits
 bool FileExists(const wchar* filePath)
 {
@@ -31,6 +32,7 @@ bool DirectoryExists(const wchar* dirPath)
     DWORD fileAttr = GetFileAttributes(dirPath);
     return (fileAttr != INVALID_FILE_ATTRIBUTES && (fileAttr & FILE_ATTRIBUTE_DIRECTORY));
 }
+#endif
 
 
 // Returns the directory containing a file
@@ -44,6 +46,18 @@ std::wstring GetDirectoryFromFilePath(const wchar* filePath_)
         return filePath.substr(0, idx + 1);
     else
         return std::wstring(L"");
+}
+
+// Returns the directory containing a file
+std::string GetDirectoryFromFilePath(const std::string & filePath)
+{
+    Assert_(filePath.size() > 0);
+
+    size_t idx = filePath.rfind('\\');
+    if(idx != std::wstring::npos)
+        return filePath.substr(0, idx + 1);
+    else
+        return std::string("");
 }
 
 // Returns the name of the file given the path (extension included)
@@ -65,11 +79,36 @@ std::wstring GetFileName(const wchar* filePath_)
     }
 }
 
+// Returns the name of the file given the path (extension included)
+std::string GetFileName(const std::string & filePath)
+{
+    Assert_(filePath.size() > 0);
+
+    size_t idx = filePath.rfind('\\');
+    if(idx != std::wstring::npos && idx < filePath.length() - 1)
+        return filePath.substr(idx + 1);
+    else
+    {
+        idx = filePath.rfind('/');
+        if(idx != std::wstring::npos && idx < filePath.length() - 1)
+            return filePath.substr(idx + 1);
+        else
+            return filePath;
+    }
+}
+
 // Returns the name of the file given the path, minus the extension
 std::wstring GetFileNameWithoutExtension(const wchar* filePath)
 {
     std::wstring fileName = GetFileName(filePath);
     return GetFilePathWithoutExtension(fileName.c_str());
+}
+
+// Returns the name of the file given the path, minus the extension
+std::string GetFileNameWithoutExtension(const std::string & filePath)
+{
+    std::string fileName = GetFileName(filePath);
+    return GetFilePathWithoutExtension(fileName);
 }
 
 // Returns the given file path, minus the extension
@@ -85,6 +124,18 @@ std::wstring GetFilePathWithoutExtension(const wchar* filePath_)
         return std::wstring(L"");
 }
 
+// Returns the given file path, minus the extension
+std::string GetFilePathWithoutExtension(const std::string & filePath)
+{
+    Assert_(filePath.size() > 0);
+
+    size_t idx = filePath.rfind('.');
+    if (idx != std::string::npos)
+        return filePath.substr(0, idx);
+    else
+        return std::string("");
+}
+
 // Returns the extension of the file path
 std::wstring GetFileExtension(const wchar* filePath_)
 {
@@ -96,6 +147,18 @@ std::wstring GetFileExtension(const wchar* filePath_)
         return filePath.substr(idx + 1, filePath.length() - idx - 1);
     else
         return std::wstring(L"");
+}
+
+// Returns the extension of the file path
+std::string GetFileExtension(const std::string & filePath)
+{
+    Assert_(filePath.size() > 0);
+
+    size_t idx = filePath.rfind('.');
+    if (idx != std::string::npos)
+        return filePath.substr(idx + 1, filePath.length() - idx - 1);
+    else
+        return std::string("");
 }
 
 // Gets the last written timestamp of the file

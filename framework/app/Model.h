@@ -85,7 +85,7 @@ public:
     std::vector<MeshPart>& MeshParts() { return meshParts; }
     const std::vector<MeshPart>& MeshParts() const { return meshParts; }
 
-    const D3D11_INPUT_ELEMENT_DESC* InputElements() const { return &inputElements[0]; }
+    const GHIInputElementInfo* InputElements() const { return &inputElements[0]; }
     uint32 NumInputElements() const { return static_cast<uint32>(inputElements.size()); }
 
     uint32 VertexStride() const { return vertexStride; }
@@ -144,7 +144,7 @@ protected:
     std::vector<GHIInputElementInfo> inputElements;
     std::vector<std::string> inputElementStrings;
 
-    uint32 vertexStride = 0;
+    int vertexStride = 0;
     uint32 numVertices = 0;
     uint32 numIndices = 0;
 

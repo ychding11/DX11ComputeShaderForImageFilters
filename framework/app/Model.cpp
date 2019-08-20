@@ -766,6 +766,7 @@ void Mesh::GenerateTangentFrame()
 
 void Mesh::CreateInputElements(const D3DVERTEXELEMENT9* declaration)
 {
+#if 0
     map<BYTE, LPCSTR> nameMap;
     nameMap[D3DDECLUSAGE_POSITION] = "POSITION";
     nameMap[D3DDECLUSAGE_BLENDWEIGHT] = "BLENDWEIGHT";
@@ -812,6 +813,7 @@ void Mesh::CreateInputElements(const D3DVERTEXELEMENT9* declaration)
 
         numInputElements++;
     }
+#endif
 }
 
 void Mesh::CreateVertexAndIndexBuffers(IGHIComputeCommandCotext* commandcontext)
@@ -876,7 +878,7 @@ void Model::CreateFromSDKMeshFile(IGHIComputeCommandCotext* commandcontext, cons
 
     // Use the SDKMesh class to load in the data
     SDKMesh sdkMesh;
-    sdkMesh.Create(fileName);
+    sdkMesh.Create(StrToWstr(fileName).c_str());
 
     fileDirectory = GetDirectoryFromFilePath(fileName);
 
@@ -893,8 +895,8 @@ void Model::CreateFromSDKMeshFile(IGHIComputeCommandCotext* commandcontext, cons
         if (normalMapSuffix && material.DiffuseMapName.length() > 0
             && (material.NormalMapName.length() == 0 || overrideNormalMaps))
         {
-            std::string base = GetFilePathWithoutExtension(material.DiffuseMapName.c_str());
-            std::string extension = GetFileExtension(material.DiffuseMapName.c_str());
+            std::string base      = GetFilePathWithoutExtension(material.DiffuseMapName);
+            std::string extension = GetFileExtension(material.DiffuseMapName);
             material.NormalMapName = base + normalMapSuffix + "." + extension;
         }
 
@@ -950,17 +952,17 @@ void Model::CreateWithAssimp(IGHIComputeCommandCotext* commandcontext, const cha
         aiString roughnessMapPath;
         aiString metallicMapPath;
         if(mat.GetTexture(aiTextureType_DIFFUSE, 0, &diffuseTexPath) == aiReturn_SUCCESS)
-            material.DiffuseMapName = GetFileName(StrToWstr(diffuseTexPath.C_Str()).c_str());
+            material.DiffuseMapName = GetFileName(diffuseTexPath.C_Str());
 
         if(mat.GetTexture(aiTextureType_NORMALS, 0, &normalMapPath) == aiReturn_SUCCESS
            || mat.GetTexture(aiTextureType_HEIGHT, 0, &normalMapPath) == aiReturn_SUCCESS)
-            material.NormalMapName = GetFileName(StrToWstr(normalMapPath.C_Str()).c_str());
+            material.NormalMapName = GetFileName(normalMapPath.C_Str());
 
         if(mat.GetTexture(aiTextureType_SHININESS, 0, &roughnessMapPath) == aiReturn_SUCCESS)
-            material.RoughnessMapName = GetFileName(StrToWstr(roughnessMapPath.C_Str()).c_str());
+            material.RoughnessMapName = GetFileName(roughnessMapPath.C_Str());
 
         if(mat.GetTexture(aiTextureType_AMBIENT, 0, &metallicMapPath) == aiReturn_SUCCESS)
-            material.MetallicMapName = GetFileName(StrToWstr(metallicMapPath.C_Str()).c_str());
+            material.MetallicMapName = GetFileName(metallicMapPath.C_Str());
 
         LoadMaterialResources(material, fileDirectory, commandcontext, forceSRGB);
 
