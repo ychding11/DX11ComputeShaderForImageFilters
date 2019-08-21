@@ -26,7 +26,8 @@ namespace GHI
 
 class SDKMesh;
 
-struct MeshMaterial
+
+struct MaterialMap
 {
     std::string DiffuseMapName;
     std::string NormalMapName;
@@ -37,6 +38,21 @@ struct MeshMaterial
     GHITexture *NormalMap;
     GHITexture *RoughnessMap;
     GHITexture *MetallicMap;
+
+    std::string str() const
+    {
+        char buf[1024];
+        snprintf(buf, 1024, "Mesh Material:"
+            "\n\t\t diffuse-map [%s]"
+            "\n\t\t normal-map [%s]"
+            "\n\t\t roughness-map [%s]"
+            "\n\t\t metallic-map  [%s]", 
+            DiffuseMapName.c_str(),
+            NormalMapName.c_str(),
+            RoughnessMapName.c_str(),
+            MetallicMapName.c_str());
+        return std::string(buf);
+    }
 
     template<typename TSerializer> void Serialize(TSerializer& serializer)
     {
@@ -49,15 +65,14 @@ struct MeshMaterial
 
 struct MeshPart
 {
-    uint32 VertexStart;
-    uint32 VertexCount;
-    uint32 IndexStart;
-    uint32 IndexCount;
-    uint32 MaterialIdx;
+    uint32_t VertexStart;
+    uint32_t VertexCount;
+    uint32_t IndexStart;
+    uint32_t IndexCount;
+    uint32_t MaterialIdx;
 
     MeshPart() : VertexStart(0), VertexCount(0), IndexStart(0), IndexCount(0), MaterialIdx(0)
-    {
-    }
+    { }
 };
 
 class Mesh
@@ -79,29 +94,37 @@ public:
 
     void InitCornea(IGHIComputeCommandCotext* commandcontext, uint32 materialIdx);
 
-    // Rendering
-    void Render(IGHIComputeCommandCotext* commandcontext);
+    std::vector<MeshPart>& MeshParts()
+    {
+        return meshParts;
+    }
+    const std::vector<MeshPart>& MeshParts() const
+    {
+        return meshParts;
+    }
 
-    std::vector<MeshPart>& MeshParts() { return meshParts; }
-    const std::vector<MeshPart>& MeshParts() const { return meshParts; }
-
-    const GHIInputElementInfo* InputElements() const { return &inputElements[0]; }
-    uint32 NumInputElements() const { return static_cast<uint32>(inputElements.size()); }
+    const std::vector<GHIInputElementInfo>& VertexElements() const
+    {
+        return inputElements;
+    }
 
     uint32 VertexStride() const { return vertexStride; }
     uint32 NumVertices() const { return numVertices; }
     uint32 NumIndices() const { return numIndices; }
 
     GHIIndexType IndexBufferType() const
-    { return indexType; }
+    {
+        return indexType;
+    }
 
     uint32 IndexSize() const
-    { return indexType == GHIIndexType::Index32Bit ? 4 : 2; }
+    {
+        return indexType == GHIIndexType::Index32Bit ? 4 : 2;
+    }
 
     const uint8* Vertices() const { return vertices.data(); }
     const uint8* Indices() const { return indices.data(); }
 
-    // Accessors
     GHIBuffer* VertexBuffer() const { return vertexBuffer; }
     GHIBuffer* IndexBuffer() const { return indexBuffer; }
 
@@ -131,10 +154,33 @@ public:
 #endif
     }
 
+    std::string str() const
+    {
+        char buf[1024];
+        snprintf(buf, 1024, "Mesh :"
+            "\n\t\t Vertex count: %d"
+            "\n\t\t Index count: %d"
+            "\n\t\t Tri Face count: %d"
+            "\n\t\t Index type: %s"
+            "\n\t\t Vertext attributes: %s"
+            "\n\t\t Vertex stream count: 1\n",
+            numVertices,
+            numIndices,
+            numTriFaces,
+            IndexTypeStr().c_str(),
+            VertexAttributeStr().c_str());
+
+        return std::string(buf);
+    }
+
+    // Rendering
+    void Render(IGHIComputeCommandCotext* commandcontext) const;
+
+	AABB boundingbox;
 protected:
 
     void GenerateTangentFrame();
-    void CreateInputElements(const D3DVERTEXELEMENT9* declaration);
+    //void CreateInputElements(const D3DVERTEXELEMENT9* declaration);
     void CreateVertexAndIndexBuffers(IGHIComputeCommandCotext* commandcontext);
 
     GHIBuffer *vertexBuffer = nullptr;
@@ -142,16 +188,29 @@ protected:
 
     std::vector<MeshPart> meshParts;
     std::vector<GHIInputElementInfo> inputElements;
-    std::vector<std::string> inputElementStrings;
 
     int vertexStride = 0;
     uint32 numVertices = 0;
     uint32 numIndices = 0;
+    uint32 numTriFaces = 0;
 
     GHIIndexType indexType = GHIIndexType::Index16Bit;
 
     std::vector<uint8> vertices;
     std::vector<uint8> indices;
+
+    std::string IndexTypeStr() const
+    {
+        return indexType == GHIIndexType::Index16Bit ? "16-bit" : "32-bit";
+    }
+
+    std::string VertexAttributeStr() const
+    {
+        std::string ret;
+        for (uint64 i = 0; i < inputElements.size(); ++i)
+             ret += std::string(inputElements[i].SemanticName)+"\t";
+        return ret;
+    }
 };
 
 class Model
@@ -188,8 +247,8 @@ public:
     void GenerateCorneaScene(IGHIComputeCommandCotext* commandcontext);
 
     // Accessors
-    std::vector<MeshMaterial>& Materials() { return meshMaterials; };
-    const std::vector<MeshMaterial>& Materials() const { return meshMaterials; };
+    std::vector<MaterialMap>& Materials() { return meshMaterials; };
+    const std::vector<MaterialMap>& Materials() const { return meshMaterials; };
 
     std::vector<Mesh>& Meshes() { return meshes; }
     const std::vector<Mesh>& Meshes() const { return meshes; }
@@ -216,10 +275,10 @@ public:
 
 protected:
 
-    static void LoadMaterialResources(MeshMaterial& material, const std::string& directory, IGHIComputeCommandCotext* commandcontext, bool forceSRGB);
+    static void LoadMaterialResources(MaterialMap& material, const std::string& directory, IGHIComputeCommandCotext* commandcontext, bool forceSRGB);
 
     std::vector<Mesh> meshes;
-    std::vector<MeshMaterial> meshMaterials;
+    std::vector<MaterialMap> meshMaterials;
     std::string fileDirectory;
 };
 

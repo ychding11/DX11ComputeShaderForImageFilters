@@ -20,6 +20,13 @@ namespace GHI
 
 	void FDX11GHITexture::LoadFromFile(std::string filename)
 	{
+        if (ExtractExtension(filename) == "dds")
+        {
+            width = height = textureSizeInBytes = 0;
+            aspect = 0.;
+            ELOG("Currently NOT Support 'DDS' format Texture.");
+            return;
+        }
 		std::wstring wName = StrToWstr(filename.c_str());
 		DXCall(CreateWICTextureFromFile(DX11::Device(), wName.c_str(), (ID3D11Resource **)&rawTexture, &rawSRV));
 		D3D11_TEXTURE2D_DESC desc;
@@ -29,10 +36,10 @@ namespace GHI
         {
             width = height = textureSizeInBytes = 0;
             aspect = 0.;
-            WriteLog("Texutre format != DXGI_FORMAT_R8G8B8A8_UNORM");
+            ELOG("Texutre format != DXGI_FORMAT_R8G8B8A8_UNORM.");
 			return;
         }
-		width = desc.Width;
+		width  = desc.Width;
 		height = desc.Height;
 		aspect = float(width) / float(height);
 		textureSizeInBytes = desc.Width * desc.Height * 4;

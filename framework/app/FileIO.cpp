@@ -9,7 +9,6 @@
 namespace GHI
 {
 
-#if 0
 // Returns true if a file exits
 bool FileExists(const wchar* filePath)
 {
@@ -23,6 +22,7 @@ bool FileExists(const wchar* filePath)
     return true;
 }
 
+#if 0
 // Retursn true if a directory exists
 bool DirectoryExists(const wchar* dirPath)
 {

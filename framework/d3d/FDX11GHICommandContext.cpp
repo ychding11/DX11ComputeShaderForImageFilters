@@ -17,6 +17,7 @@ namespace GHI
 	{
 		D3D_PRIMITIVE_TOPOLOGY top = (D3D_PRIMITIVE_TOPOLOGY)topology;
 		DX11::ImmediateContext()->IASetPrimitiveTopology(top);
+        DLOG("Set Primitive Topology.");
 	}
 
 	void FDX11IGHIComputeCommandCotext::CopyTexture(GHITexture *dst, GHITexture *src)
@@ -29,34 +30,35 @@ namespace GHI
 		}
 		else
 		{
-
+            ELOG("Copy Texture failed.");
 		}
 	}
 
 	GHITexture* FDX11IGHIComputeCommandCotext::CreateTexture(std::string filename)
 	{
 		GHITexture *tex = new FDX11GHITexture(filename);
+        DLOG("Load Texture from file.");
 		return tex;
 	}
 
 	GHITexture* FDX11IGHIComputeCommandCotext::CreateTextureByAnother(GHITexture * tex)
 	{
-            FDX11GHITexture *res = ResourceCast(tex);
-			if (res)
-			{
-				ID3D11Texture2D *rawTexture = res->rawTexture;
-				D3D11_TEXTURE2D_DESC desc;
-				rawTexture->GetDesc(&desc);
-				desc.BindFlags |= (D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE);
-				ID3D11Texture2D *temp = nullptr;
-				DXCall(DX11::Device()->CreateTexture2D(&desc, NULL, &temp));
-				return new FDX11GHITexture(temp);
-			}
-			else
-			{
-
-				return nullptr;
-			}
+        FDX11GHITexture *res = ResourceCast(tex);
+		if (res)
+		{
+			ID3D11Texture2D *rawTexture = res->rawTexture;
+			D3D11_TEXTURE2D_DESC desc;
+			rawTexture->GetDesc(&desc);
+			desc.BindFlags |= (D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE);
+			ID3D11Texture2D *temp = nullptr;
+			DXCall(DX11::Device()->CreateTexture2D(&desc, NULL, &temp));
+			return new FDX11GHITexture(temp);
+		}
+		else
+		{
+            DLOG("GHI Texutre cast fail.");
+			return nullptr;
+		}
 	}
 
     void FDX11IGHIComputeCommandCotext::SetViewport(GHIViewport viewport)
@@ -66,12 +68,12 @@ namespace GHI
         vp.TopLeftX = viewport.TopLeftX; vp.TopLeftY = viewport.TopLeftY;
         vp.MinDepth = viewport.MinDepth; vp.MaxDepth = viewport.MaxDepth;
         DX11::ImmediateContext()->RSSetViewports(1, &vp);
+        DLOG("Set Viewport");
     }
     void FDX11IGHIComputeCommandCotext::Draw(int count, int offset)
     {
         DX11::ImmediateContext()->Draw(count, offset);
     }
-
 
     static bool BuildComputeShader(LPCWSTR filename, LPCSTR entrypoint, ID3D11ComputeShader** computeShader,ID3DBlob** pBlob,ID3DBlob** pErrorBlob )
     {
@@ -97,7 +99,15 @@ namespace GHI
         dwShaderFlags |= D3DCOMPILE_DEBUG;
         #endif
 
-        DXCall(D3DCompileFromFile(filename, NULL, NULL, entrypoint, "ps_4_0", dwShaderFlags, 0, pBlob, pErrorBlob));
+        if (FAILED(D3DCompileFromFile(filename, NULL, NULL, entrypoint, "ps_4_0", dwShaderFlags, 0, pBlob, pErrorBlob)))
+        {
+            ELOG("Compile Pixel shader fail. [ %s ]", WstrToStr(filename).c_str());
+            if (*pErrorBlob)
+            {
+                ELOG("Compile info:%s",(char*)( (*pErrorBlob)->GetBufferPointer()));
+            }
+            return false;
+        }
         DXCall(DX11::Device()->CreatePixelShader((*pBlob)->GetBufferPointer(), (*pBlob)->GetBufferSize(), NULL, shader));
 
         DLOG("Build pixel Shader['%ls'] OK.\n", filename);
@@ -112,7 +122,15 @@ namespace GHI
 #if defined( DEBUG ) || defined( _DEBUG )
         dwShaderFlags |= D3DCOMPILE_DEBUG;
 #endif
-        DXCall(D3DCompileFromFile(filename, NULL, NULL, entrypoint, "vs_4_0", dwShaderFlags, 0, pBlob, pErrorBlob));
+        if (FAILED(D3DCompileFromFile(filename, NULL, NULL, entrypoint, "vs_4_0", dwShaderFlags, 0, pBlob, pErrorBlob)))
+        {
+            ELOG("Compile Vertext shader fail. [ %s ]", WstrToStr(filename).c_str());
+            if (*pErrorBlob)
+            {
+                ELOG("Compile info:%s",(char*)( (*pErrorBlob)->GetBufferPointer()));
+            }
+            return false;
+        }
         DXCall(DX11::Device()->CreateVertexShader((*pBlob)->GetBufferPointer(), (*pBlob)->GetBufferSize(), NULL, shader));
         DLOG("Build vertex Shader['%ls'] OK.\n", filename);
         
@@ -232,6 +250,29 @@ namespace GHI
 		return shader;
 	}
 
+    GHIVertexLayout* FDX11IGHIComputeCommandCotext::CreateVertextLayout(const std::vector<GHIInputElementInfo>& vertexFormats, GHIVertexShader *vs)
+    {
+        ID3D11InputLayout *layout = nullptr;
+
+        if (vs && vs->info.shaderstage == EShaderStage::VS)
+        {
+            FDX11GHIVertexShader *shader = dynamic_cast<FDX11GHIVertexShader *>(vs);
+            if (!shader)
+            {
+                ELOG("GHI Shader cast failed.");
+                return nullptr;
+            }
+            const D3D11_INPUT_ELEMENT_DESC *elemDsc = reinterpret_cast<const D3D11_INPUT_ELEMENT_DESC*>(vertexFormats.data());
+            DXCall(DX11::Device()->CreateInputLayout(elemDsc, vertexFormats.size(), vs->info.bytecode.data(), vs->info.bytecode.size() , &layout));
+            return new FDX11GHIVertexLayout(layout);
+        }
+        else
+        {
+            ELOG("shader type is NOT Vertext shader.");
+            return nullptr;
+        }
+    }
+
     void FDX11IGHIComputeCommandCotext::SetShader(GHIShader* shader)
     {
         if (shader && shader->info.shaderstage == EShaderStage::CS)
@@ -239,31 +280,184 @@ namespace GHI
             FDX11GHIComputeShader *cs = dynamic_cast<FDX11GHIComputeShader *>(shader);
             if (!cs)
             {
+                ELOG("GHI Shader cast failed.");
                 return;
             }
-
             DX11::ImmediateContext()->CSSetShader(cs->rawPtr, nullptr, 0);
+            DLOG("Set Compute Shader OK.");
         }
         else if (shader && shader->info.shaderstage == EShaderStage::VS)
         {
             FDX11GHIVertexShader *vs = dynamic_cast<FDX11GHIVertexShader *>(shader);
             if (!vs)
             {
+                ELOG("GHI Shader cast failed.");
                 return;
             }
-
             DX11::ImmediateContext()->VSSetShader(vs->rawPtr, nullptr, 0);
+            DLOG("Set Vertex Shader OK.");
         }
         else if (shader && shader->info.shaderstage == EShaderStage::PS)
         {
             FDX11GHIPixelShader *ps = dynamic_cast<FDX11GHIPixelShader *>(shader);
             if (!ps)
             {
+                ELOG("GHI Shader cast failed.");
                 return;
             }
 
             DX11::ImmediateContext()->PSSetShader(ps->rawPtr, nullptr, 0);
+            DLOG("Set Pixel Shader OK.");
         }
+
+    }
+
+	GHIBuffer*  FDX11IGHIComputeCommandCotext::CreateVertexBuffer(int size, const void* initData)
+	{
+        D3D11_BUFFER_DESC bufferDesc;
+        bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+        bufferDesc.ByteWidth = size;
+        bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+        bufferDesc.CPUAccessFlags = 0;
+        bufferDesc.MiscFlags = 0;
+        bufferDesc.StructureByteStride = 0;
+
+        D3D11_SUBRESOURCE_DATA data;
+        data.pSysMem = initData;
+        data.SysMemPitch = 0;
+        data.SysMemSlicePitch = 0;
+
+        ID3D11Buffer *vertexBuffer = nullptr;
+        DXCall(DX11::Device()->CreateBuffer(&bufferDesc, &data, &vertexBuffer));
+
+        return new FDX11GHIBuffer(vertexBuffer);
+	}
+	GHIBuffer*  FDX11IGHIComputeCommandCotext::CreateIndexBuffer(int size, const void* initData)
+	{
+        D3D11_BUFFER_DESC bufferDesc;
+        bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+        bufferDesc.ByteWidth = size;
+        bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+        bufferDesc.CPUAccessFlags = 0;
+        bufferDesc.MiscFlags = 0;
+        bufferDesc.StructureByteStride = 0;
+
+        D3D11_SUBRESOURCE_DATA data;
+        data.pSysMem = initData;
+        data.SysMemPitch = 0;
+        data.SysMemSlicePitch = 0;
+
+        ID3D11Buffer *indexBuffer = nullptr;
+        DXCall(DX11::Device()->CreateBuffer(&bufferDesc, &data, &indexBuffer));
+
+        return new FDX11GHIBuffer(indexBuffer);
+	}
+
+	void FDX11IGHIComputeCommandCotext::SetIndexBuffer(GHIBuffer *buffer, GHIIndexType type, int offset)
+	{
+        FDX11GHIBuffer *res = ResourceCast(buffer);
+        if (res)
+        {
+            DXGI_FORMAT indexFormat = type == GHIIndexType::Index32Bit ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT;
+            DX11::ImmediateContext()->IASetIndexBuffer(res->rawBuffer, indexFormat, offset);
+        }
+        else
+        {
+           ELOG("GHI Index Buffer cast failed.");
+           return;
+        }
+        DLOG("Set Index Buffer OK.");
+	}
+
+	void FDX11IGHIComputeCommandCotext::SetVertexBuffers(int startSlot, int numSlots, GHIBuffer *buffer[], int strides[], int offsets[])
+	{
+        // check parameter here
+
+        ID3D11Buffer * devicebuffer[8] = { 0 };
+        for (int i = 0; i < numSlots; ++i)
+        {
+            FDX11GHIBuffer *res = ResourceCast(buffer[i]);
+            if (res)
+            {
+                devicebuffer[i] = res->rawBuffer;
+            }
+            else
+            {
+                ELOG("GHI Vertext Buffer cast failed.");
+                return;
+            }
+
+        }
+        DX11::ImmediateContext()->IASetVertexBuffers(startSlot, numSlots, devicebuffer, (unsigned int*)strides, (unsigned int*)offsets);
+        DLOG("Set Vetex Buffer OK. slot[%d,%d]", startSlot, numSlots);
+	}
+
+	void FDX11IGHIComputeCommandCotext::DrawIndexed(int count, int startIndexLocation, int baseIndexLocation)
+	{
+        DX11::ImmediateContext()->DrawIndexed(count, startIndexLocation, baseIndexLocation);
+	}
+
+    void FDX11IGHIComputeCommandCotext::SetVertexLayout(GHIVertexLayout* layout)
+    {
+        FDX11GHIVertexLayout *res = ResourceCast(layout);
+        if (res)
+        {
+            ID3D11InputLayout *raw = res->rawLayout;
+            DX11::ImmediateContext()->IASetInputLayout(raw);
+        }
+        else
+        {
+            ELOG("GHI Vertex Layout cast failed.");
+            return;
+        }
+        DLOG("Set Vetex Layout OK.");
+    }
+
+    void FDX11IGHIComputeCommandCotext::SetRenderTarget(int num, GHITexture **colorBuffers, GHITexture *depthBuffer)
+    {
+        AssertMsg_(num > 0, "error");
+        ID3D11DepthStencilView *depth = nullptr;
+        std::vector<ID3D11RenderTargetView*> colors;
+        colors.resize(num);
+        for (int i = 0; i < num; ++i)
+        {
+            FDX11GHITexture *res = ResourceCast(colorBuffers[i]);
+            if (res == nullptr)
+            {
+                ELOG("GHI Texture cast fail.");
+                return;
+            }
+            colors[i] = res->rawRTV;
+        }
+
+        FDX11GHITexture *res = ResourceCast(depthBuffer);
+        if (res == nullptr)
+        {
+            ELOG("GHI Texture cast fail.");
+            return;
+        }
+
+    }
+    void FDX11IGHIComputeCommandCotext::ClearRenderTarget(int num, GHITexture **colorBuffers, float*clearValue)
+    {
+        std::vector<ID3D11RenderTargetView*> colors;
+        colors.resize(num);
+        for (int i = 0; i < num; ++i)
+        {
+            FDX11GHITexture *res = ResourceCast(colorBuffers[i]);
+            if (res == nullptr)
+            {
+                ELOG("GHI Texture cast fail.");
+                return;
+            }
+            colors[i] = res->rawRTV;
+            DX11::ImmediateContext()->ClearRenderTargetView(res->rawRTV, clearValue);
+        }
+
+    }
+
+    void FDX11IGHIComputeCommandCotext::ClearDepthStencil(GHITexture *depthBuffers, float depth, int stencil, int flag)
+    {
 
     }
 }

@@ -25,7 +25,7 @@ inline bool FileExists(const std::string filePath)
     return std::filesystem::exists(filePath);
 }
 
-//bool FileExists(const wchar* filePath);
+bool FileExists(const wchar* filePath);
 //bool DirectoryExists(const wchar* dirPath);
 
 std::wstring GetDirectoryFromFilePath(const wchar* filePath);

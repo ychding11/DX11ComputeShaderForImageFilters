@@ -78,6 +78,12 @@ namespace GHI
 			view = new FDX11GHIResourceView(this);
             list.push_back(this);
 		}
+
+		~FDX11GHITexture()
+		{
+			this->release();
+		}
+
         virtual void release() override
         {
             DLOG("Begin, DXRelease() texture");
@@ -104,6 +110,12 @@ namespace GHI
 		{
             list.push_back(this);
 		}
+
+        ~FDX11GHIBuffer()
+        {
+            this->release();
+        }
+
         virtual void release() override
         {
             DLOG("Begin, DXRelease() buffer");
@@ -122,6 +134,12 @@ namespace GHI
 		{
             list.push_back(this);
 		}
+
+        ~FDX11GHISampler()
+        {
+            this->release();
+        }
+
         virtual void release() override
         {
             DLOG("Begin, DXRelease(), sampler");
@@ -135,11 +153,16 @@ namespace GHI
     {
     public:
         ID3D11ComputeShader*  rawPtr = nullptr;
-    public:
+
         FDX11GHIComputeShader(ID3D11ComputeShader*  ptr)
             :rawPtr(ptr)
         {
             list.push_back(this);
+        }
+
+        ~FDX11GHIComputeShader()
+        {
+            this->release();
         }
 
         virtual void release() override
@@ -198,6 +221,36 @@ namespace GHI
 		}
     };
 
+    // vertex Layout
+    class FDX11GHIVertexLayout :public GHIVertexLayout
+    {
+    public:
+        ID3D11InputLayout * rawLayout = nullptr;
+        FDX11GHIVertexLayout(ID3D11InputLayout * layout)
+            :rawLayout(layout)
+        {
+            list.push_back(this);
+        }
+
+        ~FDX11GHIVertexLayout()
+        {
+            this->release();
+        }
+
+        virtual void release() override
+        {
+            DLOG("Begin, DXRelease() buffer");
+            DXRelease(rawLayout);
+            AssertMsg_(rawLayout == nullptr, "Fault, DXRelease()");
+        }
+
+    };
+
+    class FDX11GHIRenderTarget :public GHIRenderTarget
+    {
+        
+    };
+
     // Cast
     template<class T>
     struct TD3D11ResourceTraits
@@ -235,9 +288,9 @@ namespace GHI
     };
 
     template<>
-    struct TD3D11ResourceTraits<GHIPixelShader>
+    struct TD3D11ResourceTraits<GHIVertexLayout>
     {
-        typedef FDX11GHIPixelShader TConcreteType;
+        typedef FDX11GHIVertexLayout TConcreteType;
     };
 
     #define FORCEINLINE __forceinline									/* Force code to be inline */

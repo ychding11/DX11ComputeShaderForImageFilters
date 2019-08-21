@@ -80,15 +80,7 @@ typedef uint32_t bool32;
 #include <d3dcompiler.h>
 #include <d3d9.h>
 
-// DirectX Math
-#if 1
-#include <DirectXMath.h>
-#include <DirectXPackedVector.h>
-#include <DirectXCollision.h>
 
-using namespace DirectX;
-using namespace DirectX::PackedVector;
-#endif
 
 // Un-define min and max from the windows headers
 #ifdef min
@@ -140,6 +132,11 @@ using namespace DirectX::PackedVector;
 #pragma comment(lib, "psapi.lib")
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "gdiplus.lib")
+
+// Assimp
+//#pragma comment(lib, "..\\framework\\thirdparty\\Assimp-3.1.1\\lib\\assimp.lib")
+//#pragma comment(lib, "assimp.lib")
+
 
 // Hosek Sky
 #ifdef _DEBUG

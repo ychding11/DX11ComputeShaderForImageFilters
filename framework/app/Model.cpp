@@ -45,22 +45,22 @@ struct Vertex
     void Transform(const Float3& p, const Float3& s, const Quaternion& q)
     {
         Position *= s;
-        Position = Float3::Transform(Position, q);
+        Position  = Float3::Transform(Position, q);
         Position += p;
 
-        Normal = Float3::Transform(Normal, q);
-        Tangent = Float3::Transform(Tangent, q);
+        Normal    = Float3::Transform(Normal, q);
+        Tangent   = Float3::Transform(Tangent, q);
         Bitangent = Float3::Transform(Bitangent, q);
     }
 };
 
-static const D3D11_INPUT_ELEMENT_DESC VertexInputs[5] =
+static const GHIInputElementInfo VertexInputs[5] =
 {
-    { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    { "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-    { "BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    { "POSITION",  0, DATA_FORMAT_R32G32B32_FLOAT, 0, 0,  PER_VERTEX_DATA, 0 },
+    { "NORMAL",    0, DATA_FORMAT_R32G32B32_FLOAT, 0, 12, PER_VERTEX_DATA, 0 },
+    { "TEXCOORD",  0, DATA_FORMAT_R32G32_FLOAT,    0, 24, PER_VERTEX_DATA, 0 },
+    { "TANGENT",   0, DATA_FORMAT_R32G32B32_FLOAT, 0, 32, PER_VERTEX_DATA, 0 },
+    { "BITANGENT", 0, DATA_FORMAT_R32G32B32_FLOAT, 0, 44, PER_VERTEX_DATA, 0 },
 };
 
 void Mesh::InitFromSDKMesh(IGHIComputeCommandCotext* commandcontext, SDKMesh& sdkMesh, uint32 meshIdx, bool generateTangents)
@@ -81,7 +81,7 @@ void Mesh::InitFromSDKMesh(IGHIComputeCommandCotext* commandcontext, SDKMesh& sd
     const uint32 vbIdx = sdkMeshData.VertexBuffers[0];
     const uint32 ibIdx = sdkMeshData.IndexBuffer;
 
-    CreateInputElements(sdkMesh.VBElements(0));
+    //CreateInputElements(sdkMesh.VBElements(0));
 
     vertices.resize(vertexStride * numVertices, 0);
     memcpy(vertices.data(), sdkMesh.GetRawVerticesAt(vbIdx), vertexStride * numVertices);
@@ -112,6 +112,7 @@ void Mesh::InitFromAssimpMesh(IGHIComputeCommandCotext* commandcontext, const ai
 {
     numVertices = assimpMesh.mNumVertices;
     numIndices = assimpMesh.mNumFaces * 3;
+    numTriFaces = assimpMesh.mNumFaces;
 
     uint32 indexSize = 2;
     indexType = GHIIndexType::Index16Bit;
@@ -186,7 +187,7 @@ void Mesh::InitFromAssimpMesh(IGHIComputeCommandCotext* commandcontext, const ai
 
     vertexStride = currOffset;
 
-    // Copy and interleave the vertex data
+    // Copy and interleave the vertex data into a single buffer binding
     vertices.resize(vertexStride * numVertices, 0);
     for(uint64 vtxIdx = 0; vtxIdx < numVertices; ++vtxIdx)
     {
@@ -203,6 +204,12 @@ void Mesh::InitFromAssimpMesh(IGHIComputeCommandCotext* commandcontext, const ai
                 *reinterpret_cast<Float3*>(elemStart) *= -1.0f;
         }
     }
+
+	float * data = (float*)vertices.data();
+	for (uint64 vtxIdx = 0; vtxIdx < numVertices; ++vtxIdx)
+	{
+		boundingbox.Expand( { data[3*vtxIdx], data[3*vtxIdx+1], data[3*vtxIdx+2] } );
+	}
 
     // Copy the index data
     indices.resize(indexSize * numIndices, 0);
@@ -221,7 +228,6 @@ void Mesh::InitFromAssimpMesh(IGHIComputeCommandCotext* commandcontext, const ai
         }
     }
 
-    CreateVertexAndIndexBuffers(commandcontext);
 
     const uint32 numSubsets = 1;
     meshParts.resize(numSubsets);
@@ -234,6 +240,9 @@ void Mesh::InitFromAssimpMesh(IGHIComputeCommandCotext* commandcontext, const ai
         part.VertexCount = numVertices;
         part.MaterialIdx = assimpMesh.mMaterialIndex;
     }
+
+    CreateVertexAndIndexBuffers(commandcontext);
+    DLOG("%s",str().c_str());
 }
 
 // Initializes the mesh as a box
@@ -247,6 +256,7 @@ void Mesh::InitBox(IGHIComputeCommandCotext* commandcontext, const Float3& dimen
 
     uint64 vIdx = 0;
 
+    // hard code vertex data
     // Top
     boxVerts[vIdx++] = Vertex(Float3(-1.0f, 1.0f, 1.0f), Float3(0.0f, 1.0f, 0.0f), Float2(0.0f, 0.0f), Float3(1.0f, 0.0f, 0.0f), Float3(0.0f, 0.0f, -1.0f));
     boxVerts[vIdx++] = Vertex(Float3(1.0f, 1.0f, 1.0f), Float3(0.0f, 1.0f, 0.0f), Float2(1.0f, 0.0f), Float3(1.0f, 0.0f, 0.0f), Float3(0.0f, 0.0f, -1.0f));
@@ -344,7 +354,7 @@ void Mesh::InitBox(IGHIComputeCommandCotext* commandcontext, const Float3& dimen
     numIndices = uint32(NumBoxIndices);
 
     inputElements.clear();
-    inputElements.resize(sizeof(VertexInputs) / sizeof(D3D11_INPUT_ELEMENT_DESC));
+    inputElements.resize(sizeof(VertexInputs) / sizeof(GHIInputElementInfo));
     memcpy(inputElements.data(), VertexInputs, sizeof(VertexInputs));
 
     const uint32 vbSize = vertexStride * numVertices;
@@ -356,7 +366,6 @@ void Mesh::InitBox(IGHIComputeCommandCotext* commandcontext, const Float3& dimen
     memcpy(indices.data(), boxIndices.data(), ibSize);
 
     meshParts.resize(1);
-
     MeshPart& part = meshParts[0];
     part.IndexStart = 0;
     part.IndexCount = numIndices;
@@ -364,32 +373,8 @@ void Mesh::InitBox(IGHIComputeCommandCotext* commandcontext, const Float3& dimen
     part.VertexCount = numVertices;
     part.MaterialIdx = materialIdx;
 
-#if 0
-    D3D11_BUFFER_DESC bufferDesc;
-    bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-    bufferDesc.ByteWidth = vbSize;
-    bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bufferDesc.CPUAccessFlags = 0;
-    bufferDesc.MiscFlags = 0;
-    bufferDesc.StructureByteStride = 0;
-
-    D3D11_SUBRESOURCE_DATA initData;
-    initData.pSysMem = vertices.data();
-    initData.SysMemPitch = 0;
-    initData.SysMemSlicePitch = 0;
-    DXCall(device->CreateBuffer(&bufferDesc, &initData, &vertexBuffer));
-
-    bufferDesc.ByteWidth = ibSize;
-    bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    bufferDesc.MiscFlags = 0;
-    bufferDesc.StructureByteStride = 0;
-
-    initData.pSysMem = indices.data();
-    DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
-#endif
-
-    commandcontext->CreateVertexBuffer(vbSize, vertices.data());
-    commandcontext->CreateIndexBuffer(ibSize, indices.data());
+    vertexBuffer = commandcontext->CreateVertexBuffer(vbSize, vertices.data());
+    indexBuffer = commandcontext->CreateIndexBuffer(ibSize, indices.data());
 }
 
 // Initializes the mesh as a plane
@@ -439,7 +424,6 @@ void Mesh::InitPlane(IGHIComputeCommandCotext* commandcontext, const Float2& dim
     memcpy(indices.data(), planeIndices.data(), ibSize);
 
     meshParts.resize(1);
-
     MeshPart& part = meshParts[0];
     part.IndexStart = 0;
     part.IndexCount = numIndices;
@@ -447,32 +431,8 @@ void Mesh::InitPlane(IGHIComputeCommandCotext* commandcontext, const Float2& dim
     part.VertexCount = numVertices;
     part.MaterialIdx = materialIdx;
 
-#if 0
-    D3D11_BUFFER_DESC bufferDesc;
-    bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-    bufferDesc.ByteWidth = vbSize;
-    bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bufferDesc.CPUAccessFlags = 0;
-    bufferDesc.MiscFlags = 0;
-    bufferDesc.StructureByteStride = 0;
-
-    D3D11_SUBRESOURCE_DATA initData;
-    initData.pSysMem = vertices.data();
-    initData.SysMemPitch = 0;
-    initData.SysMemSlicePitch = 0;
-    DXCall(device->CreateBuffer(&bufferDesc, &initData, &vertexBuffer));
-
-    bufferDesc.ByteWidth = ibSize;
-    bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    bufferDesc.MiscFlags = 0;
-    bufferDesc.StructureByteStride = 0;
-
-    initData.pSysMem = indices.data();
-    DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
-#endif
-
-    commandcontext->CreateVertexBuffer(vbSize, vertices.data());
-    commandcontext->CreateIndexBuffer(ibSize, indices.data());
+    vertexBuffer = commandcontext->CreateVertexBuffer(vbSize, vertices.data());
+    indexBuffer = commandcontext->CreateIndexBuffer(ibSize, indices.data());
 }
 
 static float CorneaZ(float r)
@@ -608,37 +568,9 @@ void Mesh::InitCornea(IGHIComputeCommandCotext* commandcontext, uint32 materialI
     part.VertexCount = numVertices;
     part.MaterialIdx = materialIdx;
 
-#if 0
-    D3D11_BUFFER_DESC bufferDesc;
-    bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-    bufferDesc.ByteWidth = vbSize;
-    bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bufferDesc.CPUAccessFlags = 0;
-    bufferDesc.MiscFlags = 0;
-    bufferDesc.StructureByteStride = 0;
-
-    D3D11_SUBRESOURCE_DATA initData;
-    initData.pSysMem = vertices.data();
-    initData.SysMemPitch = 0;
-    initData.SysMemSlicePitch = 0;
-#endif
-
-    
-    //DXCall(device->CreateBuffer(&bufferDesc, &initData, &vertexBuffer));
-
-#if 0
-    bufferDesc.ByteWidth = ibSize;
-    bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    bufferDesc.MiscFlags = 0;
-    bufferDesc.StructureByteStride = 0;
-
-    initData.pSysMem = indices.data();
-#endif
-    commandcontext->CreateVertexBuffer(vbSize, vertices.data());
-    commandcontext->CreateIndexBuffer(ibSize, indices.data());
-    //DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
+    vertexBuffer = commandcontext->CreateVertexBuffer(vbSize, vertices.data());
+    indexBuffer = commandcontext->CreateIndexBuffer(ibSize, indices.data());
 }
-
 
 void Mesh::GenerateTangentFrame()
 {
@@ -764,9 +696,9 @@ void Mesh::GenerateTangentFrame()
     memcpy(vertices.data(), newVertices.data(), numVertices * vertexStride);
 }
 
+#if 0
 void Mesh::CreateInputElements(const D3DVERTEXELEMENT9* declaration)
 {
-#if 0
     map<BYTE, LPCSTR> nameMap;
     nameMap[D3DDECLUSAGE_POSITION] = "POSITION";
     nameMap[D3DDECLUSAGE_BLENDWEIGHT] = "BLENDWEIGHT";
@@ -813,45 +745,20 @@ void Mesh::CreateInputElements(const D3DVERTEXELEMENT9* declaration)
 
         numInputElements++;
     }
-#endif
 }
+#endif
 
 void Mesh::CreateVertexAndIndexBuffers(IGHIComputeCommandCotext* commandcontext)
 {
     Assert_(numVertices > 0);
     Assert_(numIndices > 0);
 
-#if 0
-    D3D11_BUFFER_DESC bufferDesc;
-    bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
-    bufferDesc.ByteWidth = vertexStride * numVertices;
-    bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bufferDesc.CPUAccessFlags = 0;
-    bufferDesc.MiscFlags = 0;
-    bufferDesc.StructureByteStride = 0;
-
-    D3D11_SUBRESOURCE_DATA initData;
-    initData.pSysMem = vertices.data();
-    initData.SysMemPitch = 0;
-    initData.SysMemSlicePitch = 0;
-#endif
-    commandcontext->CreateVertexBuffer(vertexStride*numVertices, vertices.data());
-    //DXCall(device->CreateBuffer(&bufferDesc, &initData, &vertexBuffer));
-#if 0
-    bufferDesc.ByteWidth = IndexSize() * numIndices;
-    bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    bufferDesc.MiscFlags = 0;
-    bufferDesc.StructureByteStride = 0;
-
-    initData.pSysMem = indices.data();
-#endif
-
-    commandcontext->CreateIndexBuffer(IndexSize() * numIndices, indices.data());
-    //DXCall(device->CreateBuffer(&bufferDesc, &initData, &indexBuffer));
+	vertexBuffer = commandcontext->CreateVertexBuffer(vertexStride*numVertices, vertices.data());
+	indexBuffer = commandcontext->CreateIndexBuffer(IndexSize() * numIndices, indices.data());
 }
 
 // Does a basic draw of all parts
-void Mesh::Render(IGHIComputeCommandCotext* commandcontext)
+void Mesh::Render(IGHIComputeCommandCotext* commandcontext) const
 {
     // Set the vertices and indices
     GHIBuffer* vertexBuffers[1] = { vertexBuffer };
@@ -864,8 +771,8 @@ void Mesh::Render(IGHIComputeCommandCotext* commandcontext)
     // Draw each MeshPart
     for(size_t i = 0; i < meshParts.size(); ++i)
     {
-        MeshPart& meshPart = meshParts[i];
-        commandcontext->DrawIndexed(meshPart.IndexCount, meshPart.IndexStart, 0);
+        //MeshPart& meshPart = meshParts[i];
+        commandcontext->DrawIndexed(meshParts[i].IndexCount, meshParts[i].IndexStart, 0);
     }
 }
 
@@ -880,13 +787,13 @@ void Model::CreateFromSDKMeshFile(IGHIComputeCommandCotext* commandcontext, cons
     SDKMesh sdkMesh;
     sdkMesh.Create(StrToWstr(fileName).c_str());
 
-    fileDirectory = GetDirectoryFromFilePath(fileName);
+    fileDirectory = ExtractDirectory(fileName);
 
     // Make materials
     uint32 numMaterials = sdkMesh.GetNumMaterials();
     for(uint32 i = 0; i < numMaterials; ++i)
     {
-        MeshMaterial material;
+        MaterialMap material;
         SDKMESH_MATERIAL* mat = sdkMesh.GetMaterial(i);
         material.DiffuseMapName = (mat->DiffuseTexture);
         material.NormalMapName  = (mat->NormalTexture);
@@ -938,13 +845,13 @@ void Model::CreateWithAssimp(IGHIComputeCommandCotext* commandcontext, const cha
     if(scene->mNumMaterials == 0)
         throw Exception("Scene " + std::string(fileName) + " has no materials");
 
-    fileDirectory = GetDirectoryFromFilePath(fileName);
+    fileDirectory = ExtractDirectory(fileName);
 
     // Load the materials
     const uint64 numMaterials = scene->mNumMaterials;
     for(uint64 i = 0; i < numMaterials; ++i)
     {
-        MeshMaterial material;
+        MaterialMap material;
         const aiMaterial& mat = *scene->mMaterials[i];
 
         aiString diffuseTexPath;
@@ -967,13 +874,17 @@ void Model::CreateWithAssimp(IGHIComputeCommandCotext* commandcontext, const cha
         LoadMaterialResources(material, fileDirectory, commandcontext, forceSRGB);
 
         meshMaterials.push_back(material);
+
+        DLOG("Material Index %d, %s", i, material.str().c_str());
     }
 
     // Initialize the meshes
     const uint64 numMeshes = scene->mNumMeshes;
     meshes.resize(numMeshes);
-    for(uint64 i = 0; i < numMeshes; ++i)
+    for (uint64 i = 0; i < numMeshes; ++i)
+    {
         meshes[i].InitFromAssimpMesh(commandcontext, *scene->mMeshes[i]);
+    }
 }
 
 void Model::CreateFromMeshData(IGHIComputeCommandCotext* commandcontext, const char* fileName, bool forceSRGB)
@@ -987,7 +898,7 @@ void Model::CreateFromMeshData(IGHIComputeCommandCotext* commandcontext, const c
 void Model::GenerateBoxScene(IGHIComputeCommandCotext* commandcontext, const Float3& dimensions, const Float3& position,
                              const Quaternion& orientation, const char* colorMap, const char* normalMap)
 {
-    MeshMaterial material;
+    MaterialMap material;
     material.DiffuseMapName = colorMap;
     material.NormalMapName = normalMap;
     fileDirectory = "..\\Content\\Textures\\";
@@ -1000,7 +911,7 @@ void Model::GenerateBoxScene(IGHIComputeCommandCotext* commandcontext, const Flo
 
 void Model::GenerateBoxTestScene(IGHIComputeCommandCotext* commandcontext)
 {
-    MeshMaterial material;
+    MaterialMap material;
     material.DiffuseMapName = "White.png";
     material.NormalMapName = "Hex.png";
     fileDirectory = "..\\Content\\Textures\\";
@@ -1016,7 +927,7 @@ void Model::GenerateBoxTestScene(IGHIComputeCommandCotext* commandcontext)
 void Model::GeneratePlaneScene(IGHIComputeCommandCotext* commandcontext, const Float2& dimensions, const Float3& position,
                                const Quaternion& orientation, const char* colorMap, const char* normalMap)
 {
-    MeshMaterial material;
+    MaterialMap material;
     material.DiffuseMapName = colorMap;
     material.NormalMapName = normalMap;
     fileDirectory = "..\\Content\\Textures\\";
@@ -1029,7 +940,7 @@ void Model::GeneratePlaneScene(IGHIComputeCommandCotext* commandcontext, const F
 
 void Model::GenerateCorneaScene(IGHIComputeCommandCotext* commandcontext)
 {
-    MeshMaterial material;
+    MaterialMap material;
     material.DiffuseMapName = "Eyeball.png";
     material.NormalMapName = "";
     fileDirectory = "..\\Content\\Textures\\";
@@ -1040,7 +951,7 @@ void Model::GenerateCorneaScene(IGHIComputeCommandCotext* commandcontext)
     meshes[0].InitCornea(commandcontext, 0);
 }
 
-void Model::LoadMaterialResources(MeshMaterial& material, const std::string& directory, IGHIComputeCommandCotext* commandcontext, bool forceSRGB)
+void Model::LoadMaterialResources(MaterialMap& material, const std::string& directory, IGHIComputeCommandCotext* commandcontext, bool forceSRGB)
 {
     // Load the diffuse map
     std::string diffuseMapPath = directory + material.DiffuseMapName;
@@ -1049,8 +960,8 @@ void Model::LoadMaterialResources(MeshMaterial& material, const std::string& dir
     else
     {
         GHITexture *defaultDiffuse = nullptr;
-        if (defaultDiffuse == nullptr)
-            defaultDiffuse = commandcontext->CreateTexture("..\\Content\\Textures\\Default.dds");
+        //if (defaultDiffuse == nullptr)
+        //    defaultDiffuse = commandcontext->CreateTexture("..\\Content\\Textures\\Default.dds");
         material.DiffuseMap = defaultDiffuse;
     }
 
@@ -1061,8 +972,8 @@ void Model::LoadMaterialResources(MeshMaterial& material, const std::string& dir
     else
     {
         GHITexture *defaultNormalMap = nullptr;
-        if(defaultNormalMap == nullptr)
-            defaultNormalMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultNormalMap.dds");
+        //if(defaultNormalMap == nullptr)
+       //     defaultNormalMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultNormalMap.dds");
         material.NormalMap = defaultNormalMap;
     }
 
@@ -1073,8 +984,8 @@ void Model::LoadMaterialResources(MeshMaterial& material, const std::string& dir
     else
     {
         GHITexture *defaultRoughnessMap = nullptr;
-        if(defaultRoughnessMap == nullptr)
-            defaultRoughnessMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultRoughness.dds");
+        //if(defaultRoughnessMap == nullptr)
+        //    defaultRoughnessMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultRoughness.dds");
         material.RoughnessMap = defaultRoughnessMap;
     }
 
@@ -1085,8 +996,8 @@ void Model::LoadMaterialResources(MeshMaterial& material, const std::string& dir
     else
     {
         GHITexture *defaultMetallicMap = nullptr;
-        if(defaultMetallicMap == nullptr)
-            defaultMetallicMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultBlack.dds");
+        //if(defaultMetallicMap == nullptr)
+        //    defaultMetallicMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultBlack.dds");
         material.MetallicMap = defaultMetallicMap;
     }
 }

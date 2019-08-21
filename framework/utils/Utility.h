@@ -81,7 +81,7 @@ namespace GHI
         }
     }
 
-    // Splits up a string using a delimiter
+    // Splits up a string by a delimiter
     inline std::vector<std::string> Split(const std::string& str, const std::string& delimiters = " ")
     {
         std::vector<std::string> parts;
@@ -130,13 +130,13 @@ namespace GHI
     #endif
 
     #if defined( DEBUG ) || defined( _DEBUG )
-    #define DLOG(fmt,...)  WriteLog("- [Debug] " fmt, ##__VA_ARGS__)
+    #define DLOG(fmt,...)  //WriteLog("- [Debug] " fmt, ##__VA_ARGS__)
     #else
     #define DLOG(fmt,...)
     #endif
 
     #if defined( DEBUG ) || defined( _DEBUG )
-    #define ELOG(fmt,...)  WriteLog("- [Error] " fmt, ##__VA_ARGS__)
+    #define ELOG(fmt,...)  WriteLog("- [Error] %s():%s\t" fmt, __FUNCTION__, __FILE__, ##__VA_ARGS__)
     #else
     #define ELOG(fmt,...)
     #endif
@@ -199,5 +199,27 @@ namespace GHI
     std::string LoadStr(std::string filename);
     void ArchiveStr(const std::string &str, std::string filename);
     
+    // Returns the extension of the file path
+    inline std::string ExtractExtension(const std::string & filePath)
+    {
+        Assert_(filePath.size() > 0);
+        size_t idx = filePath.rfind('.');
+        if (idx != std::string::npos)
+            return filePath.substr(idx + 1, filePath.length() - idx - 1);
+        else
+            return std::string("");
+    }
+
+    // Returns the directory containing a file
+    inline std::string ExtractDirectory(const std::string & filePath)
+    {
+        Assert_(filePath.size() > 0);
+
+        size_t idx = filePath.rfind('\\');
+        if (idx != std::wstring::npos)
+            return filePath.substr(0, idx + 1);
+        else
+            return std::string("");
+    }
 
 }////namespace

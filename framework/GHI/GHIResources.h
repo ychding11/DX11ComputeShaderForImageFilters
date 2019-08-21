@@ -197,6 +197,11 @@ namespace GHI
 
 	};
 
+	class GHIVertexLayout:public GHIResource
+	{
+
+	};
+
     enum EShaderStage
     {
         ShaderStageInvalid,
@@ -234,10 +239,26 @@ namespace GHI
 
 	};
 
+	#define	GHI_MAX_RENDERTARGET 8
 
-	class GHIShaderProgram
+	class GHIRenderTarget:public GHIResource
 	{
-		std::list<GHIShader*> shaders;
+	protected:
+		int width;
+		int height;
+		int count = 1;
+		EPixelFormat format;
+		GHITexture *targets[GHI_MAX_RENDERTARGET];
+
+	public:
+		int Width() const { return width; }
+		void Width(int w) { width = w; }
+
+		int Height()const { return height; }
+		void Height(int h) { height = h; }
+
+		int TargetCount() const { return count; }
+		void TargetCount(int c) { count = c; }
 	};
 
-}
+ }

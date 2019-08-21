@@ -53,9 +53,8 @@ namespace GHI
 			}
             else
             {
-                //! cast failed
+                ELOG("GHI Texture cast failed.");
             }
-
 		}
 
         virtual void SetShaderResource(GHITexture *resource, int slot, GHIUAVParam view,EShaderStage stage = EShaderStage::CS) override
@@ -69,23 +68,35 @@ namespace GHI
 			}
             else
             {
-                //! cast failed
+                ELOG("GHI Texture cast failed.");
             }
-
 		}
 
-        virtual void SetConstBuffer(GHIBuffer *resource, int slot) override
+        virtual void SetConstBuffer(GHIBuffer *resource, int slot, GHIShader *shader = nullptr) override
         {
 			FDX11GHIBuffer *res = ResourceCast(resource);
 			if (res)
 			{
-                DX11::ImmediateContext()->CSSetConstantBuffers(slot, 1, &res->rawBuffer);
+                if (shader && shader->info.shaderstage == EShaderStage::VS)
+                {
+                    DX11::ImmediateContext()->VSSetConstantBuffers(slot, 1, &res->rawBuffer);
+                    DLOG("Set VS Const Buffer OK.");
+                }
+                else if (shader && shader->info.shaderstage == EShaderStage::PS)
+                {
+                    DX11::ImmediateContext()->PSSetConstantBuffers(slot, 1, &res->rawBuffer);
+                    DLOG("Set PS Const Buffer OK.");
+                }
+                else
+                {
+                    DX11::ImmediateContext()->CSSetConstantBuffers(slot, 1, &res->rawBuffer);
+                    DLOG("Set PS Const Buffer OK.");
+                }
 			}
             else
             {
-                //! cast failed
+                ELOG("GHI Buffer cast failed.");
             }
-
         }
 
         virtual GHIBuffer* CreateConstBuffer(int size, const void* initData) override
@@ -103,10 +114,13 @@ namespace GHI
             InitData.SysMemSlicePitch = 0;
 
 	        ID3D11Buffer *constBuffer = nullptr;
-            DXCall(DX11::Device()->CreateBuffer(&descConstBuffer, &InitData, &constBuffer));
+            if (initData == nullptr)
+                DXCall(DX11::Device()->CreateBuffer(&descConstBuffer, nullptr, &constBuffer));
+            else
+                DXCall(DX11::Device()->CreateBuffer(&descConstBuffer, &InitData, &constBuffer));
             
+            DLOG("Create Uniform Buffer OK.");
             return new FDX11GHIBuffer(constBuffer);
-
         }
 
         virtual void UpdateBuffer(GHIBuffer*buffer, void* data, int size) override
@@ -119,6 +133,7 @@ namespace GHI
             else
             {
                 //! cast failed
+                ELOG("GHI GHI Buffer cast failed.");
             }
         }
 
@@ -127,6 +142,7 @@ namespace GHI
 			D3D11_SAMPLER_DESC descDX11 = DX11SamplerCast(desc);
 			ID3D11SamplerState *sampler = nullptr;
 			DXCall(DX11::Device()->CreateSamplerState(&descDX11, &sampler));
+            DLOG("Create Sampler OK.");
 			return new FDX11GHISampler(sampler);
 		}
 		virtual void SetSampler(GHISampler *resource, int slot, EShaderStage stage) override
@@ -141,7 +157,7 @@ namespace GHI
             }
             else
             {
-                //! cast failed
+                ELOG("GHI GHI Sampler cast failed.");
             }
 
 		}
@@ -158,11 +174,25 @@ namespace GHI
 		virtual void setPrimitiveTopology(PrimitiveTopology topology) override;
         virtual void SetViewport(GHIViewport viewport) override;
         virtual void Draw(int count, int offset) override;
+		virtual void DrawIndexed(int count, int startIndexLocation, int baseIndexLocation) override;
 
         virtual GHIVertexShader*  CreateVertexShader(std::string file, std::string entrypoint) override;
         virtual GHIPixelShader*   CreatePixelShader(std::string file, std::string entrypoint) override;
         virtual GHIShader* CreateComputeShader(std::string file) override;
         virtual GHIShader* CreateShader(std::string file) override;
         virtual void SetShader(GHIShader* shader) override;
+
+        virtual GHIBuffer*  CreateVertexBuffer(int size, const void* initData) override;
+        virtual GHIBuffer*  CreateIndexBuffer(int size, const void* initData) override;
+		virtual void SetIndexBuffer(GHIBuffer *buffer, GHIIndexType type, int offset) override;
+		virtual void SetVertexBuffers(int startSlot, int numSlots, GHIBuffer *buffer[], int strides[], int offsets[]) override;
+
+        virtual GHIVertexLayout* CreateVertextLayout(const std::vector<GHIInputElementInfo>& vertexFormats, GHIVertexShader *vs) override;
+
+        virtual void SetVertexLayout(GHIVertexLayout* shader) override;
+
+        virtual void SetRenderTarget(int num, GHITexture **colorBuffers, GHITexture *depthBuffer) override;
+        virtual void ClearRenderTarget(int num, GHITexture **colorBuffers, float*clearValue = nullptr) override;
+        virtual void ClearDepthStencil(GHITexture *depthBuffers, float depth, int stencil, int flag) override;
 	};
 }

@@ -54,6 +54,11 @@ endforeach()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/")
 find_package(DirectX)
 
+## Here Should Set correct value based on Visual Studio Version
+## Customer link directory
+link_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/framework/thirdparty/Assimp-3.1.1/lib
+)
 #######################################################################################
 
 #set (USE_MSVC_RUNTIME_LIBRARY_DLL true)
@@ -156,7 +161,7 @@ SET(LINK_OPTIONS " ")
 SET(EXE_NAME "ImageEffects")
 
 ADD_EXECUTABLE(${EXE_NAME} ${SRC_FILES} ${FRAMEWORK_FILES} ${EXT_FILES})
-TARGET_LINK_LIBRARIES(${EXE_NAME} ${DirectX_D3D11_LIBRARY} ${DirectX_D3D11_COMPILER})
+TARGET_LINK_LIBRARIES(${EXE_NAME} ${DirectX_D3D11_LIBRARY} ${DirectX_D3D11_COMPILER} assimp.lib)
 
 
 #--------------------------------------------------------------------

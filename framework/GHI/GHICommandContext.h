@@ -190,10 +190,14 @@ namespace GHI
         virtual GHITexture* CreateTexture(std::string filename) = 0;
         virtual GHITexture* CreateTextureByAnother(GHITexture * tex) = 0;
 
+        virtual void SetRenderTarget(int num, GHITexture **colorBuffers, GHITexture *depthBuffer ) = 0;
+        virtual void ClearRenderTarget(int num, GHITexture **colorBuffers, float*clearValue = nullptr ) = 0;
+        virtual void ClearDepthStencil(GHITexture *depthBuffers, float depth, int stencil, int flag) = 0;
+
 		virtual void UpdateBuffer(GHIBuffer*buffer, void* data, int size) = 0;
         virtual void SetShaderResource(GHITexture *resource, int slot, GHISRVParam view,EShaderStage stage = EShaderStage::CS) = 0;
         virtual void SetShaderResource(GHITexture *resource, int slot, GHIUAVParam view,EShaderStage stage = EShaderStage::CS) = 0;
-        virtual void SetConstBuffer(GHIBuffer *resource, int slot) = 0;
+        virtual void SetConstBuffer(GHIBuffer *resource, int slot, GHIShader *shader = nullptr) = 0;
         virtual GHISampler* CreateSampler(const GHISamplerDesc  &desc) = 0;
         virtual void SetSampler(GHISampler *resource, int slot, EShaderStage stage) = 0;
 
@@ -207,11 +211,13 @@ namespace GHI
 		virtual void SetIndexBuffer(GHIBuffer *buffer, GHIIndexType type, int offset) = 0;
 		virtual void SetVertexBuffers(int startSlot, int numSlots, GHIBuffer *buffer[], int strides[], int offsets[]) = 0;
 
+        virtual GHIVertexLayout* CreateVertextLayout(const std::vector<GHIInputElementInfo>& vertexFormats, GHIVertexShader *vs) = 0;
         virtual GHIVertexShader*  CreateVertexShader(std::string file, std::string entrypoint) = 0;
         virtual GHIPixelShader*   CreatePixelShader(std::string file, std::string entrypoint) = 0;
         virtual GHIShader* CreateComputeShader(std::string file) = 0;
         virtual GHIShader* CreateShader(std::string file) = 0;
         virtual void SetShader(GHIShader* shader) = 0;
+        virtual void SetVertexLayout(GHIVertexLayout* shader) = 0;
 
         GHIShader* GetComputeShader(std::string file);
 	};

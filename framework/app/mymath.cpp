@@ -1040,7 +1040,7 @@ Float4x4 Float4x4::TranslationMatrix(const Float3& t)
 
 bool Float4x4::operator==(const Float4x4& other) const
 {
-    const float* ours = reinterpret_cast<const float*>(this);
+    const float* ours   = reinterpret_cast<const float*>(this);
     const float* theirs = reinterpret_cast<const float*>(&other);
     for(uint64 i = 0; i < 16; ++i)
         if(ours[i] != theirs[i])
@@ -1050,7 +1050,7 @@ bool Float4x4::operator==(const Float4x4& other) const
 
 bool Float4x4::operator!=(const Float4x4& other) const
 {
-    const float* ours = reinterpret_cast<const float*>(this);
+    const float* ours   = reinterpret_cast<const float*>(this);
     const float* theirs = reinterpret_cast<const float*>(&other);
     for(uint64 i = 0; i < 16; ++i)
     if(ours[i] != theirs[i])

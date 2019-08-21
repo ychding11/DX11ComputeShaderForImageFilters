@@ -14,6 +14,15 @@
 // code migration. https://msdn.microsoft.com/en-us/library/windows/desktop/ee418730(v=vs.85).aspx
 //#include <DirectXMath.h>
 //using namespace DirectX;
+// DirectX Math
+#if 1
+#include <DirectXMath.h>
+#include <DirectXPackedVector.h>
+#include <DirectXCollision.h>
+
+using namespace DirectX;
+using namespace DirectX::PackedVector;
+#endif
 
 namespace GHI
 {
@@ -125,6 +134,47 @@ struct Float3
 
 // Non-member operators of Float3
 Float3 operator*(float a, const Float3& b);
+
+struct AABB
+{
+	Float3 min;
+	Float3 max;
+
+	AABB() :min(0.f,0.f,0.f),max(0.f,0.f,0.f)
+	{}
+
+	Float3 Centroid() const
+	{
+		return { (min.x+max.x)/2.f, (min.y+max.y)/2.f, (min.z+max.z)/2.f };
+	}
+
+	float DiagnalLen() const
+	{
+		return Float3::Distance(min, max);
+	}
+
+	void Union(const AABB &a)
+	{
+		if (a.min.x < min.x) min.x = a.min.x;
+		if (a.min.y < min.y) min.y = a.min.y;
+		if (a.min.z < min.z) min.z = a.min.z;
+
+		if (a.max.x > max.x) max.x = a.max.x;
+		if (a.max.y > max.y) max.y = a.max.y;
+		if (a.max.z > max.z) max.z = a.max.z;
+	}
+
+	void Expand(Float3 p)
+	{
+		if (p.x < min.x) min.x = p.x;
+		if (p.y < min.y) min.y = p.y;
+		if (p.z < min.z) min.z = p.z;
+
+		if (p.x > max.x) max.x = p.x;
+		if (p.y > max.y) max.y = p.y;
+	    if (p.z > max.z) max.z = p.z;
+	}
+};
 
 struct Float4
 {
