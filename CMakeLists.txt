@@ -20,8 +20,12 @@ file(GLOB FRAMEWORK_FILES
 	${CMAKE_SOURCE_DIR}/framework/*.cpp
 	${CMAKE_SOURCE_DIR}/framework/d3d/*.h
 	${CMAKE_SOURCE_DIR}/framework/d3d/*.cpp
-	${CMAKE_SOURCE_DIR}/framework/app/*.h
-	${CMAKE_SOURCE_DIR}/framework/app/*.cpp
+	${CMAKE_SOURCE_DIR}/framework/camera/*.h
+	${CMAKE_SOURCE_DIR}/framework/camera/*.cpp
+	${CMAKE_SOURCE_DIR}/framework/core/*.h
+	${CMAKE_SOURCE_DIR}/framework/core/*.cpp
+	${CMAKE_SOURCE_DIR}/framework/io/*.h
+	${CMAKE_SOURCE_DIR}/framework/io/*.cpp
 	${CMAKE_SOURCE_DIR}/framework/utils/*.h
 	${CMAKE_SOURCE_DIR}/framework/utils/*.cpp
 	${CMAKE_SOURCE_DIR}/framework/GHI/*.h
@@ -41,10 +45,10 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/framework/d3d
   ${CMAKE_SOURCE_DIR}/framework/GHI
   ${CMAKE_SOURCE_DIR}/framework/utils
-  ${CMAKE_SOURCE_DIR}/framework/app
+  ${CMAKE_SOURCE_DIR}/framework/core
 )
 
-## Output include directory for debug
+## Print include directory for debug
 #######################################################################################
 get_property(includes DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach(dir ${includes})

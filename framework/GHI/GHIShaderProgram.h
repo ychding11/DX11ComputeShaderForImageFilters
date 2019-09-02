@@ -7,8 +7,8 @@
 
 #pragma once
 
-#include "myCamera.h" 
-#include "Model.h" 
+#include <camera/myCamera.h>
+#include <io/Model.h> 
 #include "GHIResources.h" 
 #include "GHICommandContext.h" 
 
