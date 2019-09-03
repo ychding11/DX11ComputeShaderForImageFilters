@@ -214,7 +214,6 @@ class ModelViewer :public GHI::App
 private:
 	std::string modelPath = "..\\Content\\Models\\Box\\Box_Lightmap.fbx";
 	GHI::Model model3d;
-    GHI::Mesh  testMesh;
 	GHI::FirstPersonCamera camera;
     GHI::MouseState mouseState;
 
@@ -225,7 +224,7 @@ private:
 public:
 
 	ModelViewer()
-		: App(L"ModelViewer")
+		: App(L"ModelViewerWithoutTexture")
         , camera(16.0f / 9.0f, Pi_4 * 0.75f, NearClip, FarClip)
 
 	{
@@ -243,25 +242,23 @@ protected:
 		const GHI::Mesh& mesh = const_cast<const GHI::Mesh&>(model3d.Meshes()[0]);
 		GHI::Float3 pos = mesh.boundingbox.Centroid() + mesh.boundingbox.DiagnalLen() * GHI::Float3(0, 0, -1);
 
-        GHI::Float3 dimension(1.0, 1.0, 1.0);
-        GHI::Float3 position(.0, .0, .0);
-        GHI::Quaternion orientation;
-
-        testMesh.InitBox(commandContext, dimension, position,orientation, 0);
         camera.SetPosition(pos);
 	}
 
 	virtual void Update(const GHI::Timer& timer) override
 	{
+        GHI::UserData userdata;
+        userdata.camera = &camera;
+        userdata.worldMat.SetTranslation(GHI::Float3(0,0,0));
+
 		updateInput(timer);
-		shaderProgram->Update(camera, commandContext);
+		shaderProgram->Update(userdata, commandContext);
 	}
 
 	virtual void Render(const GHI::Timer& timer) override
 	{
 		//for (int i = 0; i < model3d.Meshes().size(); ++i)
-			//shaderProgram->Apply(const_cast<const GHI::Mesh&>(model3d.Meshes()[0]), commandContext);
-			shaderProgram->Apply(testMesh, commandContext);
+			shaderProgram->Apply(const_cast<const GHI::Mesh&>(model3d.Meshes()[0]), commandContext);
 	}
 
 	virtual void Shutdown() override
@@ -322,4 +319,127 @@ private:
 	{
 
 	}
+};
+
+/*===============================================================*/
+class TranslateAnimation:public GHI::App
+{
+private:
+    GHI::Mesh  testMesh;
+    GHI::FirstPersonCamera camera;
+    GHI::MouseState mouseState;
+
+    GHI::GHIShaderProgram *shaderProgram = nullptr;
+    GHI::DepthOnlyShader  depthOnly;
+    GHI::NoLightingShader noLighting;
+
+public:
+
+    TranslateAnimation()
+        : App(L"TranslateAnimation")
+        , camera(16.0f / 9.0f, Pi_4 * 0.75f, NearClip, FarClip)
+
+    {
+        window.RegisterMessageCallback(WindowMessageCallback, this);
+    }
+protected:
+
+    virtual void Initialize() override
+    {
+        //shaderProgram = &depthOnly;
+        shaderProgram = &noLighting;
+        shaderProgram->Init(commandContext);
+
+
+        GHI::Float3 dimension(1.0, 1.0, 1.0);
+        GHI::Float3 position(.0, .0, .0);
+        GHI::Quaternion orientation;
+
+        testMesh.InitBox(commandContext, dimension, position, orientation, 0);
+        GHI::Float3 pos = testMesh.boundingbox.Centroid() + testMesh.boundingbox.DiagnalLen() * GHI::Float3(0, 0, -1);
+        camera.SetPosition(pos);
+    }
+
+    virtual void Update(const GHI::Timer& timer) override
+    {
+        const float maxTranslate = 3.f;
+        static float x = -maxTranslate;
+        //float deltTime = timer.DeltaSeconds();
+        float deltTime = 0.01f;
+        float speed = 0.05f;
+
+        GHI::UserData userdata;
+        userdata.camera = &camera;
+        userdata.worldMat.SetTranslation(GHI::Float3(x, 0, 0));
+        updateInput(timer);
+        shaderProgram->Update(userdata, commandContext);
+
+        x += deltTime * speed;
+        x > maxTranslate ? x = -maxTranslate : x;
+
+    }
+
+    virtual void Render(const GHI::Timer& timer) override
+    {
+        shaderProgram->Apply(testMesh, commandContext);
+    }
+
+    virtual void Shutdown() override
+    {
+
+    }
+
+private:
+    void updateInput(const GHI::Timer& timer)
+    {
+        using namespace GHI;
+
+        mouseState = MouseState::GetMouseState(window);
+        KeyboardState kbState = KeyboardState::GetKeyboardState(window);
+
+        if (kbState.IsKeyDown(KeyboardState::Escape))
+            window.Destroy();
+
+        float CamMoveSpeed = 5.0f   * timer.DeltaSecondsF();
+        const float CamRotSpeed = 0.180f * timer.DeltaSecondsF();
+        const float MeshRotSpeed = 0.180f * timer.DeltaSecondsF();
+
+        // Move the camera with keyboard input
+        if (kbState.IsKeyDown(KeyboardState::LeftShift))
+            CamMoveSpeed *= 0.25f;
+
+        Float3 camPos = camera.Position();
+        if (kbState.IsKeyDown(KeyboardState::W))
+            camPos += camera.Forward() * CamMoveSpeed;
+        else if (kbState.IsKeyDown(KeyboardState::S))
+            camPos += camera.Back() * CamMoveSpeed;
+        if (kbState.IsKeyDown(KeyboardState::A))
+            camPos += camera.Left() * CamMoveSpeed;
+        else if (kbState.IsKeyDown(KeyboardState::D))
+            camPos += camera.Right() * CamMoveSpeed;
+        if (kbState.IsKeyDown(KeyboardState::Q))
+            camPos += camera.Up() * CamMoveSpeed;
+        else if (kbState.IsKeyDown(KeyboardState::E))
+            camPos += camera.Down() * CamMoveSpeed;
+        camera.SetPosition(camPos);
+
+        // Rotate the camera by the mouse
+        if (mouseState.RButton.Pressed && mouseState.IsOverWindow)
+        {
+            float xRot = camera.XRotation();
+            float yRot = camera.YRotation();
+            xRot += mouseState.DY * CamRotSpeed;
+            yRot += mouseState.DX * CamRotSpeed;
+            camera.SetXRotation(xRot);
+            camera.SetYRotation(yRot);
+        }
+
+        //camera.SetFieldOfView(AppSettings::VerticalFOV(camera.AspectRatio()));
+    }
+
+    //// Windows Message handler
+    static void WindowMessageCallback(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+
+    }
 };

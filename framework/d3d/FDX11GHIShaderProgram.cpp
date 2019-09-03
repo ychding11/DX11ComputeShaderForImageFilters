@@ -18,7 +18,7 @@ namespace GHI
     }
 
 
-    void FDX11GHIShaderProgram::Update(const Camera &camera, IGHIComputeCommandCotext *commandcontext)
+    void FDX11GHIShaderProgram::Update(const UserData&camera, IGHIComputeCommandCotext *commandcontext)
     {
 
     }

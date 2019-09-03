@@ -7,11 +7,6 @@
 
 #pragma once
 
-//#include "myCamera.h" 
-//#include "Model.h" 
-//#include "GHIResources.h" 
-//#include "GHICommandContext.h" 
-
 #include "GHIShaderProgram.h" 
 
 namespace GHI
@@ -24,7 +19,7 @@ namespace GHI
         { }
 
         virtual void Init(IGHIComputeCommandCotext *commandcontext) override;
-        virtual void Update(const Camera &camera, IGHIComputeCommandCotext *commandcontext) override;
+        virtual void Update(const UserData&camera, IGHIComputeCommandCotext *commandcontext) override;
         virtual void Apply(const Mesh &model, IGHIComputeCommandCotext *commandcontext) override;
     };
 }

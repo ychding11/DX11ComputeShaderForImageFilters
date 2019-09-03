@@ -54,13 +54,18 @@ struct Vertex
     }
 };
 
-static const GHIInputElementInfo VertexInputs[5] =
+static const GHIInputElementInfo VertexInputs[] =
 {
     { "POSITION",  0, DATA_FORMAT_R32G32B32_FLOAT, 0, 0,  PER_VERTEX_DATA, 0 },
     { "NORMAL",    0, DATA_FORMAT_R32G32B32_FLOAT, 0, 12, PER_VERTEX_DATA, 0 },
     { "TEXCOORD",  0, DATA_FORMAT_R32G32_FLOAT,    0, 24, PER_VERTEX_DATA, 0 },
     { "TANGENT",   0, DATA_FORMAT_R32G32B32_FLOAT, 0, 32, PER_VERTEX_DATA, 0 },
     { "BITANGENT", 0, DATA_FORMAT_R32G32B32_FLOAT, 0, 44, PER_VERTEX_DATA, 0 },
+
+    { "INSTMAT",   0, DATA_FORMAT_R32G32B32A32_FLOAT, 1, 0, PER_INSTANCE_DATA, 1 },
+    { "INSTMAT",   1, DATA_FORMAT_R32G32B32A32_FLOAT, 1, 16, PER_INSTANCE_DATA, 1 },
+    { "INSTMAT",   2, DATA_FORMAT_R32G32B32A32_FLOAT, 1, 32, PER_INSTANCE_DATA, 1 },
+    { "INSTMAT",   3, DATA_FORMAT_R32G32B32A32_FLOAT, 1, 48, PER_INSTANCE_DATA, 1 },
 };
 
 void Mesh::InitFromSDKMesh(IGHIComputeCommandCotext* commandcontext, SDKMesh& sdkMesh, uint32 meshIdx, bool generateTangents)
@@ -293,8 +298,15 @@ void Mesh::InitBox(IGHIComputeCommandCotext* commandcontext, const Float3& dimen
     boxVerts[vIdx++] = Vertex(Float3(1.0f, -1.0f, 1.0f), Float3(1.0f, 0.0f, 0.0f), Float2(1.0f, 1.0f), Float3(0.0f, 0.0f, 1.0f), Float3(0.0f, -1.0f, 0.0f));
     boxVerts[vIdx++] = Vertex(Float3(1.0f, -1.0f, -1.0f), Float3(1.0f, 0.0f, 0.0f), Float2(0.0f, 1.0f), Float3(0.0f, 0.0f, 1.0f), Float3(0.0f, -1.0f, 0.0f));
 
-    for(uint64 i = 0; i < NumBoxVerts; ++i)
+    for (uint64 i = 0; i < NumBoxVerts; ++i)
+    {
+        boundingbox.Expand(boxVerts[i].Position);
+    }
+
+    for (uint64 i = 0; i < NumBoxVerts; ++i)
+    {
         boxVerts[i].Transform(position, dimensions * 0.5f, orientation);
+    }
 
     uint64 iIdx = 0;
 

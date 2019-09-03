@@ -14,10 +14,16 @@
 
 namespace GHI
 {
+    struct UserData
+    {
+        Camera *camera;
+        Float4x4 worldMat;
+    };
+
     struct  UniformParam 
     {
         virtual void Init(IGHIComputeCommandCotext *commandcontext, GHIBuffer **constBuffer) = 0;
-        virtual void Update(const Camera &camera, IGHIComputeCommandCotext *commandcontext, GHIBuffer *constBuffer) = 0;
+        virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext, GHIBuffer *constBuffer) = 0;
     };
 
 	class GHIShaderProgram
@@ -69,7 +75,7 @@ namespace GHI
             loadShaderProgram(commandcontext);
         }
 
-        virtual void Update(const Camera &camera, IGHIComputeCommandCotext *commandcontext) = 0;
+        virtual void Update(const UserData&camera, IGHIComputeCommandCotext *commandcontext) = 0;
 
         virtual void Apply(const Mesh &model, IGHIComputeCommandCotext *commandcontext)
         {
@@ -96,10 +102,10 @@ namespace GHI
             *constBuffer = commandcontext->CreateConstBuffer(sizeof(BufferStruct), nullptr);
         }
 
-        virtual void Update(const Camera &camera, IGHIComputeCommandCotext *commandcontext, GHIBuffer *constBuffer) override
+        virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext, GHIBuffer *constBuffer) override
         {
             BufferStruct vsParam;
-            vsParam.WorldViewProjection = Float4x4::Transpose(camera.ViewProjectionMatrix());
+            vsParam.WorldViewProjection = Float4x4::Transpose(data.camera->ViewProjectionMatrix());
             commandcontext->UpdateBuffer(constBuffer, &vsParam, sizeof(vsParam));
         }
     };
@@ -129,9 +135,9 @@ namespace GHI
             paramStruct->Init(commandcontext, &paramBuffer);
         }
 
-        virtual void Update(const Camera &camera, IGHIComputeCommandCotext *commandcontext) override
+        virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext) override
         {
-            paramStruct->Update(camera, commandcontext, paramBuffer);
+            paramStruct->Update(data, commandcontext, paramBuffer);
 		    commandcontext->SetConstBuffer(paramBuffer, 0, vs);
         }
 
@@ -152,14 +158,12 @@ namespace GHI
             *constBuffer = commandcontext->CreateConstBuffer(sizeof(BufferStruct), nullptr);
         }
 
-        virtual void Update(const Camera &camera, IGHIComputeCommandCotext *commandcontext, GHIBuffer *constBuffer) override
+        virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext, GHIBuffer *constBuffer) override
         {
-            Float4x4 World;
-            World.SetTranslation(Float3(2, 0, 0));
             BufferStruct vsParam;
-            vsParam.World = Float4x4::Transpose(World);
-            vsParam.ViewProjection = Float4x4::Transpose(camera.ViewProjectionMatrix());
-            vsParam.EyePos = camera.Position();
+            vsParam.World = Float4x4::Transpose(data.worldMat);
+            vsParam.ViewProjection = Float4x4::Transpose(data.camera->ViewProjectionMatrix());
+            vsParam.EyePos = data.camera->Position();
             commandcontext->UpdateBuffer(constBuffer, &vsParam, sizeof(vsParam));
         }
     };
@@ -189,9 +193,9 @@ namespace GHI
             paramStruct->Init(commandcontext, &paramBuffer);
         }
 
-        virtual void Update(const Camera &camera, IGHIComputeCommandCotext *commandcontext) override
+        virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext) override
         {
-            paramStruct->Update(camera, commandcontext, paramBuffer);
+            paramStruct->Update(data, commandcontext, paramBuffer);
             commandcontext->SetConstBuffer(paramBuffer, 0, vs);
         }
 
