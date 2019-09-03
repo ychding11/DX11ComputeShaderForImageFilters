@@ -14,7 +14,7 @@ namespace GHI
 
     void WriteLog(const wchar* format, ...)
     {
-        wchar buffer[1024] = { 0 };
+        wchar buffer[4096] = { 0 };
         va_list args;
         va_start(args, format);
         vswprintf_s(buffer, ArraySize_(buffer), format, args);
@@ -25,7 +25,7 @@ namespace GHI
 
     void WriteLog(const char* format, ...)
     {
-        char buffer[1024] = { 0 };
+        char buffer[4096] = { 0 };
         va_list args;
         va_start(args, format);
         vsprintf_s(buffer, ArraySize_(buffer), format, args);

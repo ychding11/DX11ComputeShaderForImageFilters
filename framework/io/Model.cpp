@@ -62,7 +62,7 @@ static const GHIInputElementInfo VertexInputs[] =
     { "TANGENT",   0, DATA_FORMAT_R32G32B32_FLOAT, 0, 32, PER_VERTEX_DATA, 0 },
     { "BITANGENT", 0, DATA_FORMAT_R32G32B32_FLOAT, 0, 44, PER_VERTEX_DATA, 0 },
 
-    { "INSTMAT",   0, DATA_FORMAT_R32G32B32A32_FLOAT, 1, 0, PER_INSTANCE_DATA, 1 },
+    { "INSTMAT",   0, DATA_FORMAT_R32G32B32A32_FLOAT, 1, 0,  PER_INSTANCE_DATA, 1 },
     { "INSTMAT",   1, DATA_FORMAT_R32G32B32A32_FLOAT, 1, 16, PER_INSTANCE_DATA, 1 },
     { "INSTMAT",   2, DATA_FORMAT_R32G32B32A32_FLOAT, 1, 32, PER_INSTANCE_DATA, 1 },
     { "INSTMAT",   3, DATA_FORMAT_R32G32B32A32_FLOAT, 1, 48, PER_INSTANCE_DATA, 1 },
@@ -785,6 +785,21 @@ void Mesh::Render(IGHIComputeCommandCotext* commandcontext) const
     {
         //MeshPart& meshPart = meshParts[i];
         commandcontext->DrawIndexed(meshParts[i].IndexCount, meshParts[i].IndexStart, 0);
+    }
+}
+
+void Mesh::RenderInstanced(IGHIComputeCommandCotext* commandcontext, GHIBuffer *instanceBuffer, int instanceStride, int instanceOffset, int instanceCount) const
+{
+    GHIBuffer* vertexBuffers[] = { vertexBuffer, instanceBuffer };
+    int strides[] = { vertexStride, instanceCount };
+    int offsets[] = { 0, 0 };
+    commandcontext->SetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
+    commandcontext->SetIndexBuffer(indexBuffer, indexType, 0);
+    commandcontext->setPrimitiveTopology(TOPOLOGY_TRIANGLELIST);
+
+    for(size_t i = 0; i < meshParts.size(); ++i)
+    {
+        commandcontext->DrawIndexed(meshParts[i].IndexCount, meshParts[i].IndexStart, instanceCount);
     }
 }
 

@@ -332,6 +332,9 @@ private:
     GHI::GHIShaderProgram *shaderProgram = nullptr;
     GHI::DepthOnlyShader  depthOnly;
     GHI::NoLightingShader noLighting;
+    GHI::RawInstancedShader rawInstance;
+
+    GHI::GHIBuffer *instanceBuffer = nullptr;
 
 public:
 
@@ -347,7 +350,8 @@ protected:
     virtual void Initialize() override
     {
         //shaderProgram = &depthOnly;
-        shaderProgram = &noLighting;
+        //shaderProgram = &noLighting;
+        shaderProgram = &rawInstance;
         shaderProgram->Init(commandContext);
 
 
@@ -358,6 +362,15 @@ protected:
         testMesh.InitBox(commandContext, dimension, position, orientation, 0);
         GHI::Float3 pos = testMesh.boundingbox.Centroid() + testMesh.boundingbox.DiagnalLen() * GHI::Float3(0, 0, -1);
         camera.SetPosition(pos);
+
+        GHI::Float4x4 instanceData[2];
+        instanceData[0].SetTranslation(GHI::Float3(-2.0, 0, 0));
+        instanceData[0].SetTranslation(GHI::Float3( 2.0, 0, 0));
+
+        rawInstance.instanceBuffer = commandContext->CreateVertexBuffer(sizeof(GHI::Float4x4) * 2, instanceData);
+        rawInstance.instanceCount  = 2;
+        rawInstance.instanceOffset = 0;
+        rawInstance.instanceStride = 64;
     }
 
     virtual void Update(const GHI::Timer& timer) override
@@ -370,7 +383,7 @@ protected:
 
         GHI::UserData userdata;
         userdata.camera = &camera;
-        userdata.worldMat.SetTranslation(GHI::Float3(x, 0, 0));
+        userdata.worldMat.SetTranslation(GHI::Float3(0, 0, 0));
         updateInput(timer);
         shaderProgram->Update(userdata, commandContext);
 

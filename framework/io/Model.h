@@ -175,6 +175,7 @@ public:
 
     // Rendering
     void Render(IGHIComputeCommandCotext* commandcontext) const;
+    void RenderInstanced(IGHIComputeCommandCotext* commandcontext, GHIBuffer *instanceBuffer, int instanceStride, int instanceOffset, int instanceCount) const;
 
 	AABB boundingbox;
 protected:

@@ -168,6 +168,7 @@ namespace GHI
         }
     };
 
+
     class  NoLightingShader : public GHIShaderProgram
     {
         UniformParam *paramStruct = nullptr;
@@ -198,6 +199,63 @@ namespace GHI
             paramStruct->Update(data, commandcontext, paramBuffer);
             commandcontext->SetConstBuffer(paramBuffer, 0, vs);
         }
+    };
 
+    class  RawInstancedShader : public GHIShaderProgram
+    {
+        UniformParam *paramStruct = nullptr;
+        GHIBuffer    *paramBuffer = nullptr;
+
+    public:
+        GHIBuffer    *instanceBuffer = nullptr;
+        int instanceStride = 0;
+        int instanceOffset = 0;
+        int instanceCount = 0;
+
+    public:
+        RawInstancedShader(std::string file = "..\\data\\rawInstance.hlsl")
+            : GHIShaderProgram(file)
+        {
+
+        }
+
+        ~RawInstancedShader()
+        {
+            delete paramStruct;
+            delete paramBuffer;
+            delete instanceBuffer;
+        }
+
+        virtual void Init(IGHIComputeCommandCotext *commandcontext) override
+        {
+            GHIShaderProgram::Init(commandcontext);
+            paramStruct = new NoLightingUniform;
+            paramStruct->Init(commandcontext, &paramBuffer);
+        }
+
+        virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext) override
+        {
+            paramStruct->Update(data, commandcontext, paramBuffer);
+            commandcontext->SetConstBuffer(paramBuffer, 0, vs);
+        }
+
+        virtual void Apply(const Mesh &model, IGHIComputeCommandCotext *commandcontext) override
+        {
+            if (vertexLayout == nullptr)
+            {
+                vertexLayout = commandcontext->CreateVertextLayout(model.VertexElements(), vs);
+            }
+            commandcontext->SetVertexLayout(vertexLayout);
+            commandcontext->SetShader(vs);
+            commandcontext->SetShader(ps);
+            if (instanceBuffer == nullptr)
+            {
+                model.Render(commandcontext);
+            }
+            else
+            {
+                model.RenderInstanced(commandcontext, instanceBuffer, instanceStride, instanceOffset, instanceCount);
+            }
+        }
     };
 }
