@@ -19,7 +19,11 @@ struct VSInput
 {
     float4 PositionOS 		: POSITION;
 	float3 Normal           : NORMAL;
- row_major  float4x4 Inst   : INSTMAT;
+ 
+    float4 r0   : INSTMAT0;
+	float4 r1   : INSTMAT1;
+	float4 r2   : INSTMAT2;
+	float4 r3   : INSTMAT3;
 };
 
 struct VSOutput
@@ -37,6 +41,7 @@ VSOutput VS(in VSInput input)
 {
     VSOutput output;
     float4 color = float4(0.5f, 0.5f, 0.5f, 1.0f);
+	float4x4 Inst = float4x4(input.r0, input.r1, input.r2, input.r3);
 	float3 posWorld = mul(input.PositionOS, Inst);
 	float v = dot(input.Normal, EyePos - posWorld);
 	color = color * v;

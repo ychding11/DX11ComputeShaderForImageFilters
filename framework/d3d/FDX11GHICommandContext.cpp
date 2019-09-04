@@ -396,6 +396,13 @@ namespace GHI
 	{
         DX11::ImmediateContext()->DrawIndexed(count, startIndexLocation, baseIndexLocation);
 	}
+    
+    void FDX11IGHIComputeCommandCotext::DrawIndexedInstanced(unsigned int IndexCountPerInstance, unsigned int InstanceCount,
+                                                             unsigned int StartIndexLocation, int BaseVertexLocation, unsigned int StartInstanceLocation
+    )
+    {
+        DX11::ImmediateContext()->DrawIndexedInstanced(IndexCountPerInstance, InstanceCount, StartIndexLocation, BaseVertexLocation, StartInstanceLocation);
+    }
 
     void FDX11IGHIComputeCommandCotext::SetVertexLayout(GHIVertexLayout* layout)
     {

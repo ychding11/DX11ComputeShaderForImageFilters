@@ -365,7 +365,9 @@ protected:
 
         GHI::Float4x4 instanceData[2];
         instanceData[0].SetTranslation(GHI::Float3(-2.0, 0, 0));
-        instanceData[0].SetTranslation(GHI::Float3( 2.0, 0, 0));
+        instanceData[1].SetTranslation(GHI::Float3( 2.0, 0, 0));
+        instanceData[0] = GHI::Float4x4::Transpose(instanceData[0]);
+        instanceData[1] = GHI::Float4x4::Transpose(instanceData[1]);
 
         rawInstance.instanceBuffer = commandContext->CreateVertexBuffer(sizeof(GHI::Float4x4) * 2, instanceData);
         rawInstance.instanceCount  = 2;

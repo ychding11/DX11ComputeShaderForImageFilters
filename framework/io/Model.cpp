@@ -791,7 +791,7 @@ void Mesh::Render(IGHIComputeCommandCotext* commandcontext) const
 void Mesh::RenderInstanced(IGHIComputeCommandCotext* commandcontext, GHIBuffer *instanceBuffer, int instanceStride, int instanceOffset, int instanceCount) const
 {
     GHIBuffer* vertexBuffers[] = { vertexBuffer, instanceBuffer };
-    int strides[] = { vertexStride, instanceCount };
+    int strides[] = { vertexStride, instanceStride };
     int offsets[] = { 0, 0 };
     commandcontext->SetVertexBuffers(0, 2, vertexBuffers, strides, offsets);
     commandcontext->SetIndexBuffer(indexBuffer, indexType, 0);
@@ -799,7 +799,7 @@ void Mesh::RenderInstanced(IGHIComputeCommandCotext* commandcontext, GHIBuffer *
 
     for(size_t i = 0; i < meshParts.size(); ++i)
     {
-        commandcontext->DrawIndexed(meshParts[i].IndexCount, meshParts[i].IndexStart, instanceCount);
+        commandcontext->DrawIndexedInstanced(meshParts[i].IndexCount, instanceCount, meshParts[i].IndexStart, 0, 0);
     }
 }
 

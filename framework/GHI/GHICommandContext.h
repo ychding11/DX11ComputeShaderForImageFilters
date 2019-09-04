@@ -206,6 +206,9 @@ namespace GHI
 		virtual void SetViewport(GHIViewport viewport) = 0;
 		virtual void Draw(int count, int offset) = 0;
 		virtual void DrawIndexed(int count, int startIndexLocation, int baseIndexLocation) = 0;
+        virtual void DrawIndexedInstanced( unsigned int IndexCountPerInstance, unsigned int InstanceCount,
+            unsigned int StartIndexLocation, int BaseVertexLocation, unsigned int StartInstanceLocation
+        ) = 0;
 
 		virtual void setPrimitiveTopology(PrimitiveTopology topology) = 0;
 		virtual void SetIndexBuffer(GHIBuffer *buffer, GHIIndexType type, int offset) = 0;
