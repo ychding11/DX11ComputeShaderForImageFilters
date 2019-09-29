@@ -37,14 +37,19 @@ struct VSOutput
 // ================================================================================================
 // Vertex Shader
 // ================================================================================================
+// matrix packing order
+//   Row-major and column-major matrix ordering determine the order the matrix components are read from shader inputs.
+//   1. matrices declared in a shader body do not get packed into constant registers. 
+//   2. Row-major and column-major packing order has no influence on the packing order of constructors (which always follows row-major ordering)
+//   Reference: https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-per-component-math
 VSOutput VS(in VSInput input)
 {
     VSOutput output;
     float4 color = float4(0.5f, 0.5f, 0.5f, 1.0f);
-	float4x4 Inst = float4x4(input.r0, input.r1, input.r2, input.r3);
-	float3 posWorld = mul(input.PositionOS, Inst);
-	float v = dot(input.Normal, EyePos - posWorld);
-	color = color * v;
+	float4x4 Inst = float4x4(input.r0, // row1
+							 input.r1, // row2
+							 input.r2, // row3
+							 input.r3); // row3
 	
     output.PositionCS = mul(mul(input.PositionOS, Inst), ViewProjection);
 	output.color = color;
