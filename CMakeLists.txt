@@ -33,7 +33,6 @@ file(GLOB FRAMEWORK_FILES
 	${CMAKE_SOURCE_DIR}/framework/thirdparty/*.h
 	${CMAKE_SOURCE_DIR}/framework/thirdparty/imgui/*.h
 	${CMAKE_SOURCE_DIR}/framework/thirdparty/imgui/*.cpp
-	
 )
 
 include_directories(
@@ -59,7 +58,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/")
 find_package(DirectX)
 
 ## Here Should Set correct value based on Visual Studio Version
-## Customer link directory
+## Custom link directory
 link_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/framework/thirdparty/Assimp-3.1.1/lib
 )
@@ -162,17 +161,36 @@ endif()
 
 SET(LINK_OPTIONS " ")
 
+###########################################################################
+# ugs libraries and executables
+
+ADD_LIBRARY ( ugs STATIC
+  ${FRAMEWORK_FILES} 
+  ${EXT_FILES}
+  )
+
+IF (WIN32)
+  # Avoid a name clash when building on Visual Studio
+  SET_TARGET_PROPERTIES ( ugs PROPERTIES OUTPUT_NAME libugs )
+ENDIF()
+
+SET(ALL_UGS_LIBS
+  ugs
+  ${DirectX_D3D11_LIBRARY} 
+  ${DirectX_D3D11_COMPILER} 
+  assimp.lib
+)
+
+# Main demo
 SET(EXE_NAME "ImageEffects")
+ADD_EXECUTABLE ( ${EXE_NAME} ${SRC_FILES})
+TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
 
-ADD_EXECUTABLE(${EXE_NAME} ${SRC_FILES} ${FRAMEWORK_FILES} ${EXT_FILES})
-TARGET_LINK_LIBRARIES(${EXE_NAME} ${DirectX_D3D11_LIBRARY} ${DirectX_D3D11_COMPILER} assimp.lib)
-
-
-#--------------------------------------------------------------------
+###########################################################################
 # output dirs
-#--------------------------------------------------------------------
+###########################################################################
 # https://cmake.org/cmake/help/v3.0/manual/cmake-properties.7.html 
-#--------------------------------------------------------------------
+###########################################################################
 set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin )
 set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin )
 set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/bin )

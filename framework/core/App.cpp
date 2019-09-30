@@ -213,12 +213,12 @@ namespace GHI
 		DX11::ImmediateContext()->OMSetRenderTargets(1, swapchain.RTV(), nullptr);
 		DX11::ImmediateContext()->ClearRenderTargetView((swapchain.RTV())[0], clearColor);
         commandContext->SetViewport({0., 0., (float)SwapchainWidth(), (float)SwapchainHeight(), 0., 1.});
-		//imgui::BeginFrame();
+		imgui::BeginFrame();
 	}
 
 	void App::EndFrame_private()
 	{
-		//imgui::EndFrame();
+		imgui::EndFrame();
 		swapchain.D3DSwapChain()->Present(0,0);
 	}
 

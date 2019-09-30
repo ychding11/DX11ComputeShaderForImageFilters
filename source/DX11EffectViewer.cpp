@@ -185,9 +185,9 @@ void DX11EffectViewer::WindowMessageCallback(void* context, HWND hWnd, UINT mess
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
-	//DX11EffectViewer viewer;
+	DX11EffectViewer viewer;
 	//ModelViewer viewer;
-    TranslateAnimation viewer;
+    //TranslateAnimation viewer;
 	viewer.Run();
 	return 0;
 }
