@@ -53,29 +53,8 @@ get_property(includes DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIR
 foreach(dir ${includes})
     message(STATUS "include dir='${dir}'")
 endforeach()
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/")
-find_package(DirectX)
-
-## Here Should Set correct value based on Visual Studio Version
-## Custom link directory
-link_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/framework/thirdparty/Assimp-3.1.1/lib
-)
 #######################################################################################
 
-#set (USE_MSVC_RUNTIME_LIBRARY_DLL true)
-#IF (NOT USE_MSVC_RUNTIME_LIBRARY_DLL)
-#    #We statically link to reduce dependancies
-#    FOREACH(flag_var CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO CMAKE_CXX_FLAGS_RETAIL)
-#        IF(${flag_var} MATCHES "/MD")
-#            STRING(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-#        ENDIF(${flag_var} MATCHES "/MD")
-#        IF(${flag_var} MATCHES "/MDd")
-#            STRING(REGEX REPLACE "/MDd" "/MTd" ${flag_var} "${${flag_var}}")
-#        ENDIF(${flag_var} MATCHES "/MDd")
-#    ENDFOREACH(flag_var)
-#ENDIF (NOT USE_MSVC_RUNTIME_LIBRARY_DLL)
 
 #######################################################################################
 
@@ -159,7 +138,18 @@ if(MSVC)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
 
-SET(LINK_OPTIONS " ")
+############################################################################
+# Custom Lib
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/")
+find_package(DirectX)
+
+############################################################################
+# Custom link directory
+link_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/framework/thirdparty/Assimp-3.1.1/lib
+)
+
+set(LINK_OPTIONS " ")
 
 ###########################################################################
 # ugs libraries and executables
@@ -169,12 +159,12 @@ ADD_LIBRARY ( ugs STATIC
   ${EXT_FILES}
   )
 
-IF (WIN32)
+if (WIN32)
   # Avoid a name clash when building on Visual Studio
-  SET_TARGET_PROPERTIES ( ugs PROPERTIES OUTPUT_NAME libugs )
-ENDIF()
+  set_target_properties ( ugs PROPERTIES OUTPUT_NAME libugs )
+endif()
 
-SET(ALL_UGS_LIBS
+set(ALL_UGS_LIBS
   ugs
   ${DirectX_D3D11_LIBRARY} 
   ${DirectX_D3D11_COMPILER} 
@@ -182,7 +172,7 @@ SET(ALL_UGS_LIBS
 )
 
 # Main demo
-SET(EXE_NAME "ImageEffects")
+set(EXE_NAME "ImageEffects")
 ADD_EXECUTABLE ( ${EXE_NAME} ${SRC_FILES})
 TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
 
@@ -197,6 +187,44 @@ set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEB
 set_target_properties(${EXE_NAME} PROPERTIES DEBUG_POSTFIX "_d")
 set_target_properties(${EXE_NAME} PROPERTIES RELWITHDEBINFO_POSTFIX "RelWithDebInfo")
 set_target_properties(${EXE_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+
+
+set(EXE_NAME "SimpleInstanceDraw")
+ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/SimpleInstanceDraw.cpp)
+TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
+
+###########################################################################
+# output dirs
+###########################################################################
+# https://cmake.org/cmake/help/v3.0/manual/cmake-properties.7.html 
+###########################################################################
+set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin )
+set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin )
+set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/bin )
+set_target_properties(${EXE_NAME} PROPERTIES DEBUG_POSTFIX "_d")
+set_target_properties(${EXE_NAME} PROPERTIES RELWITHDEBINFO_POSTFIX "RelWithDebInfo")
+set_target_properties(${EXE_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+
+
+function(my_default_target_property target_name)
+  foreach(f ${ARGN})
+    # do something interesting with 'f' -> other optional arg list
+    message(STATUS "f='${f}' target_name='${target_name}' ")
+  endforeach()
+  message(STATUS "f='${f}' target_name='${target_name}' ")  
+  message(STATUS "ARGV0='${ARGV0}' ARGV1='${ARGV1}' ARGV2='${ARGV2}'")
+  set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin )
+  set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin )
+  set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/bin )
+  set_target_properties(${target_name} PROPERTIES DEBUG_POSTFIX "_d")
+  set_target_properties(${target_name} PROPERTIES RELWITHDEBINFO_POSTFIX "RelWithDebInfo")
+  set_target_properties(${target_name} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+endfunction()
+
+set(EXE_NAME "TranslateAnimation")
+ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/TranslateAnimation.cpp)
+TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
+my_default_target_property(${EXE_NAME})
 
 
 #--------------------------------------------------------------------
