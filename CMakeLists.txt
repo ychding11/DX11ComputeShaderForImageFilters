@@ -171,41 +171,11 @@ set(ALL_UGS_LIBS
   assimp.lib
 )
 
-# Main demo
-set(EXE_NAME "ImageEffects")
-ADD_EXECUTABLE ( ${EXE_NAME} ${SRC_FILES})
-TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
-
 ###########################################################################
-# output dirs
+# custom-defined function
+# set target property
+# reference https://cmake.org/cmake/help/v3.0/manual/cmake-properties.7.html 
 ###########################################################################
-# https://cmake.org/cmake/help/v3.0/manual/cmake-properties.7.html 
-###########################################################################
-set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin )
-set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin )
-set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/bin )
-set_target_properties(${EXE_NAME} PROPERTIES DEBUG_POSTFIX "_d")
-set_target_properties(${EXE_NAME} PROPERTIES RELWITHDEBINFO_POSTFIX "RelWithDebInfo")
-set_target_properties(${EXE_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-
-
-set(EXE_NAME "SimpleInstanceDraw")
-ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/SimpleInstanceDraw.cpp)
-TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
-
-###########################################################################
-# output dirs
-###########################################################################
-# https://cmake.org/cmake/help/v3.0/manual/cmake-properties.7.html 
-###########################################################################
-set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin )
-set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin )
-set_target_properties(${EXE_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/bin )
-set_target_properties(${EXE_NAME} PROPERTIES DEBUG_POSTFIX "_d")
-set_target_properties(${EXE_NAME} PROPERTIES RELWITHDEBINFO_POSTFIX "RelWithDebInfo")
-set_target_properties(${EXE_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-
-
 function(my_default_target_property target_name)
   foreach(f ${ARGN})
     # do something interesting with 'f' -> other optional arg list
@@ -220,6 +190,18 @@ function(my_default_target_property target_name)
   set_target_properties(${target_name} PROPERTIES RELWITHDEBINFO_POSTFIX "RelWithDebInfo")
   set_target_properties(${target_name} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 endfunction()
+
+
+# Main demo
+set(EXE_NAME "ImageEffects")
+ADD_EXECUTABLE ( ${EXE_NAME} ${SRC_FILES})
+TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
+my_default_target_property(${EXE_NAME})
+
+set(EXE_NAME "SimpleInstanceDraw")
+ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/SimpleInstanceDraw.cpp)
+TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
+my_default_target_property(${EXE_NAME})
 
 set(EXE_NAME "TranslateAnimation")
 ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/TranslateAnimation.cpp)

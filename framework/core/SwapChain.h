@@ -46,6 +46,11 @@ public:
     DXGI_FORMAT Format() const { return format; };
     void SetFormat(DXGI_FORMAT format_) { format = format_; };
 
+    virtual bool Present()
+    {
+        return true;
+    }
+
 protected:
 
     void CheckForSuitableOutput();

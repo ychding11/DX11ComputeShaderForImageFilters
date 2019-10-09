@@ -258,10 +258,6 @@ protected:
     virtual void Render(const Timer& timer) = 0;
     virtual void Shutdown() = 0;
 
-
-	ID3D11Device* Device();
-	ID3D11DeviceContext* ImmediateContext();
-
 	uint32 SwapchainWidth() const;
 	uint32 SwapchainHeight() const;
 
@@ -281,7 +277,7 @@ protected:
     uint32 fps;
 
     std::wstring applicationName;
-    std::string globalHelpText = "Simple framework";
+    std::string globalHelpText = "Unified Graphic Solution";
 
     bool createConsole;
     bool showWindow;

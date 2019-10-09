@@ -192,6 +192,7 @@ namespace GHI
 		return returnCode;
 	}
 
+    /* Create device, command context, swapchain and other device dependent resources */
 	void App::Initialize_private()
 	{
 		DX11::Initialize(D3D_FEATURE_LEVEL_11_0);
@@ -208,6 +209,19 @@ namespace GHI
 		LoadShaderProgram("../data/fullQuad.fx");
 	}
 
+    /* reclaim all tracked resources */
+	void App::Shutdown_private()
+	{
+		for (auto it = GHIResource::list.begin(); it != GHIResource::list.end(); ++it)
+		{
+			(*it)->release();
+		}
+		imgui::Shutdown();
+		swapchain.Shutdown();
+		DX11::Shutdown();
+	}
+
+
 	void App::BeginFrame_private()
 	{
 		DX11::ImmediateContext()->OMSetRenderTargets(1, swapchain.RTV(), nullptr);
@@ -220,17 +234,6 @@ namespace GHI
 	{
 		imgui::EndFrame();
 		swapchain.D3DSwapChain()->Present(0,0);
-	}
-
-	void App::Shutdown_private()
-	{
-		for (auto it = GHIResource::list.begin(); it != GHIResource::list.end(); ++it)
-		{
-			(*it)->release();
-		}
-		imgui::Shutdown();
-		swapchain.Shutdown();
-		DX11::Shutdown();
 	}
 
 	App::~App()
@@ -254,14 +257,7 @@ namespace GHI
 	void App::ToggleFullScreen(bool fullScreen)
 	{
 	}
-	ID3D11Device* App::Device()
-	{
-		return DX11::Device();
-	}
-	ID3D11DeviceContext* App::ImmediateContext()
-	{
-		return DX11::ImmediateContext();
-	}
+
 	uint32 App::SwapchainWidth() const
 	{
 		return swapchain.Width();
