@@ -65,6 +65,7 @@ namespace GHI
 		ID3D11ShaderResourceView *rawSRV = nullptr;
 		ID3D11UnorderedAccessView *rawUAV = nullptr;
 		ID3D11RenderTargetView *rawRTV = nullptr;
+        ID3D11DepthStencilView *rawDSV = nullptr;
 
 		FDX11GHITexture(ID3D11Texture2D *tex)
 			: rawTexture(tex)

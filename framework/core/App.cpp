@@ -147,17 +147,12 @@ namespace GHI
 		GlobalApp = this;
 		for(uint32 i = 0; i < NumTimeDeltaSamples; ++i)
 			timeDeltaBuffer[i] = 0;
-
 	}
 
 	int32 App::Run()
 	{
 		try
 		{
-			window.SetClientArea(swapchain.Width(), swapchain.Height());
-			if(showWindow) window.ShowWindow();
-			window.RegisterMessageCallback(OnWindowResized, this);
-
 			Initialize_private();
 		
 			Initialize(); // pure virtual
@@ -203,10 +198,17 @@ namespace GHI
 
 		GHISamplerDesc desc;
 		linearSampler = (commandContext->CreateSampler(desc));
-		swapchain.Initialize(window);
+
+        swapchain = new SwapChainDX11();
+		swapchain->Initialize(window);
 		imgui::Initialize(window);
 
 		LoadShaderProgram("../data/fullQuad.fx");
+
+		window.SetClientArea(swapchain->Width(), swapchain->Height());
+		if(showWindow) window.ShowWindow();
+		window.RegisterMessageCallback(OnWindowResized, this);
+
 	}
 
     /* reclaim all tracked resources */
@@ -217,15 +219,15 @@ namespace GHI
 			(*it)->release();
 		}
 		imgui::Shutdown();
-		swapchain.Shutdown();
+		swapchain->Shutdown();
+        swapchain = nullptr;
 		DX11::Shutdown();
 	}
 
-
 	void App::BeginFrame_private()
 	{
-		DX11::ImmediateContext()->OMSetRenderTargets(1, swapchain.RTV(), nullptr);
-		DX11::ImmediateContext()->ClearRenderTargetView((swapchain.RTV())[0], clearColor);
+        commandContext->SetRenderTarget(1, (swapchain->ColorBuffers()), nullptr);
+        commandContext->ClearRenderTarget(1,swapchain->ColorBuffers());
         commandContext->SetViewport({0., 0., (float)SwapchainWidth(), (float)SwapchainHeight(), 0., 1.});
 		imgui::BeginFrame();
 	}
@@ -233,12 +235,11 @@ namespace GHI
 	void App::EndFrame_private()
 	{
 		imgui::EndFrame();
-		swapchain.D3DSwapChain()->Present(0,0);
+		swapchain->Present();
 	}
 
 	App::~App()
-	{
-	}
+	{ }
 
 	void App::CalculateFPS()
 	{
@@ -260,12 +261,12 @@ namespace GHI
 
 	uint32 App::SwapchainWidth() const
 	{
-		return swapchain.Width();
+		return swapchain->Width();
 	}
 
 	uint32 App::SwapchainHeight() const
 	{
-		return swapchain.Height();
+		return swapchain->Height();
 	}
 
 	std::string App::Name() const

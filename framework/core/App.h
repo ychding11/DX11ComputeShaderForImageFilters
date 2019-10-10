@@ -268,7 +268,7 @@ protected:
     static void OnWindowResized(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
     Window window;
-	SwapChain swapchain;
+	SwapChain *swapchain = nullptr;
     Timer timer;
 
     static const uint32 NumTimeDeltaSamples = 64;

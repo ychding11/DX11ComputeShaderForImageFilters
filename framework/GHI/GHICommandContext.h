@@ -190,6 +190,7 @@ namespace GHI
         virtual GHITexture* CreateTexture(std::string filename) = 0;
         virtual GHITexture* CreateTextureByAnother(GHITexture * tex) = 0;
 
+        // Render Target related
         virtual void SetRenderTarget(int num, GHITexture **colorBuffers, GHITexture *depthBuffer ) = 0;
         virtual void ClearRenderTarget(int num, GHITexture **colorBuffers, float*clearValue = nullptr ) = 0;
         virtual void ClearDepthStencil(GHITexture *depthBuffers, float depth, int stencil, int flag) = 0;
@@ -207,8 +208,7 @@ namespace GHI
 		virtual void Draw(int count, int offset) = 0;
 		virtual void DrawIndexed(int count, int startIndexLocation, int baseIndexLocation) = 0;
         virtual void DrawIndexedInstanced( unsigned int IndexCountPerInstance, unsigned int InstanceCount,
-            unsigned int StartIndexLocation, int BaseVertexLocation, unsigned int StartInstanceLocation
-        ) = 0;
+            unsigned int StartIndexLocation, int BaseVertexLocation, unsigned int StartInstanceLocation ) = 0;
 
 		virtual void setPrimitiveTopology(PrimitiveTopology topology) = 0;
 		virtual void SetIndexBuffer(GHIBuffer *buffer, GHIIndexType type, int offset) = 0;

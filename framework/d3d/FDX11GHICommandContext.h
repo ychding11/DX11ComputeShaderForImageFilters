@@ -176,8 +176,7 @@ namespace GHI
         virtual void Draw(int count, int offset) override;
 		virtual void DrawIndexed(int count, int startIndexLocation, int baseIndexLocation) override;
         virtual void DrawIndexedInstanced(unsigned int IndexCountPerInstance, unsigned int InstanceCount,
-            unsigned int StartIndexLocation, int BaseVertexLocation, unsigned int StartInstanceLocation
-        ) override;
+            unsigned int StartIndexLocation, int BaseVertexLocation, unsigned int StartInstanceLocation ) override;
 
         virtual GHIVertexShader*  CreateVertexShader(std::string file, std::string entrypoint) override;
         virtual GHIPixelShader*   CreatePixelShader(std::string file, std::string entrypoint) override;

@@ -422,7 +422,7 @@ namespace GHI
 
     void FDX11IGHIComputeCommandCotext::SetRenderTarget(int num, GHITexture **colorBuffers, GHITexture *depthBuffer)
     {
-        AssertMsg_(num > 0, "error");
+        AssertMsg_(num > 0, "render target number error.");
         ID3D11DepthStencilView *depth = nullptr;
         std::vector<ID3D11RenderTargetView*> colors;
         colors.resize(num);
@@ -438,17 +438,19 @@ namespace GHI
         }
 
         FDX11GHITexture *res = ResourceCast(depthBuffer);
-        if (res == nullptr)
+        if (res == nullptr && depthBuffer != nullptr)
         {
             ELOG("GHI Texture cast fail.");
             return;
         }
 
+        DX11::ImmediateContext()->OMSetRenderTargets(num, colors.data(), nullptr); // hardcode, need refine
     }
     void FDX11IGHIComputeCommandCotext::ClearRenderTarget(int num, GHITexture **colorBuffers, float*clearValue)
     {
         std::vector<ID3D11RenderTargetView*> colors;
         colors.resize(num);
+        float defaultColor[4] = { 0 };
         for (int i = 0; i < num; ++i)
         {
             FDX11GHITexture *res = ResourceCast(colorBuffers[i]);
@@ -458,6 +460,10 @@ namespace GHI
                 return;
             }
             colors[i] = res->rawRTV;
+            if (clearValue == nullptr)
+            {
+                clearValue = defaultColor;
+            }
             DX11::ImmediateContext()->ClearRenderTargetView(res->rawRTV, clearValue);
         }
 
