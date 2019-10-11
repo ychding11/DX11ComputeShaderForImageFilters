@@ -1,3 +1,12 @@
+//=================================================================================================
+// Translate Animation example
+//   - Translate x coordinate of a box to make a simple animation.
+//
+//  All code licensed under the MIT license
+//
+//=================================================================================================
+
+
 #pragma once
 
 

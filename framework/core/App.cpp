@@ -205,7 +205,8 @@ namespace GHI
 		linearSampler = (commandContext->CreateSampler(desc));
 
         /* default shader programs */
-		LoadShaderProgram("../data/fullQuad.fx");
+        LoadShaderProgram("../data/fullQuad.fx");
+		LoadShaderProgram("../data/canvas.hlsl");
 
         /* window update */
 		window.SetClientArea(swapchain->Width(), swapchain->Height());
@@ -287,6 +288,15 @@ namespace GHI
         commandContext->SetShaderResource(tex, 0, GHISRVParam(), EShaderStage::PS);
         commandContext->SetSampler(linearSampler, 0, EShaderStage::PS);
         commandContext->SetShader((*shaderCache)["PS"]);
+		commandContext->Draw(3, 0);
+    }
+
+    void App::DrawCanvas(GHIShader*vertexshader, GHIShader*pixelshader, GHIViewport *viewport )
+    {
+        commandContext->SetShader(vertexshader);
+		commandContext->setPrimitiveTopology(PrimitiveTopology::TOPOLOGY_TRIANGLESTRIP);
+		if (viewport) commandContext->SetViewport(*viewport);
+        commandContext->SetShader(pixelshader);
 		commandContext->Draw(3, 0);
     }
 

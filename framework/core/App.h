@@ -308,6 +308,7 @@ protected:
     }
 
     void DrawFullScreenTriangle(GHIViewport viewport, GHITexture *tex);
+    void DrawCanvas( GHIShader*vertexshader, GHIShader*pixelshader, GHIViewport *viewport = nullptr);
 	void LoadShaderProgram(std::string file);
 };
 

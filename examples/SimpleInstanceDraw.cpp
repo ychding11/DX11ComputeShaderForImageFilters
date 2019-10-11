@@ -1,5 +1,14 @@
-#pragma once
 
+//=================================================================================================
+// Raw instance draw example
+//   - simple instance drawing, draw 2 boxes.
+//
+//  All code licensed under the MIT license
+//
+//=================================================================================================
+
+
+#pragma once
 
 #include <vector> 
 #include "App.h"
@@ -49,17 +58,14 @@ protected:
 
     virtual void Initialize() override
     {
-        //shaderProgram = &depthOnly;
-        //shaderProgram = &noLighting;
         shaderProgram = &rawInstance;
         shaderProgram->Init(commandContext);
-
 
         GHI::Float3 dimension(1.0, 1.0, 1.0);
         GHI::Float3 position(.0, .0, .0);
         GHI::Quaternion orientation;
-
         testMesh.InitBox(commandContext, dimension, position, orientation, 0);
+
         GHI::Float3 pos = testMesh.boundingbox.Centroid() + testMesh.boundingbox.DiagnalLen() * GHI::Float3(0, 0, -1);
         camera.SetPosition(pos);
 
@@ -79,20 +85,12 @@ protected:
 
     virtual void Update(const GHI::Timer& timer) override
     {
-        const float maxTranslate = 3.f;
-        static float x = -maxTranslate;
-        //float deltTime = timer.DeltaSeconds();
-        float deltTime = 0.01f;
-        float speed = 0.05f;
+        updateInput(timer);
 
         GHI::UserData userdata;
         userdata.camera = &camera;
         userdata.worldMat.SetTranslation(GHI::Float3(0, 0, 0));
-        updateInput(timer);
         shaderProgram->Update(userdata, commandContext);
-
-        x += deltTime * speed;
-        x > maxTranslate ? x = -maxTranslate : x;
     }
 
     virtual void Render(const GHI::Timer& timer) override
@@ -101,9 +99,7 @@ protected:
     }
 
     virtual void Shutdown() override
-    {
-
-    }
+    { }
 
 private:
     void updateInput(const GHI::Timer& timer)
@@ -156,7 +152,6 @@ private:
     //// Windows Message handler
     static void WindowMessageCallback(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     { }
-
 };
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)

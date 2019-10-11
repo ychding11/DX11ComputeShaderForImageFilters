@@ -179,7 +179,7 @@ set(ALL_UGS_LIBS
 function(my_default_target_property target_name)
   foreach(f ${ARGN})
     # do something interesting with 'f' -> other optional arg list
-    message(STATUS "f='${f}' target_name='${target_name}' ")
+    message(STATUS "Print ARGN=${ARGN} f='${f}' target_name='${target_name}' ")
   endforeach()
   message(STATUS "f='${f}' target_name='${target_name}' ")  
   message(STATUS "ARGV0='${ARGV0}' ARGV1='${ARGV1}' ARGV2='${ARGV2}'")
@@ -208,6 +208,17 @@ ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/TranslateAnimation.cpp
 TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
 my_default_target_property(${EXE_NAME})
 
+
+set(EXE_NAME "ModelViewer")
+ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/ModelViewer.cpp)
+TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
+my_default_target_property(${EXE_NAME})
+
+
+set(EXE_NAME "Canvas")
+ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/Canvas.cpp)
+TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
+my_default_target_property(${EXE_NAME})
 
 #--------------------------------------------------------------------
 # Hide the console window in visual studio projects
