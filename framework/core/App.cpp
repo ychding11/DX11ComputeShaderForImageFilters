@@ -190,25 +190,30 @@ namespace GHI
     /* Create device, command context, swapchain and other device dependent resources */
 	void App::Initialize_private()
 	{
+        /* device aware init */
 		DX11::Initialize(D3D_FEATURE_LEVEL_11_0);
 		commandContext = new FDX11IGHIComputeCommandCotext;
+        swapchain = new SwapChainDX11();
+		swapchain->Initialize(window);
+
+        /* shader cache */
 		gShaderCache = new ShaderCache(commandContext);
-		//shaderCache = new ShaderCache(commandContext);
 		shaderCache = gShaderCache;
 
+        /* default samplers */
 		GHISamplerDesc desc;
 		linearSampler = (commandContext->CreateSampler(desc));
 
-        swapchain = new SwapChainDX11();
-		swapchain->Initialize(window);
-		imgui::Initialize(window);
-
+        /* default shader programs */
 		LoadShaderProgram("../data/fullQuad.fx");
 
+        /* window update */
 		window.SetClientArea(swapchain->Width(), swapchain->Height());
 		if(showWindow) window.ShowWindow();
 		window.RegisterMessageCallback(OnWindowResized, this);
 
+        /* external GUI model */
+		imgui::Initialize(window);
 	}
 
     /* reclaim all tracked resources */

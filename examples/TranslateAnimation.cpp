@@ -30,18 +30,18 @@ private:
     GHI::MouseState mouseState;
 
     GHI::GHIShaderProgram *shaderProgram = nullptr;
-    GHI::DepthOnlyShader  depthOnly;
     GHI::NoLightingShader noLighting;
-    GHI::RawInstancedShader rawInstance;
 
-    GHI::GHIBuffer *instanceBuffer = nullptr;
+    const float maxTranslateX;
+    float animatedX = 0.f;
+    float animatedSpeed = 0.05f;
 
 public:
 
     TranslateAnimation()
         : App(L"TranslateAnimation")
         , camera(16.0f / 9.0f, Pi_4 * 0.75f, NearClip, FarClip)
-
+        , maxTranslateX(3.f)
     {
         window.RegisterMessageCallback(WindowMessageCallback, this);
     }
@@ -49,116 +49,46 @@ protected:
 
     virtual void Initialize() override
     {
-        //shaderProgram = &depthOnly;
         shaderProgram = &noLighting;
-        //shaderProgram = &rawInstance;
         shaderProgram->Init(commandContext);
-
 
         GHI::Float3 dimension(1.0, 1.0, 1.0);
         GHI::Float3 position(.0, .0, .0);
         GHI::Quaternion orientation;
 
-        testMesh.InitBox(commandContext, dimension, position, orientation, 0);
+        testMesh.InitBox(commandContext, dimension, position, orientation, 0); // create a box 
         GHI::Float3 pos = testMesh.boundingbox.Centroid() + testMesh.boundingbox.DiagnalLen() * GHI::Float3(0, 0, -1);
         camera.SetPosition(pos);
-
-        GHI::Float4x4 instanceData[2];
-        instanceData[0].SetTranslation(GHI::Float3(-1.0, 0, 0));
-        instanceData[1].SetTranslation(GHI::Float3( 1.0, 0, 0));
-
-        // NOT as a shader input, no need to transpose
-        //instanceData[0] = GHI::Float4x4::Transpose(instanceData[0]);
-        //instanceData[1] = GHI::Float4x4::Transpose(instanceData[1]);
-
-        rawInstance.instanceBuffer = commandContext->CreateVertexBuffer(sizeof(GHI::Float4x4) * 2, instanceData);
-        rawInstance.instanceCount  = 2;
-        rawInstance.instanceOffset = 0;
-        rawInstance.instanceStride = 64;
     }
 
     virtual void Update(const GHI::Timer& timer) override
     {
-        const float maxTranslate = 3.f;
-        static float x = -maxTranslate;
-        //float deltTime = timer.DeltaSeconds();
-        float deltTime = 0.01f;
-        float speed = 0.05f;
-
+        // set shader parameter
         GHI::UserData userdata;
         userdata.camera = &camera;
-        userdata.worldMat.SetTranslation(GHI::Float3(x, 0, 0));
-        updateInput(timer);
+        userdata.worldMat.SetTranslation(GHI::Float3(animatedX, 0, 0));
         shaderProgram->Update(userdata, commandContext);
 
-        x += deltTime * speed;
-        x > maxTranslate ? x = -maxTranslate : x;
-
+        // update "animated X coordinate" by a frame delta.
+        float deltTime = timer.DeltaSecondsF();
+        deltTime < 1e-3f ? deltTime = 1e-3f : deltTime;
+        animatedX += deltTime * animatedSpeed;
+        animatedX > maxTranslateX ? animatedX = -maxTranslateX : animatedX;
     }
 
     virtual void Render(const GHI::Timer& timer) override
     {
+        // bind shaders & drawing
         shaderProgram->Apply(testMesh, commandContext);
     }
 
     virtual void Shutdown() override
-    {
-
-    }
+    { }
 
 private:
-    void updateInput(const GHI::Timer& timer)
-    {
-        using namespace GHI;
-
-        mouseState = MouseState::GetMouseState(window);
-        KeyboardState kbState = KeyboardState::GetKeyboardState(window);
-
-        if (kbState.IsKeyDown(KeyboardState::Escape))
-            window.Destroy();
-
-        float CamMoveSpeed = 5.0f   * timer.DeltaSecondsF();
-        const float CamRotSpeed = 0.180f * timer.DeltaSecondsF();
-        const float MeshRotSpeed = 0.180f * timer.DeltaSecondsF();
-
-        // Move the camera with keyboard input
-        if (kbState.IsKeyDown(KeyboardState::LeftShift))
-            CamMoveSpeed *= 0.25f;
-
-        Float3 camPos = camera.Position();
-        if (kbState.IsKeyDown(KeyboardState::W))
-            camPos += camera.Forward() * CamMoveSpeed;
-        else if (kbState.IsKeyDown(KeyboardState::S))
-            camPos += camera.Back() * CamMoveSpeed;
-        if (kbState.IsKeyDown(KeyboardState::A))
-            camPos += camera.Left() * CamMoveSpeed;
-        else if (kbState.IsKeyDown(KeyboardState::D))
-            camPos += camera.Right() * CamMoveSpeed;
-        if (kbState.IsKeyDown(KeyboardState::Q))
-            camPos += camera.Up() * CamMoveSpeed;
-        else if (kbState.IsKeyDown(KeyboardState::E))
-            camPos += camera.Down() * CamMoveSpeed;
-        camera.SetPosition(camPos);
-
-        // Rotate the camera by the mouse
-        if (mouseState.RButton.Pressed && mouseState.IsOverWindow)
-        {
-            float xRot = camera.XRotation();
-            float yRot = camera.YRotation();
-            xRot += mouseState.DY * CamRotSpeed;
-            yRot += mouseState.DX * CamRotSpeed;
-            camera.SetXRotation(xRot);
-            camera.SetYRotation(yRot);
-        }
-
-        //camera.SetFieldOfView(AppSettings::VerticalFOV(camera.AspectRatio()));
-    }
-
     //// Windows Message handler
     static void WindowMessageCallback(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
-    {
-
-    }
+    { }
 };
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
