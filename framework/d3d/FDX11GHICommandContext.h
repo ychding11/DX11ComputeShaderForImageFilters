@@ -90,7 +90,7 @@ namespace GHI
                 else
                 {
                     DX11::ImmediateContext()->CSSetConstantBuffers(slot, 1, &res->rawBuffer);
-                    DLOG("Set PS Const Buffer OK.");
+                    DLOG("Set CS Const Buffer OK by default.");
                 }
 			}
             else

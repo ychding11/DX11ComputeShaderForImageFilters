@@ -3,6 +3,12 @@
 
 
 //--------------------------------------------------------------------------------------
+// reference
+// https://xiaoiver.github.io/coding/2018/07/20/%E7%BB%98%E5%88%B6-Pattern.html
+//--------------------------------------------------------------------------------------
+
+
+//--------------------------------------------------------------------------------------
 // Constant Buffers
 //--------------------------------------------------------------------------------------
 cbuffer CB : register(b0)
@@ -46,10 +52,24 @@ PS_INPUT VSCanvas( in uint VertexIdx : SV_VertexID)
 float circle(in float2 _st, in float _radius)
 {
     float2 l = _st-float2(0.5,0.5);
-    return 1.f - smoothstep(
-        _radius-(_radius*0.01),
-        _radius+(_radius*0.01),
-        dot(l,l)*4.0);
+	// create a smooth transition in sphere edge
+	// smoothstep(a,b,x) = smoothstep(b,a,x)
+    //return 1.f - smoothstep(_radius-(_radius*0.01),_radius+(_radius*0.01), dot(l,l)*4.0);
+	//return smoothstep(_radius+(_radius*0.01), _radius-(_radius*0.01), dot(l,l)*4.0);
+	//return 1.f - step(_radius*_radius, dot(l,l)*4.0);
+	
+	// transition region is resolution based. it is more robust
+	float p = 4./cWidth;
+    return smoothstep( p, - p, length(l)-_radius );
+
+}
+
+float circlePattern(float2 st, float radius) 
+{
+    return circle(st+float2(0.,-.5), radius)+
+        circle(st+float2(0.,.5), radius)+
+        circle(st+float2(-.5,0.), radius)+
+        circle(st+float2(.5,0.), radius);
 }
 
 //--------------------------------------------------------------------------------------
@@ -62,7 +82,13 @@ float4 PSCanvas( PS_INPUT input) : SV_Target
 	float3 color = float3(0.f,0.f,0.f);
 	st *= 3.0f;
 	st = frac(st); // fract() in glsl
-	float v = circle(st, 0.5);
-	color = float3(v, v, v); 
+	
+	//float v = circle(st, 0.25);
+	float v = circlePattern(st, 0.5);
+	//color = float3(v, v, v); 
+	
+	// interplate color
+	color += lerp(float3(0.075,0.114,0.329),float3(0.973,0.843,0.675),float3(v, v, v));
+
     return float4(color,1.0f);
 }

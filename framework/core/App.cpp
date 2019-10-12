@@ -147,6 +147,7 @@ namespace GHI
 		GlobalApp = this;
 		for(uint32 i = 0; i < NumTimeDeltaSamples; ++i)
 			timeDeltaBuffer[i] = 0;
+        swapchain = new SwapChainDX11();
 	}
 
 	int32 App::Run()
@@ -193,7 +194,6 @@ namespace GHI
         /* device aware init */
 		DX11::Initialize(D3D_FEATURE_LEVEL_11_0);
 		commandContext = new FDX11IGHIComputeCommandCotext;
-        swapchain = new SwapChainDX11();
 		swapchain->Initialize(window);
 
         /* shader cache */

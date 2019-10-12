@@ -52,7 +52,9 @@ protected:
         Width = SwapchainWidth();
         Height = SwapchainHeight();
 
-        CB cb = { Width, Height };
+        int size = Width < Height ? Width : Height;
+
+        CB cb = { size, size};
         mConstBuffer = commandContext->CreateConstBuffer(sizeof(cb), &cb);
         commandContext->SetConstBuffer(mConstBuffer, 0, (*shaderCache)["PSCanvas"]);
 	}
@@ -63,7 +65,8 @@ protected:
 
 	virtual void Render(const GHI::Timer& timer) override
 	{
-        DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSCanvas"]);
+        //GHI::GHIViewport viewport = {0, 0, Height, Height, 0, 1};
+        DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSCanvas"] );
 	}
 
     virtual void Shutdown() override
