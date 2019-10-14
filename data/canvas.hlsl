@@ -15,6 +15,7 @@ cbuffer CB : register(b0)
 {
     unsigned int cWidth;
     unsigned int cHeight;
+	float cTime;
 };
 
 
@@ -84,7 +85,7 @@ float4 PSCanvas( PS_INPUT input) : SV_Target
 	st = frac(st); // fract() in glsl
 	
 	//float v = circle(st, 0.25);
-	float v = circlePattern(st, 0.5);
+	float v = circlePattern(st, 0.25*(sin(cTime*2)+1.));
 	//color = float3(v, v, v); 
 	
 	// interplate color

@@ -18,6 +18,7 @@ struct alignas(16) CB
 {
 	int iWidth;
 	int iHeight;
+    float fTime;
 };
 
 
@@ -61,6 +62,10 @@ protected:
 
 	virtual void Update(const GHI::Timer& timer) override
 	{
+        float elapsed = timer.ElapsedMicrosecondsF();
+        int size = Width < Height ? Width : Height;
+        CB cb = { size, size, elapsed };
+        commandContext->UpdateBuffer(mConstBuffer, &cb, sizeof(CB));
 	}
 
 	virtual void Render(const GHI::Timer& timer) override
