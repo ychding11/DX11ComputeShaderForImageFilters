@@ -1,5 +1,6 @@
 // VS VSCanvas
 // PS PSCanvas
+// PS PSSdfPrimitive
 
 
 //--------------------------------------------------------------------------------------
@@ -93,3 +94,40 @@ float4 PSCanvas( PS_INPUT input) : SV_Target
 
     return float4(color,1.0f);
 }
+
+//--------------------------------------------------------------------------------------
+// 2D SDF functions for primitives
+//--------------------------------------------------------------------------------------
+float sdfCircle(float2 p, float2 center, float radius)
+{
+	return length(p-center) - radius;
+}
+
+//--------------------------------------------------------------------------------------
+// Color a pixel
+// how to color a pixel with sdf "d" by "color" with stroke width "stroke"
+//--------------------------------------------------------------------------------------
+float4 sdfColor(float d, float3 color, float stroke) 
+{
+	float aaWdith = fwidth(d) * 1.0;
+	float4 colorLayer = float4(color, 1.0 - smoothstep(-aaWdith, aaWdith, d));
+	float4 strokeLayer = float4(float3(0.05, 0.05, 0.05), 1.0 - smoothstep(-aaWdith, aaWdith, d - stroke));
+	return float4(lerp(strokeLayer.rgb, colorLayer.rgb, colorLayer.a), strokeLayer.a);
+}
+
+//--------------------------------------------------------------------------------------
+// Pixel Shader: SDF Primitives
+//--------------------------------------------------------------------------------------
+float4 PSSdfPrimitive( PS_INPUT input) : SV_Target
+{
+	float2 resolution = float2(cWidth,cHeight);
+
+	// hard-coded, maybe controled by parameter
+    float4 _BackgroundColor = float4(1, 1, 1, 1);
+	float4 _Color = float4(1., 0, 0, 0);
+	
+	float d = sdfCircle(input.Pos.xy, float2(0.5, 0.5)* resolution, 100);
+	float4 v = sdfColor(d, _Color, fwidth(d) * 2.0);
+	return lerp(_BackgroundColor, v, v.a);
+}
+
