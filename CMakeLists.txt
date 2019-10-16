@@ -220,6 +220,11 @@ ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/Canvas.cpp)
 TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
 my_default_target_property(${EXE_NAME})
 
+set(EXE_NAME "Sphere")
+ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/Sphere.cpp)
+TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
+my_default_target_property(${EXE_NAME})
+
 #--------------------------------------------------------------------
 # Hide the console window in visual studio projects
 #--------------------------------------------------------------------
