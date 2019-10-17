@@ -207,6 +207,7 @@ namespace GHI
         /* default shader programs */
         LoadShaderProgram("../data/fullQuad.fx");
 		LoadShaderProgram("../data/canvas.hlsl");
+		LoadShaderProgram("../data/sphere.hlsl");
 
         /* window update */
 		window.SetClientArea(swapchain->Width(), swapchain->Height());
