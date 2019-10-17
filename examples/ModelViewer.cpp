@@ -57,8 +57,8 @@ protected:
 
 	virtual void Initialize() override
 	{
-        //shaderProgram = &depthOnly;
-        shaderProgram = &noLighting;
+        shaderProgram = &depthOnly;
+        //shaderProgram = &noLighting;
 		shaderProgram->Init(commandContext);
 
 		model3d.CreateWithAssimp(commandContext, modelPath.c_str()); // load model 

@@ -1,6 +1,5 @@
 // VS VSCanvas
 // PS PSCanvas
-// PS PSSdfPrimitive
 
 
 //--------------------------------------------------------------------------------------
@@ -124,10 +123,26 @@ float4 PSSdfPrimitive( PS_INPUT input) : SV_Target
 
 	// hard-coded, maybe controled by parameter
     float4 _BackgroundColor = float4(1, 1, 1, 1);
-	float4 _Color = float4(1., 0, 0, 0);
+	float4 _Color = float4(1.0, 0, 0, 0);
 	
 	float d = sdfCircle(input.Pos.xy, float2(0.5, 0.5)* resolution, 100);
 	float4 v = sdfColor(d, _Color, fwidth(d) * 2.0);
 	return lerp(_BackgroundColor, v, v.a);
 }
+
+//--------------------------------------------------------------------------------------
+// sphere of size “ra” centered at point “ce”
+// ray at "ro" with direction "rd"
+//--------------------------------------------------------------------------------------
+float2 sphIntersect( in float3 ro, in float3 rd, in float3 ce, float ra )
+{
+    float3 oc = ro - ce;
+    float b = dot( oc, rd );
+    float c = dot( oc, oc ) - ra*ra;
+    float h = b*b - c;
+    if( h<0.0 ) return float2(-1.0, -1.0); // no intersection
+    h = sqrt( h );
+    return float2( -b-h, -b+h );
+}
+
 

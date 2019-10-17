@@ -52,33 +52,10 @@ PS_INPUT VSSphere( in uint VertexIdx : SV_VertexID)
 
 
 
-float circle(in float2 _st, in float _radius)
-{
-    float2 l = _st-float2(0.5,0.5);
-	// create a smooth transition in sphere edge
-	// smoothstep(a,b,x) = smoothstep(b,a,x)
-    //return 1.f - smoothstep(_radius-(_radius*0.01),_radius+(_radius*0.01), dot(l,l)*4.0);
-	//return smoothstep(_radius+(_radius*0.01), _radius-(_radius*0.01), dot(l,l)*4.0);
-	//return 1.f - step(_radius*_radius, dot(l,l)*4.0);
-	
-	// transition region is resolution based. it is more robust
-	float p = 4./cWidth;
-    return smoothstep( p, - p, length(l)-_radius );
-
-}
-
-float circlePattern(float2 st, float radius) 
-{
-    return circle(st+float2(0.,-.5), radius)+
-        circle(st+float2(0.,.5), radius)+
-        circle(st+float2(-.5,0.), radius)+
-        circle(st+float2(.5,0.), radius);
-}
-
-//-------------------------------------------------------------------------------------------
-// sphere related functions
-//-------------------------------------------------------------------------------------------
-
+//--------------------------------------------------------------------------------------
+// sphere: "xyz" is center, "w" is radius.
+// ray: origin "ro" with direction "rd"
+//--------------------------------------------------------------------------------------
 float sphIntersect( in float3 ro, in float3 rd, in float4 sph )
 {
 	float3 oc = ro - sph.xyz;
@@ -89,7 +66,13 @@ float sphIntersect( in float3 ro, in float3 rd, in float4 sph )
 	return -b - sqrt( h );
 }
 
-
+//--------------------------------------------------------------------------------------
+// reference  http://iquilezles.org/www/articles/sphereshadow/sphereshadow.htm
+// "ro"  hit point.
+// "rd"  light direction
+// "sph" sphere in test
+// "k"   the sharpness of the shadow penumbra. Higher values means sharper.
+//--------------------------------------------------------------------------------------
 float sphSoftShadow( in float3 ro, in float3 rd, in float4 sph, in float k )
 {
     float3 oc = ro - sph.xyz;
@@ -133,26 +116,30 @@ float iPlane( in float3 ro, in float3 rd )
 }
 
 //--------------------------------------------------------------------------------------
-// Pixel Shader: Draw circles 
+// Pixel Shader: trace sphere on a plane 
 //--------------------------------------------------------------------------------------
 float4 PSSphere( PS_INPUT input) : SV_Target
 {
 	float2 resolution = float2(cWidth,cHeight);
-   
-    float2 p = (2.0*input.Pos.xy-resolution.xy) / resolution.y;
+    float2 pixelCoord = float2(input.Pos.x, cHeight - input.Pos.y);
+    float2 p = (2.0*pixelCoord-resolution.xy) / resolution.y;
     
+	// "camera" setting
 	float3 ro = float3(0.0, 0.0, 4.0 );
 	float3 rd = normalize( float3(p,-2.0) );
 	
     // sphere animation
-    float4 sph = float4( cos( cTime + float3(2.0,1.0,1.0) + 0.0 )*float3(.5,0.0,0.2), 1.0 );
-    sph.x = 1.0;    
-    float3 lig = normalize( float3(0.6,0.3,0.4) ); // directional light
+    float4 sph = float4( cos( cTime + float3(2.0,1.0,1.0) + 0.0 )*float3(.5,0.0,1.0), 1.0 );
+    sph.x = 1.0;   
+	
+	// directional light setting
+    float3 lig = normalize( float3(0.6,0.3,0.4)); 
+	
     float3 col = float3(0.,0,0);
 
     float tmin = 1e10;
     float3 nor;
-    float  occ = 1.0; // means no occlude
+    float  occ = 1.0; // 1.0 means no occlude
     
     float t1 = iPlane( ro, rd );
     if( t1>0.0 )

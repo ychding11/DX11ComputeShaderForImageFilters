@@ -39,7 +39,16 @@ VSOutput VS(in VSInput input)
 // ================================================================================================
 // Pixel Shader
 // ================================================================================================
-float4 PS() : SV_Target
+float4 PS(in VSOutput frag ) : SV_Target
 {
-    return float4(0.5f, 0.5f, 0.5f, 1.0f);
+    //return float4(0.5f, 0.5f, 0.5f, 1.0f);
+	//return float4(frag.PositionCS.z, frag.PositionCS.z, frag.PositionCS.z, 1.0f);
+	
+   float3 coord = frag.PositionCS.xyz;
+   float3 grid = abs(frac(coord - 0.5) - 0.5) / fwidth(coord);
+   float l = min(min(grid.x, grid.y), grid.z);
+
+  // Just visualize the grid lines directly
+  float v = 1.0 - min(l, 1.0);
+  return float4(float3(v,v,v), 1.0);
 }
