@@ -16,6 +16,15 @@
 namespace GHI
 {
 
+    enum EPresentMode
+    {
+        ImmediatePresent = 0,
+        OneVerticalInterval = 1,
+        TwoVerticalInterval = 2,
+        ThreeVerticalInterval = 3,
+        FourVerticalInterval = 4,
+    };
+
     class SwapChain
     {
     public:
@@ -43,6 +52,11 @@ namespace GHI
         void SetVSYNCEnabled(bool enabled) { vsync = enabled; };
         void SetNumVSYNCIntervals(uint32 intervals) { numVSYNCIntervals = intervals; };
 
+        void SetPresentMode(EPresentMode mode)
+        {
+            presentMode = mode;
+        }
+
     protected:
 
         uint32 width = 1280;
@@ -50,6 +64,7 @@ namespace GHI
         bool fullScreen = false;
         bool vsync = true;
         uint32 numVSYNCIntervals = 1;
+        EPresentMode presentMode = EPresentMode::ImmediatePresent;
     };
 
     class SwapChainDX11 :public SwapChain
@@ -65,7 +80,7 @@ namespace GHI
 
         virtual bool Present() override
         {
-            return swapChain->Present(0,0);
+            return swapChain->Present(presentMode,0);
         }
         virtual GHITexture** ColorBuffers() const override
         {

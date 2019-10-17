@@ -271,10 +271,13 @@ protected:
 	SwapChain *swapchain = nullptr;
     Timer timer;
 
-    static const uint32 NumTimeDeltaSamples = 64;
+    /* caluclate framerate related issue. */
+    static const int NumTimeDeltaSamples = 64;
     float timeDeltaBuffer[NumTimeDeltaSamples];
-    uint32 currentTimeDeltaSample;
-    uint32 fps;
+    float sumTimeSamples = 0.0f;
+    int   curTimeSampleIndex = 0;
+    bool  timeBufferFull = false;
+    float avgFrameTime = -1.0f;
 
     std::wstring applicationName;
     std::string globalHelpText = "Unified Graphic Solution";

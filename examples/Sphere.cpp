@@ -52,6 +52,7 @@ protected:
 	{
         Width = SwapchainWidth();
         Height = SwapchainHeight();
+        swapchain->SetPresentMode(GHI::EPresentMode::ThreeVerticalInterval);
 
         int size = Width < Height ? Width : Height;
 
@@ -63,7 +64,6 @@ protected:
 	virtual void Update(const GHI::Timer& timer) override
 	{
         float elapsed = timer.ElapsedMicrosecondsF();
-        //int size = Width < Height ? Width : Height;
         CB cb = { Width, Height, elapsed };
         commandContext->UpdateBuffer(mConstBuffer, &cb, sizeof(CB));
 	}

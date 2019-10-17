@@ -137,8 +137,6 @@ namespace GHI
 
 	App::App(const wchar* appName, const wchar* iconResource) : 
 		window(NULL, appName, WS_OVERLAPPEDWINDOW, WS_EX_APPWINDOW, 1280, 720, iconResource, iconResource),
-		currentTimeDeltaSample(0),
-		fps(0),
 		applicationName(appName),
 		createConsole(true),
 		showWindow(true),
@@ -241,6 +239,11 @@ namespace GHI
 
 	void App::EndFrame_private()
 	{
+        ImGui::Begin("framerate");
+        ImGui::Text(" %.3f ms (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::Text(" %.3f ms (%.1f FPS)", avgFrameTime, 1000.0f / avgFrameTime);
+        ImGui::End();
+
 		imgui::EndFrame();
 		swapchain->Present();
 	}
@@ -250,6 +253,31 @@ namespace GHI
 
 	void App::CalculateFPS()
 	{
+        float delta = timer.DeltaMillisecondsF();
+        if (timeBufferFull == false)
+        {
+            timeDeltaBuffer[curTimeSampleIndex++] = delta;
+            sumTimeSamples += delta;
+            avgFrameTime = sumTimeSamples / float(curTimeSampleIndex);
+            if (curTimeSampleIndex == NumTimeDeltaSamples)
+            {
+                curTimeSampleIndex = 0;
+                timeBufferFull = true;
+            }
+        }
+        else
+        {
+            float oldValue = timeDeltaBuffer[curTimeSampleIndex];
+            timeDeltaBuffer[curTimeSampleIndex++] = delta;
+            sumTimeSamples -= oldValue;
+            sumTimeSamples += delta;
+            avgFrameTime = sumTimeSamples / float(NumTimeDeltaSamples);
+
+            if (curTimeSampleIndex == NumTimeDeltaSamples)
+            {
+                curTimeSampleIndex = 0;
+            }
+        }
 	}
 
 	void App::OnWindowResized(void* context, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)

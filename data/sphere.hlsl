@@ -129,7 +129,7 @@ float4 PSSphere( PS_INPUT input) : SV_Target
 	float3 rd = normalize( float3(p,-2.0) );
 	
     // sphere animation
-    float4 sph = float4( cos( cTime + float3(2.0,1.0,1.0) + 0.0 )*float3(.5,0.0,1.0), 1.0 );
+    float4 sph = float4( cos( cTime + float3(2.0,1.0,1.0) + 0.0 )*float3(1.5,0.0,1.0), 1.0 );
     sph.x = 1.0;   
 	
 	// directional light setting
@@ -159,7 +159,7 @@ float4 PSSphere( PS_INPUT input) : SV_Target
         occ = 0.5 + 0.5*nor.y;
 	}
 #endif 
-    if( tmin<1000.0 )
+    if( tmin<1e4 ) // Not infinity
     {
         float3 pos = ro + tmin*rd;
         
