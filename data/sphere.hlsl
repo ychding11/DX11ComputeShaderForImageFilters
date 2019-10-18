@@ -26,7 +26,7 @@ struct PS_INPUT
 };
 
 //--------------------------------------------------------------------------------------
-// Vertex Shader
+// Vertex Shader for a full screen quad
 //--------------------------------------------------------------------------------------
 PS_INPUT VSSphere( in uint VertexIdx : SV_VertexID)
 {
@@ -72,6 +72,7 @@ float sphIntersect( in float3 ro, in float3 rd, in float4 sph )
 // "rd"  light direction
 // "sph" sphere in test
 // "k"   the sharpness of the shadow penumbra. Higher values means sharper.
+// return shadow factor: 1: No shadow, 0: All shadow
 //--------------------------------------------------------------------------------------
 float sphSoftShadow( in float3 ro, in float3 rd, in float4 sph, in float k )
 {
@@ -82,9 +83,13 @@ float sphSoftShadow( in float3 ro, in float3 rd, in float4 sph, in float k )
     
 #if 1
     // physically plausible shadow
-    float d = sqrt( max(0.0,sph.w*sph.w-h)) - sph.w;
+    //float d = sqrt( max(0.0,sph.w*sph.w-h)) - sph.w;
+	float d = sqrt( dot( oc, oc ) - b*b)- sph.w;
     float t = -b - sqrt( max(h,0.0) );
-    return (t<0.0) ? 1.0 : smoothstep(0.0, 1.0, 2.5*k*d/t );
+    //return (t<0.0) ? smoothstep(0.0, 1.0, 2.5*k*d/(t) ) : 1.0 ;
+	return (t>0.0) ? 1.0 : smoothstep(0.0, 1.0, 2.5*k*d/(t) );
+	//if (t >= 0.0) return 1.0;
+	//return smoothstep(0.0, 1.0, 2.5*k*d/(-t));
 #else
     // cheap but not plausible alternative
     return (b>0.0) ? step(-0.0001,c) : smoothstep( 0.0, 1.0, h*k/b );
@@ -104,7 +109,6 @@ float3 sphNormal( in float3 pos, in float4 sph )
 }
 
 //=====================================================
-
 float2 hash2( float n ) { return frac(sin(float2(n,n+1.0))*float2(43758.5453123,22578.1459123)); }
 
 //--------------------------------------------------------------------------------------
@@ -121,24 +125,26 @@ float iPlane( in float3 ro, in float3 rd )
 float4 PSSphere( PS_INPUT input) : SV_Target
 {
 	float2 resolution = float2(cWidth,cHeight);
-    float2 pixelCoord = float2(input.Pos.x, cHeight - input.Pos.y);
+    float2 pixelCoord = float2(input.Pos.x, cHeight-input.Pos.y);
     float2 p = (2.0*pixelCoord-resolution.xy) / resolution.y;
     
 	// "camera" setting
-	float3 ro = float3(0.0, 0.0, 4.0 );
+	float3 ro = float3(0.0, 0.0, 6.0 );
 	float3 rd = normalize( float3(p,-2.0) );
 	
     // sphere animation
-    float4 sph = float4( cos( cTime + float3(2.0,1.0,1.0) + 0.0 )*float3(1.5,0.0,1.0), 1.0 );
+    //float4 sph = float4(cos(cTime)*float3(0,0.0,1.0), 1.0 );
+	float4 sph = float4(float3(0,0.0,1.0), 1.0 );
     sph.x = 1.0;   
 	
 	// directional light setting
-    float3 lig = normalize( float3(0.6,0.3,0.4)); 
+    //float3 lig = normalize( float3(0.6,0.3,0.4)); 
+	float3 lig = normalize( float3(0,-1,0)); 
 	
-    float3 col = float3(0.,0,0);
+    float3 col = float3(0,0,0);
 
     float tmin = 1e10;
-    float3 nor;
+    float3 nor = float3(0,1,0);
     float  occ = 1.0; // 1.0 means no occlude
     
     float t1 = iPlane( ro, rd );
@@ -146,7 +152,7 @@ float4 PSSphere( PS_INPUT input) : SV_Target
     {
         tmin = t1;
         float3 pos = ro + t1*rd;
-        float3 nor = float3(0.0,1.0,0.0);
+        float3 nor = float3(0,1,0);
         occ = 1.0-sphOcclusion( pos, nor, sph );
     }
 #if 1
@@ -159,14 +165,15 @@ float4 PSSphere( PS_INPUT input) : SV_Target
         occ = 0.5 + 0.5*nor.y;
 	}
 #endif 
+
     if( tmin<1e4 ) // Not infinity
     {
         float3 pos = ro + tmin*rd;
         
-		col = float3(1.0,1.0,1.0);
-        col *= clamp( dot(nor,lig), 0.0, 1.0 );
+		col = float3(1.0,1.0,1.0); //light intensity.
+        col *= clamp( dot(nor,-lig), 0.0, 1.0 );
         col *= sphSoftShadow( pos, lig, sph, 2.0 );
-        col += 0.05*occ;
+        col += 0.05*occ; // AO
 	    col *= exp( -0.05*tmin );
     }
 
