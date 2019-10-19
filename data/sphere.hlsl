@@ -16,7 +16,8 @@ cbuffer CB : register(b0)
     unsigned int cWidth;
     unsigned int cHeight;
 	float cTime;
-	unsigned int cAnimate;
+	unsigned int cAnimateSphere;
+	unsigned int cAnimateLight;
 };
 
 
@@ -132,13 +133,20 @@ float4 PSSphere( PS_INPUT input) : SV_Target
 	
     // sphere animation
 	float4 sph = float4(float3(0,0.0,1.0), 1.0 );
-	if (cAnimate == 1)
+	if (cAnimateSphere == 1)
 		sph = float4(cos(cTime)*float3(0,0.0,1.0), 1.0 );
     sph.x = 1.0;   
 	
 	// directional light setting
-    //float3 lig = normalize( float3(0.6,0.3,0.4)); 
-	float3 lig = normalize( float3(0,-1,0)); 
+	float pi = 3.141592;
+    float delta = pi / 99999;
+	float theta = 1.75*pi;
+	if (cAnimateLight == 1)
+	{
+		int i = int(cTime) % 99998;
+		theta = pi + delta * i;
+	}
+	float3 lig = normalize( float3(cos(theta),sin(theta),0));
 	
     float3 col = float3(0,0,0);
 
