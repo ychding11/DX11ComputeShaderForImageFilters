@@ -19,6 +19,7 @@ struct alignas(16) CB
 	int iWidth;
 	int iHeight;
     float fTime;
+	int iAnimate;
 };
 
 
@@ -63,8 +64,9 @@ protected:
 
 	virtual void Update(const GHI::Timer& timer) override
 	{
+		updateUI();
         float elapsed = timer.ElapsedMicrosecondsF();
-        CB cb = { Width, Height, elapsed };
+        CB cb = { Width, Height, elapsed, animateSphere == true ? 1:0};
         commandContext->UpdateBuffer(mConstBuffer, &cb, sizeof(CB));
 	}
 
@@ -83,11 +85,16 @@ protected:
 private:
 
 	void updateUI()
-	{ }
+	{
+		ImGui::Begin("settings");
+		ImGui::Checkbox("animate sphere", &animateSphere);
+		ImGui::End();
+	}
     
 	// Fields
 	int	Width = 0;
 	int	Height = 0;
+	bool animateSphere = 1;
 
 	GHI::GHIBuffer *mConstBuffer = nullptr;
 };

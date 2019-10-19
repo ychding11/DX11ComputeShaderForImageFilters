@@ -16,6 +16,7 @@ cbuffer CB : register(b0)
     unsigned int cWidth;
     unsigned int cHeight;
 	float cTime;
+	unsigned int cAnimate;
 };
 
 
@@ -80,19 +81,16 @@ float sphSoftShadow( in float3 ro, in float3 rd, in float4 sph, in float k )
     float b = dot( oc, rd );
     float c = dot( oc, oc ) - sph.w*sph.w;
     float h = b*b - c;
-    
+    float esp = 1e-4;
 #if 1
     // physically plausible shadow
-    //float d = sqrt( max(0.0,sph.w*sph.w-h)) - sph.w;
-	float d = sqrt( dot( oc, oc ) - b*b)- sph.w;
+    float d = sqrt( max(0.0,sph.w*sph.w-h)) - sph.w;
     float t = -b - sqrt( max(h,0.0) );
-    //return (t<0.0) ? smoothstep(0.0, 1.0, 2.5*k*d/(t) ) : 1.0 ;
-	return (t>0.0) ? 1.0 : smoothstep(0.0, 1.0, 2.5*k*d/(t) );
-	//if (t >= 0.0) return 1.0;
-	//return smoothstep(0.0, 1.0, 2.5*k*d/(-t));
+	return (t<-esp) ? smoothstep(0.0, 1.0, 2.5*k*d/-t ) : 1.0 ;
 #else
     // cheap but not plausible alternative
     return (b>0.0) ? step(-0.0001,c) : smoothstep( 0.0, 1.0, h*k/b );
+	//return (b>0.0) ?  smoothstep( 0.0, 1.0, h*k/b ): step(-0.0001,c);
 #endif    
 }    
             
@@ -133,8 +131,9 @@ float4 PSSphere( PS_INPUT input) : SV_Target
 	float3 rd = normalize( float3(p,-2.0) );
 	
     // sphere animation
-    //float4 sph = float4(cos(cTime)*float3(0,0.0,1.0), 1.0 );
 	float4 sph = float4(float3(0,0.0,1.0), 1.0 );
+	if (cAnimate == 1)
+		sph = float4(cos(cTime)*float3(0,0.0,1.0), 1.0 );
     sph.x = 1.0;   
 	
 	// directional light setting
