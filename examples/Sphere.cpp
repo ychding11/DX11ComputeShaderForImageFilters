@@ -21,6 +21,7 @@ struct alignas(16) CB
     float fTime;
 	int iAnimateSphere;
 	int iAnimateLight;
+	float fLightColor[3];
 };
 
 
@@ -67,7 +68,7 @@ protected:
 	{
 		updateUI();
         float elapsed = timer.ElapsedMicrosecondsF();
-        CB cb = { Width, Height, elapsed, animateSphere == true ? 1:0, animateLight == true ? 1 : 0 };
+		CB cb = { Width, Height, elapsed, animateSphere == true ? 1 : 0, animateLight == true ? 1 : 0, {lightColor[0],lightColor[1],lightColor[2]} };
         commandContext->UpdateBuffer(mConstBuffer, &cb, sizeof(CB));
 	}
 
@@ -90,6 +91,7 @@ private:
 		ImGui::Begin("settings");
 		ImGui::Checkbox("animate sphere", &animateSphere);
 		ImGui::Checkbox("animate light", &animateLight);
+		ImGui::ColorEdit3("light color", lightColor);
 		ImGui::End();
 	}
     
@@ -98,6 +100,7 @@ private:
 	int	Height = 0;
 	bool animateSphere = 1;
 	bool animateLight = 1;
+	float lightColor[3] = {1., 1, 1};
 
 	GHI::GHIBuffer *mConstBuffer = nullptr;
 };

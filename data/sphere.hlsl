@@ -18,6 +18,7 @@ cbuffer CB : register(b0)
 	float cTime;
 	unsigned int cAnimateSphere;
 	unsigned int cAnimateLight;
+	float3 cLightColor;
 };
 
 
@@ -177,7 +178,7 @@ float4 PSSphere( PS_INPUT input) : SV_Target
     {
         float3 pos = ro + tmin*rd;
         
-		col = float3(1.0,1.0,1.0); //light intensity.
+		col = cLightColor; //float3(1.0,1.0,1.0); //light intensity.
         col *= clamp( dot(nor,-lig), 0.0, 1.0 );
         col *= sphSoftShadow( pos, lig, sph, 2.0 );
         col += 0.05*occ; // AO
