@@ -119,6 +119,69 @@ float iPlane( in float3 ro, in float3 rd )
     return (-1.0 - ro.y)/rd.y;
 }
 
+
+
+void animateCamera( out float3 origin, out float3 target )
+{
+	float an = 0.1*sin(0.1*cTime);
+	origin = float3( 5.0*cos(an), 0.5, 5.0*sin(an) );
+    target = float3( 0.0, 1.0, 0.0 );
+}
+
+//--------------------------------------------------------------------------------------
+// calculate a ray for a specified "samplePoint" (-1, 1)
+//--------------------------------------------------------------------------------------
+void calcRayForPixel( in float3 samplePoint, out float3 resRo, out float3 resRd )
+{
+     
+	float3 ro, ta;
+	animateCamera( ro, ta ); // camera sphere	
+	
+    // camera matrix
+    float3 ww = normalize( ta - ro );
+    float3 uu = normalize( cross(ww,float3(0.0,1.0,0.0) ) );
+    float3 vv = normalize( cross(uu,ww));
+	
+	// create view ray
+	float3 rd = normalize( samplePoint.x*uu + samplePoint.y*vv + 2.0*ww );
+	
+	resRo = ro;
+	resRd = rd;
+}
+
+
+float2 texCoords( in float3 pos, int mid )
+{
+    vec2 matuv;
+    
+    if( mid==0 )
+    {
+        matuv = pos.xz;
+    }
+    else if( mid==1 )
+    {
+        float3 q = normalize( pos - sc0.xyz );
+        matuv = vec2( atan(q.x,q.z), acos(q.y ) )*sc0.w;
+    }
+    else if( mid==2 )
+    {
+        float3 q = normalize( pos - sc1.xyz );
+        matuv = vec2( atan(q.x,q.z), acos(q.y ) )*sc1.w;
+    }
+    else if( mid==3 )
+    {
+        float3 q = normalize( pos - sc2.xyz );
+        matuv = vec2( atan(q.x,q.z), acos(q.y ) )*sc2.w;
+    }
+    else if( mid==4 )
+    {
+        float3 q = normalize( pos - sc3.xyz );
+        matuv = vec2( atan(q.x,q.z), acos(q.y ) )*sc3.w;
+    }
+
+	return 12.0*matuv;
+}
+
 //--------------------------------------------------------------------------------------
 // Pixel Shader: trace sphere on a plane 
 //--------------------------------------------------------------------------------------
@@ -149,6 +212,7 @@ float4 PSSphere( PS_INPUT input) : SV_Target
 	}
 	float3 lig = normalize( float3(cos(theta),sin(theta),0));
 	
+	// render
     float3 col = float3(0,0,0);
 
     float tmin = 1e10;
