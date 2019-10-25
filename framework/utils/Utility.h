@@ -118,8 +118,8 @@ namespace GHI
         return stream.str();
     }
 
-    void WriteLog(const wchar* format, ...);
-    void WriteLog(const char* format, ...);
+    std::wstring WriteLog(const wchar* format, ...);
+    std::string  WriteLog(const char* format, ...);
 
     #if 0
     #if defined(_DEBUG)

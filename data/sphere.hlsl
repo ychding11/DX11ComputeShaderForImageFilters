@@ -168,7 +168,7 @@ float checkerboardBoxFiltered( in float2 p, in float2 ddx, in float2 ddy )
 //--------------------------------------------------------------------------------------
 float checkerboard( in float2 uv )
 {
-    float2 q = floor(uv);
+    float2 q = floor(uv*12.f);
     return fmod( q.x+q.y, 2.0 );    // xor pattern
 }
 
@@ -195,7 +195,8 @@ float4 animateSphere()
 	return sph;
 }
 
-static float4 mysphere;
+static float4 mysphere;  // global variable
+
 //--------------------------------------------------------------------------------------
 // hit test: ray(ro, rd) with primitives in scene
 //         return (distance, objectID)
@@ -227,39 +228,37 @@ float2  worldIntersect( in float3 ro, in float3 rd, in float maxlen )
 
 //--------------------------------------------------------------------------------------
 // calculate the texture coordinate at a specified "hit-point" on sphere surface
-// n is the unit normal on hit point
+//           param "n" is the unit normal on hit point
 //--------------------------------------------------------------------------------------
 float2 calcSphereTexCoord( in float3 n)
 {
     float2 uv = float2( atan2(n.x, n.z), acos(n.y ));
-	return 12.0*uv;
+	return uv;
 }
-
 
 float3 Shading( in float3 hitpoint, in float3 lightdir, in float objectID )
 {
-	float3 col = cLightColor; //light intensity.
+	float3 col = float3(0,0,0);
 	float3 hitnormal = float3(0,0,0);
 	float  occ = 1.0; // 1.0 means no occlude
+	float  texturedColor = 0;
 	
 	if (objectID == 0)
 	{	
 		hitnormal = float3(0,1,0);
 		occ = 1.0-sphOcclusion( hitpoint, hitnormal, mysphere );
+		texturedColor = 1.0;
 	}
 	else if (objectID == 1)
     {
 		hitnormal = sphNormal( hitpoint, mysphere );
 		occ = 0.5 + 0.5*hitnormal.y;
-		float2 uv = calcSphereTexCoord(hitnormal);
-	    float c = checkerboard( uv );
-	    col *= c;
+	    texturedColor = checkerboard(calcSphereTexCoord(hitnormal));
 	}
 	
-	
-    col *= clamp( dot(hitnormal,-lightdir), 0.0, 1.0 );
+    col += clamp( dot(hitnormal,-lightdir), 0.0, 1.0 ) * cLightColor * texturedColor;
     col *= sphSoftShadow( hitpoint, lightdir, mysphere, 2.0 );
-    col += 0.05*occ; // AO
+    col += 0.05*occ * texturedColor; // AO
 	return col;
 }
 
@@ -273,7 +272,7 @@ float4 PSSphere( PS_INPUT input) : SV_Target
     float2 p = (2.0*pixelCoord-resolution.xy) / resolution.y;
     
 	// "camera" setting
-	float3 ro = float3(0.0, 0.0, 6.0 )
+	float3 ro = float3(0.0, 0.0, 6.0 );
 	float3 rd = normalize( float3(p,-2.0) );
 	
 	mysphere = animateSphere();

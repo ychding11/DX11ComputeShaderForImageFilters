@@ -12,7 +12,7 @@
 namespace GHI
 {
 
-    void WriteLog(const wchar* format, ...)
+    std::wstring WriteLog(const wchar* format, ...)
     {
         wchar buffer[4096] = { 0 };
         va_list args;
@@ -21,9 +21,10 @@ namespace GHI
 
         OutputDebugStringW(buffer);
         OutputDebugStringW(L"\n");
+        return std::wstring(buffer);
     }
 
-    void WriteLog(const char* format, ...)
+    std::string WriteLog(const char* format, ...)
     {
         char buffer[4096] = { 0 };
         va_list args;
@@ -31,6 +32,7 @@ namespace GHI
         vsprintf_s(buffer, ArraySize_(buffer), format, args);
         OutputDebugStringA(buffer);
         OutputDebugStringA("\n");
+        return std::string(buffer);
     }
 
     std::wstring MakeString(const wchar* format, ...)
