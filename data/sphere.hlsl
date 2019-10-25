@@ -232,7 +232,8 @@ float2  worldIntersect( in float3 ro, in float3 rd, in float maxlen )
 //--------------------------------------------------------------------------------------
 float2 calcSphereTexCoord( in float3 n)
 {
-    float2 uv = float2( atan2(n.x, n.z), acos(n.y ));
+    //float2 uv = float2( atan2(n.x, n.z), acos(n.y ));
+	float2 uv = float2( asin(n.z/n.x), acos(n.y ));
 	return uv;
 }
 
@@ -256,8 +257,8 @@ float3 Shading( in float3 hitpoint, in float3 lightdir, in float objectID )
 	    texturedColor = checkerboard(calcSphereTexCoord(hitnormal));
 	}
 	
-    col += clamp( dot(hitnormal,-lightdir), 0.0, 1.0 ) * cLightColor * texturedColor;
-    col *= sphSoftShadow( hitpoint, lightdir, mysphere, 2.0 );
+    col += clamp( dot(hitnormal,-lightdir), 0.0, 1.0 ) * cLightColor ;//* texturedColor;
+    //col *= sphSoftShadow( hitpoint, lightdir, mysphere, 2.0 );
     col += 0.05*occ * texturedColor; // AO
 	return col;
 }
