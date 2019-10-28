@@ -121,18 +121,19 @@ float iPlane( in float3 ro, in float3 rd )
 
 void animateCamera( out float3 origin, out float3 target )
 {
-	float an = 0.1*sin(0.1*cTime);
-	origin = float3( 5.0*cos(an), 0.5, 5.0*sin(an) );
-    target = float3( 0.0, 1.0, 0.0 );
+    float det = 3.1415926 / 2000.;
+	float an = (cTime % 4000) * det;
+	origin = float3( 8.0*cos(an), 0., 8.0*sin(an) );
+    target = float3( 0.0, 0, 0.0 );
 }
 
 //--------------------------------------------------------------------------------------
-// calculate a ray for a specified "samplePoint" (-1, 1)
+// calculate a ray for a specified "samplePoint" (-1, 1) on image plane
 //--------------------------------------------------------------------------------------
-void calcRayForPixel( in float3 samplePoint, out float3 resRo, out float3 resRd )
+void calcRayForPixel( in float2 samplePoint, out float3 rayOri, out float3 rayDir )
 {
      
-	float3 ro, ta;
+	float3 ro = float3(0, 0, 8), ta = float3(0, 0, 0);
 	animateCamera( ro, ta ); // camera sphere	
 	
     // camera matrix
@@ -143,8 +144,8 @@ void calcRayForPixel( in float3 samplePoint, out float3 resRo, out float3 resRd 
 	// create view ray
 	float3 rd = normalize( samplePoint.x*uu + samplePoint.y*vv + 2.0*ww );
 	
-	resRo = ro;
-	resRd = rd;
+	rayOri = ro;
+	rayDir = rd;
 }
 
 
@@ -229,11 +230,13 @@ float2  worldIntersect( in float3 ro, in float3 rd, in float maxlen )
 //--------------------------------------------------------------------------------------
 // calculate the texture coordinate at a specified "hit-point" on sphere surface
 //           param "n" is the unit normal on hit point
+//
+//  Not Very clear the "value scope" of hlsl atan2() and acos().
+//  So The UV coordiante is NOT accuarate.
 //--------------------------------------------------------------------------------------
 float2 calcSphereTexCoord( in float3 n)
 {
     float2 uv = float2( atan2(n.z, n.x), acos(n.y ));
-	//float2 uv = float2( asin(n.z/n.x), acos(n.y ));
 	return uv;
 }
 
@@ -275,6 +278,8 @@ float4 PSSphere( PS_INPUT input) : SV_Target
 	// "camera" setting
 	float3 ro = float3(0.0, 0.0, 6.0 );
 	float3 rd = normalize( float3(p,-2.0) );
+	
+	calcRayForPixel(p, ro, rd);
 	
 	mysphere = animateSphere();
 	
