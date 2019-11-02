@@ -121,8 +121,8 @@ float iPlane( in float3 ro, in float3 rd )
 
 void animateCamera( out float3 origin, out float3 target )
 {
-    float det = 3.1415926 / 2000.;
-	float an = (cTime % 4000) * det;
+    float det = 3.1415926 / 100.;
+	float an = (cTime % 200) * det;
 	origin = float3( 8.0*cos(an), 0., 8.0*sin(an) );
     target = float3( 0.0, 0, 0.0 );
 }
@@ -176,11 +176,11 @@ float checkerboard( in float2 uv )
 float3 animateDirectLight()
 {
 	float pi = 3.141592;
-    float delta = pi / 99999;
+    float delta = pi / 200;
 	float theta = 1.75*pi;
 	if (cAnimateLight == 1)
 	{
-		int i = int(cTime) % 99998;
+		int i = int(cTime) % 200;
 		theta = pi + delta * i;
 	}
 	float3 lig = normalize( float3(cos(theta),sin(theta),0));

@@ -67,7 +67,7 @@ protected:
 	virtual void Update(const GHI::Timer& timer) override
 	{
 		updateUI();
-        float elapsed = timer.ElapsedMicrosecondsF();
+        float elapsed = timer.ElapsedSecondsF();
 		CB cb = { Width, Height, elapsed, animateSphere == true ? 1 : 0, animateLight == true ? 1 : 0, {lightColor[0],lightColor[1],lightColor[2]} };
         commandContext->UpdateBuffer(mConstBuffer, &cb, sizeof(CB));
 	}
@@ -98,7 +98,7 @@ private:
 	// Fields
 	int	Width = 0;
 	int	Height = 0;
-	bool animateSphere = 1;
+	bool animateSphere = 0;
 	bool animateLight = 1;
 	float lightColor[3] = {1., 1, 1};
 
