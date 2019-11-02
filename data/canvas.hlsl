@@ -1,5 +1,7 @@
 // VS VSCanvas
 // PS PSCanvas
+// PS PSSdfPrimitive
+// PS PSClound
 
 
 //--------------------------------------------------------------------------------------
@@ -25,9 +27,9 @@ struct PS_INPUT
     float2 Tex : TEXCOORD0;
 };
 
-//--------------------------------------------------------------------------------------
+//-------------------------------------------------------------
 // Vertex Shader
-//--------------------------------------------------------------------------------------
+//-------------------------------------------------------------
 PS_INPUT VSCanvas( in uint VertexIdx : SV_VertexID)
 {
 	PS_INPUT output;
@@ -50,27 +52,23 @@ PS_INPUT VSCanvas( in uint VertexIdx : SV_VertexID)
     return output;
 }
 
+//-------------------------------------------------------------
+// judge a pixel position[0,1) in circle: 1 in circle, 0 out circle
+// create a smooth transition in sphere edge
+//-------------------------------------------------------------
 float circle(in float2 _st, in float _radius)
 {
     float2 l = _st-float2(0.5,0.5);
-	// create a smooth transition in sphere edge
-	// smoothstep(a,b,x) = smoothstep(b,a,x)
-    //return 1.f - smoothstep(_radius-(_radius*0.01),_radius+(_radius*0.01), dot(l,l)*4.0);
-	//return smoothstep(_radius+(_radius*0.01), _radius-(_radius*0.01), dot(l,l)*4.0);
-	//return 1.f - step(_radius*_radius, dot(l,l)*4.0);
-	
-	// transition region is resolution based. it is more robust
-	float p = 4./cWidth;
-    return smoothstep( p, - p, length(l)-_radius );
-
+	float p = 4./cWidth; // transition region is resolution based. hard coded
+    return smoothstep( p, -p, length(l)-_radius ); // 1 - smoothstep(a,b,x) = smoothstep(b,a,x)
 }
 
 float circlePattern(float2 st, float radius) 
 {
     return circle(st+float2(0.,-.5), radius)+
-        circle(st+float2(0.,.5), radius)+
-        circle(st+float2(-.5,0.), radius)+
-        circle(st+float2(.5,0.), radius);
+           circle(st+float2(0.,.5), radius) +
+           circle(st+float2(-.5,0.), radius)+
+           circle(st+float2(.5,0.), radius);
 }
 
 //--------------------------------------------------------------------------------------
@@ -79,20 +77,93 @@ float circlePattern(float2 st, float radius)
 float4 PSCanvas( PS_INPUT input) : SV_Target
 {
 	float2 resolution = float2(cWidth,cHeight);
-	float2 st = input.Pos.xy / cHeight;
-	float3 color = float3(0.f,0.f,0.f);
+	float2 st = input.Pos.xy / cHeight; // convert pixel coordinate to [0,1)
 	st *= 3.0f;
 	st = frac(st); // fract() in glsl
 	
-	//float v = circle(st, 0.25);
-	float v = circlePattern(st, 0.25*(sin(cTime*2)+1.));
-	//color = float3(v, v, v); 
+	float3 color = float3(0.f,0.f,0.f);
+	float v = circlePattern(st, 0.25*(sin(cTime*2)+1.)); // animate radius of circle
+	color = float3(v, v, v); 
 	
 	// interplate color
-	color += lerp(float3(0.075,0.114,0.329),float3(0.973,0.843,0.675),float3(v, v, v));
+	color = lerp(float3(0.075,0.114,0.329),float3(0.973,0.843,0.675),color);
 
     return float4(color,1.0f);
 }
+
+float random (in float2 _st) 
+{
+    return frac(sin(dot(_st.xy,float2(12.9898,78.233)))*43758.5453123);
+}
+
+float noise (in float2 _st) 
+{
+    float2 i = floor(_st);
+    float2 f = frac(_st);
+
+    // Four corners in 2D of a tile
+    float a = random(i);
+    float b = random(i + float2(1.0, 0.0));
+    float c = random(i + float2(0.0, 1.0));
+    float d = random(i + float2(1.0, 1.0));
+
+    float2 u = f * f * (3.0 - 2.0 * f);
+
+    return  lerp(a, b, u.x) +
+            (c - a) * u.y * (1.0 - u.x) +
+            (d - b) * u.y * u.x;
+}
+
+#define NUM_OCTAVES 5
+
+float fbm ( in float2 _st) 
+{
+    float v = 0.0;
+    float a = 0.5;
+    float2 shift = float2(100.0, 100.0);
+	
+    // Rotate to reduce axial bias
+    float2x2 rot = float2x2( cos(0.5), sin(0.5),
+							-sin(0.5), cos(0.5)); // mat2 in glsl
+    for (int i = 0; i < NUM_OCTAVES; ++i) 
+	{
+        v += a * noise(_st);
+        _st =  mul(_st, rot) * 2.0 + shift; // hlsl vector is a row vector. matrix multiplication is done by intrisic function
+        a *= 0.5;
+    }
+    return v;
+}
+
+float4 PSClound( PS_INPUT input) : SV_Target
+{
+    float2 resolution = float2(cWidth,cHeight);
+	float2 st = input.Pos.xy / cHeight; // convert pixel coordinate to [0,1)
+
+    float2 q = float2(0,0);
+    q.x = fbm( st + 0.00*cTime);
+    q.y = fbm( st + float2(1.0, 1.0));
+
+    float2 r = float2(0,0);
+    r.x = fbm( st + 1.0*q + float2(1.7, 9.2)+ 0.15*cTime );
+    r.y = fbm( st + 1.0*q + float2(8.3, 2.8)+ 0.126*cTime);
+
+    float f = fbm(st+r);
+
+    float3 color = lerp(float3(0.101961,0.619608,0.666667),
+                 float3(0.666667,0.666667,0.498039),
+                 clamp((f*f)*4.0,0.0,1.0));
+
+    color = lerp(color,
+                 float3(0,0,0.164706),
+                 float3(length(q),0.0,1.0));
+
+    color = lerp(color,
+                float3(0.666667,1,1),
+                clamp(length(r.x),0.0,1.0));
+
+    return float4((f*f*f+.6*f*f+.5*f)*color,1.);
+}
+
 
 //--------------------------------------------------------------------------------------
 // 2D SDF functions for primitives
@@ -129,20 +200,4 @@ float4 PSSdfPrimitive( PS_INPUT input) : SV_Target
 	float4 v = sdfColor(d, _Color, fwidth(d) * 2.0);
 	return lerp(_BackgroundColor, v, v.a);
 }
-
-//--------------------------------------------------------------------------------------
-// sphere of size “ra” centered at point “ce”
-// ray at "ro" with direction "rd"
-//--------------------------------------------------------------------------------------
-float2 sphIntersect( in float3 ro, in float3 rd, in float3 ce, float ra )
-{
-    float3 oc = ro - ce;
-    float b = dot( oc, rd );
-    float c = dot( oc, oc ) - ra*ra;
-    float h = b*b - c;
-    if( h<0.0 ) return float2(-1.0, -1.0); // no intersection
-    h = sqrt( h );
-    return float2( -b-h, -b+h );
-}
-
 

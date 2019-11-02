@@ -62,9 +62,10 @@ protected:
 
 	virtual void Update(const GHI::Timer& timer) override
 	{
+        updateUI();
+
         float elapsed = timer.ElapsedSecondsF();
         int size = Width < Height ? Width : Height;
-        //CB cb = { size, size, elapsed };
         CB cb = { Width, Height, elapsed };
         commandContext->UpdateBuffer(mConstBuffer, &cb, sizeof(CB));
 	}
@@ -72,7 +73,11 @@ protected:
 	virtual void Render(const GHI::Timer& timer) override
 	{
         //GHI::GHIViewport viewport = {0, 0, Height, Height, 0, 1};
-        DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSCanvas"] );
+
+        if (curItem == 0)
+            DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSCanvas"] );
+        else if (curItem == 1)
+            DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSClound"] );
         //DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSSdfPrimitive"]);
         
 	}
@@ -86,11 +91,19 @@ protected:
 private:
 
 	void updateUI()
-	{ }
+	{
+        const char* items[] = { "Cavas", "Cloud"};
+        ImGui::Begin("settings");
+        ImGui::Combo("combo", &curItem, items, IM_ARRAYSIZE(items));
+        //ImGui::RadioButton("mytest", mytest );
+        ImGui::End();
+    }
     
 	// Fields
 	int	Width = 0;
 	int	Height = 0;
+    int curItem = 0;
+    bool mytest;
 
 	GHI::GHIBuffer *mConstBuffer = nullptr;
 };
