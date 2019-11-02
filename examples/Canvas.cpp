@@ -62,7 +62,7 @@ protected:
 
 	virtual void Update(const GHI::Timer& timer) override
 	{
-        float elapsed = timer.ElapsedMicrosecondsF();
+        float elapsed = timer.ElapsedSecondsF();
         int size = Width < Height ? Width : Height;
         //CB cb = { size, size, elapsed };
         CB cb = { Width, Height, elapsed };
@@ -72,8 +72,8 @@ protected:
 	virtual void Render(const GHI::Timer& timer) override
 	{
         //GHI::GHIViewport viewport = {0, 0, Height, Height, 0, 1};
-        //DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSCanvas"] );
-        DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSSdfPrimitive"]);
+        DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSCanvas"] );
+        //DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSSdfPrimitive"]);
         
 	}
 

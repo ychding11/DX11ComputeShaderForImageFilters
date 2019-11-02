@@ -79,7 +79,7 @@ float circlePattern(float2 st, float radius)
 float4 PSCanvas( PS_INPUT input) : SV_Target
 {
 	float2 resolution = float2(cWidth,cHeight);
-	float2 st = input.Pos.xy / resolution;
+	float2 st = input.Pos.xy / cHeight;
 	float3 color = float3(0.f,0.f,0.f);
 	st *= 3.0f;
 	st = frac(st); // fract() in glsl
