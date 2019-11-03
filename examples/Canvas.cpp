@@ -78,6 +78,8 @@ protected:
             DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSCanvas"] );
         else if (curItem == 1)
             DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSClound"] );
+        else if (curItem == 2)
+            DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSfBM"] );
         //DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSSdfPrimitive"]);
         
 	}
@@ -92,9 +94,9 @@ private:
 
 	void updateUI()
 	{
-        const char* items[] = { "Cavas", "Cloud"};
+        const char* items[] = { "Cavas", "Cloud", "fBM" };
         ImGui::Begin("settings");
-        ImGui::Combo("combo", &curItem, items, IM_ARRAYSIZE(items));
+        ImGui::Combo("Test", &curItem, items, IM_ARRAYSIZE(items));
         //ImGui::RadioButton("mytest", mytest );
         ImGui::End();
     }
