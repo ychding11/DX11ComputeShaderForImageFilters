@@ -44,7 +44,15 @@ namespace GHI
 
 	void ShaderCache::AddGraphicShader(std::string name, GHIShader* shader)
 	{
-		mShaders[name] = shader;
+		if (shader == nullptr)
+		{
+
+			ELOG("Shader is Empty when adding to Cache.");
+			return;
+		}
+		GHIShader *old = mShaders[name];
+	    mShaders[name] = shader;
+		delete old;
 	}
 
 	void ShaderCache::EnumCache()

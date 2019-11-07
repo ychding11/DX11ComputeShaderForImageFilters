@@ -74,6 +74,12 @@ protected:
 	{
         //GHI::GHIViewport viewport = {0, 0, Height, Height, 0, 1};
 
+		if (compileShader)
+		{
+			compileShader = false;
+			LoadShaderProgram("../data/canvas.hlsl");
+		}
+
         if (curItem == 0)
             DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSCanvas"] );
         else if (curItem == 1)
@@ -98,6 +104,10 @@ private:
         ImGui::Begin("settings");
         ImGui::Combo("Test", &curItem, items, IM_ARRAYSIZE(items));
         //ImGui::RadioButton("mytest", mytest );
+		if (ImGui::Button("Compile"))
+		{
+			compileShader = true;
+		}
         ImGui::End();
     }
     
@@ -106,6 +116,7 @@ private:
 	int	Height = 0;
     int curItem = 0;
     bool mytest;
+	bool compileShader = false;
 
 	GHI::GHIBuffer *mConstBuffer = nullptr;
 };

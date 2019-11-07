@@ -191,7 +191,7 @@ float gnoise( in float p )
     float f = frac(p);
 	float u = f*f*(3.0-2.0*f);
     return lerp( hash(i+0)*(f-0.0), 
-                hash(i+1)*(f-1.0), u);
+                 hash(i+1)*(f-1.0), u);
 }
 
 // fbm
@@ -274,7 +274,9 @@ float4 PSfBM( PS_INPUT input) : SV_Target
 {	
     float3 col = float3(0,0,0);
 	float2 resolution = float2(cWidth,cHeight);
-	float2 st = input.Pos.xy / cHeight; // convert pixel coordinate to [0,1)
+	float2 st = input.Pos.xy;
+	st.y = resolution.y - st.y;
+	st = input.Pos.xy / resolution; // convert pixel coordinate to [0,1)
 	float2 fragCoord = input.Pos.xy;
 	
     for( int m=0; m<AA; m++ )
