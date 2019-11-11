@@ -196,7 +196,10 @@ float4 animateSphere()
 	return sph;
 }
 
-static float4 mysphere;  // global variable
+
+
+static float4  mysphere;  // global variable
+static float3  baseColor = float3(0,0,0);
 
 //--------------------------------------------------------------------------------------
 // hit test: ray(ro, rd) with primitives in scene
@@ -239,6 +242,7 @@ float2 calcSphereTexCoord( in float3 n)
     float2 uv = float2( atan2(n.z, n.x), acos(n.y ));
 	return uv;
 }
+
 
 float3 Shading( in float3 hitpoint, in float3 lightdir, in float objectID )
 {
