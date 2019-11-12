@@ -199,13 +199,19 @@ float4 animateSphere()
 
 
 static float4  mysphere;  // global variable
-static float3  baseColor = float3(0,0,0);
+static float3 HitPoint  = float3(0,0,0);
+static float3 HitNormal = float3(0,1,0);
+static float3 BaseColor = float3(0,0,0);
+static float  Occlusion = 1.f;  // NO Occlusion
+//static float  SoftShadow = 1.f; // NO shadow
+
+static const float PI = 3.1415926;
 
 //--------------------------------------------------------------------------------------
 // hit test: ray(ro, rd) with primitives in scene
-//         return (distance, objectID)
+// return (distance, objectID)
 //--------------------------------------------------------------------------------------
-float2  worldIntersect( in float3 ro, in float3 rd, in float maxlen )
+float2  HitScene( in float3 ro, in float3 rd, in float maxlen )
 {
     float tmin = 1e10;
     float2 ret = float2(tmin, -1.0);
@@ -214,14 +220,15 @@ float2  worldIntersect( in float3 ro, in float3 rd, in float maxlen )
     if( t1>0.0 )
     {
         tmin = t1;
-		ret.y = 0;
+		ret.y = 0; // object 0
     }
+	
 #if 1
     float t2 = sphIntersect( ro, rd, mysphere );
     if( t2>0.0 && t2<tmin )
     {
         tmin = t2;
-		ret.y = 1;
+		ret.y = 1; // object 1
 	}
 #endif 
 
@@ -236,37 +243,21 @@ float2  worldIntersect( in float3 ro, in float3 rd, in float maxlen )
 //
 //  Not Very clear the "value scope" of hlsl atan2() and acos().
 //  So The UV coordiante is NOT accuarate.
+// reference: http://www.mvps.org/directx/articles/spheremap.htm
 //--------------------------------------------------------------------------------------
 float2 calcSphereTexCoord( in float3 n)
 {
-    float2 uv = float2( atan2(n.z, n.x), acos(n.y ));
+    float2 uv = float2( asin(n.x)/PI + 0.5, asin(n.y)/PI + 0.5);
 	return uv;
 }
 
-
-float3 Shading( in float3 hitpoint, in float3 lightdir, in float objectID )
+float3 DirectionalShading( in float3 lightdir )
 {
+	float softShadow = sphSoftShadow( HitPoint, lightdir, mysphere, 2.0 );
 	float3 col = float3(0,0,0);
-	float3 hitnormal = float3(0,0,0);
-	float  occ = 1.0; // 1.0 means no occlude
-	float  texturedColor = 0;
-	
-	if (objectID == 0)
-	{	
-		hitnormal = float3(0,1,0);
-		occ = 1.0-sphOcclusion( hitpoint, hitnormal, mysphere );
-		texturedColor = 1.0;
-	}
-	else if (objectID == 1)
-    {
-		hitnormal = sphNormal( hitpoint, mysphere );
-		occ = 0.5 + 0.5*hitnormal.y;
-	    texturedColor = checkerboard(calcSphereTexCoord(hitnormal));
-	}
-	
-    col += clamp( dot(hitnormal,-lightdir), 0.0, 1.0 ) * cLightColor * texturedColor;
-    col *= sphSoftShadow( hitpoint, lightdir, mysphere, 2.0 );
-    col += 0.05*occ * texturedColor; // AO
+    col += clamp( dot(HitNormal,-lightdir), 0.0, 1.0 ) * cLightColor * BaseColor;
+    col *= softShadow;
+    col += 0.05*Occlusion * BaseColor; // AO
 	return col;
 }
 
@@ -275,6 +266,8 @@ float3 Shading( in float3 hitpoint, in float3 lightdir, in float objectID )
 //--------------------------------------------------------------------------------------
 float4 PSSphere( PS_INPUT input) : SV_Target
 {
+	mysphere = animateSphere();
+	
 	float2 resolution = float2(cWidth,cHeight);
     float2 pixelCoord = float2(input.Pos.x, cHeight-input.Pos.y);
     float2 p = (2.0*pixelCoord-resolution.xy) / resolution.y;
@@ -285,15 +278,35 @@ float4 PSSphere( PS_INPUT input) : SV_Target
 	
 	calcRayForPixel(p, ro, rd);
 	
-	mysphere = animateSphere();
-	
+
+	float3 lightdir = animateDirectLight();
     float3 col = float3(0,0,0);
 
-    float2 ret = worldIntersect( ro, rd, 1e4 );
-	if (ret.y >= 0)
+    float2 ret = HitScene( ro, rd, 1e4 );
+	if (ret.y >= 0) //hit something
 	{
-	  col = Shading( ro + ret.x*rd, animateDirectLight(), ret.y );
-	  col *= exp( -0.05*ret.x );
+	    HitPoint = ro + ret.x*rd;
+		
+	    if (ret.y == 0)
+		{	
+			HitNormal = float3(0,1,0);
+			Occlusion = 1.0-sphOcclusion( HitPoint, HitNormal, mysphere );
+			BaseColor = float3(1,1,1);
+		}
+		else if (ret.y == 1)
+		{
+			HitNormal = sphNormal( HitPoint, mysphere );
+			Occlusion = 0.5 + 0.5*HitNormal.y;
+			float c = checkerboard(calcSphereTexCoord(HitNormal));
+			BaseColor = float3(c,c,c);
+		}
+		
+	    col += DirectionalShading(lightdir);
+	    col *= exp( -0.05*ret.x );
+	}
+	else // hit sky
+	{
+	
 	}
 	
     col = sqrt(col);

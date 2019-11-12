@@ -75,6 +75,11 @@ protected:
 	virtual void Render(const GHI::Timer& timer) override
 	{
         //GHI::GHIViewport viewport = {0, 0, Height, Height, 0, 1};
+        if (compileShader)
+        {
+            compileShader = false;
+            LoadShaderProgram("../data/sphere.hlsl");
+        }
         DrawCanvas((*shaderCache)["VSSphere"], (*shaderCache)["PSSphere"] );
 	}
 
@@ -92,6 +97,10 @@ private:
 		ImGui::Checkbox("animate sphere", &animateSphere);
 		ImGui::Checkbox("animate light", &animateLight);
 		ImGui::ColorEdit3("light color", lightColor);
+        if (ImGui::Button("Compile"))
+        {
+            compileShader = true;
+        }
 		ImGui::End();
 	}
     
@@ -101,7 +110,7 @@ private:
 	bool animateSphere = 0;
 	bool animateLight = 1;
 	float lightColor[3] = {1., 1, 1};
-
+    bool compileShader = false;
 	GHI::GHIBuffer *mConstBuffer = nullptr;
 };
 
