@@ -19,16 +19,18 @@ struct alignas(16) CB
 	int iWidth;
 	int iHeight;
     float fTime;
+    float fFrequency;
+    float fAltitude;
 };
 
 
 
-class Canvas: public GHI::App
+class Fractal: public GHI::App
 {
 
 public:
 
-	Canvas() : App(L"Canvas")
+	Fractal() : App(L"Fractal")
 	{
 		window.RegisterMessageCallback(WindowMessageCallback,this);
 	}
@@ -66,7 +68,7 @@ protected:
 
         float elapsed = timer.ElapsedSecondsF();
         int size = Width < Height ? Width : Height;
-        CB cb = { Width, Height, elapsed };
+        CB cb = { Width, Height, elapsed, frequency, altitude  };
         commandContext->UpdateBuffer(mConstBuffer, &cb, sizeof(CB));
 	}
 
@@ -77,17 +79,11 @@ protected:
 		if (compileShader)
 		{
 			compileShader = false;
-			LoadShaderProgram("../data/canvas.hlsl");
+			LoadShaderProgram("../data/fractal.hlsl");
 		}
 
-        if (curItem == 0)
-            DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSCanvas"] );
-        else if (curItem == 1)
-            DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSClound"] );
-        else if (curItem == 2)
-            DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSfBM"] );
-        //DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSSdfPrimitive"]);
-        
+        //if (curItem == 0)
+            DrawCanvas((*shaderCache)["VSCanvas"], (*shaderCache)["PSMandelbrot"] );
 	}
 
     virtual void Shutdown() override
@@ -100,7 +96,7 @@ private:
 
 	void updateUI()
 	{
-        const char* items[] = { "Cavas", "Cloud", "fBM" };
+        const char* items[] = { "Mandelbrot" };
         ImGui::Begin("settings");
         ImGui::Combo("Test", &curItem, items, IM_ARRAYSIZE(items));
         //ImGui::RadioButton("mytest", mytest );
@@ -108,6 +104,8 @@ private:
 		{
 			compileShader = true;
 		}
+        ImGui::SliderFloat("Frequency", &frequency,  0.2, 0.8);
+        ImGui::SliderFloat("Altitude", &altitude,  1, 10);
         ImGui::End();
     }
     
@@ -115,15 +113,16 @@ private:
 	int	Width = 0;
 	int	Height = 0;
     int curItem = 0;
-    bool mytest;
-	bool compileShader = false;
+    float frequency = 0.23;
+    float altitude = 3.0;
+	bool compileShader = true;
 
 	GHI::GHIBuffer *mConstBuffer = nullptr;
 };
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLine, int nCmdShow)
 {
-    Canvas viewer;
+    Fractal viewer;
     viewer.Run();
     return 0;
 }
