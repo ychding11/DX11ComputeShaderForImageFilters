@@ -136,7 +136,7 @@ namespace GHI
     #endif
 
     #if defined( DEBUG ) || defined( _DEBUG )
-    #define ELOG(fmt,...)  WriteLog("- [Error] %s():%s\t" fmt, __FUNCTION__, __FILE__, ##__VA_ARGS__)
+    #define ELOG(fmt,...)  do { WriteLog("- [Error] %s():%s\t" fmt, __FUNCTION__, __FILE__, ##__VA_ARGS__); } while(0)
     #else
     #define ELOG(fmt,...)
     #endif

@@ -75,6 +75,8 @@ struct MeshPart
     { }
 };
 
+class Model;
+
 class Mesh
 {
     friend class Model;
@@ -199,6 +201,7 @@ protected:
 
     std::vector<uint8> vertices;
     std::vector<uint8> indices;
+    Model *model = nullptr;
 
     std::string IndexTypeStr() const
     {

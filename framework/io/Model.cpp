@@ -781,9 +781,14 @@ void Mesh::Render(IGHIComputeCommandCotext* commandcontext) const
     commandcontext->setPrimitiveTopology(TOPOLOGY_TRIANGLELIST);
 
     // Draw each MeshPart
+    std::vector<MaterialMap>& textures = model->Materials();
     for(size_t i = 0; i < meshParts.size(); ++i)
     {
-        //MeshPart& meshPart = meshParts[i];
+        const MeshPart& part = meshParts[i];
+        commandcontext->SetShaderResource(textures[part.MaterialIdx].DiffuseMap, 0, GHISRVParam(), EShaderStage::PS);
+        commandcontext->SetShaderResource(textures[part.MaterialIdx].NormalMap,  1, GHISRVParam(), EShaderStage::PS);
+        commandcontext->SetShaderResource(textures[part.MaterialIdx].RoughnessMap, 2, GHISRVParam(), EShaderStage::PS);
+        commandcontext->SetShaderResource(textures[part.MaterialIdx].MetallicMap,  3, GHISRVParam(), EShaderStage::PS);
         commandcontext->DrawIndexed(meshParts[i].IndexCount, meshParts[i].IndexStart, 0);
     }
 }
@@ -911,6 +916,7 @@ void Model::CreateWithAssimp(IGHIComputeCommandCotext* commandcontext, const cha
     for (uint64 i = 0; i < numMeshes; ++i)
     {
         meshes[i].InitFromAssimpMesh(commandcontext, *scene->mMeshes[i]);
+        meshes[i].model = this;
     }
 }
 
@@ -987,8 +993,8 @@ void Model::LoadMaterialResources(MaterialMap& material, const std::string& dire
     else
     {
         GHITexture *defaultDiffuse = nullptr;
-        //if (defaultDiffuse == nullptr)
-        //    defaultDiffuse = commandcontext->CreateTexture("..\\Content\\Textures\\Default.dds");
+        if (defaultDiffuse == nullptr)
+            defaultDiffuse = commandcontext->CreateTexture("..\\Content\\Textures\\Default.dds");
         material.DiffuseMap = defaultDiffuse;
     }
 
@@ -999,8 +1005,8 @@ void Model::LoadMaterialResources(MaterialMap& material, const std::string& dire
     else
     {
         GHITexture *defaultNormalMap = nullptr;
-        //if(defaultNormalMap == nullptr)
-       //     defaultNormalMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultNormalMap.dds");
+        if(defaultNormalMap == nullptr)
+            defaultNormalMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultNormalMap.dds");
         material.NormalMap = defaultNormalMap;
     }
 
@@ -1011,8 +1017,8 @@ void Model::LoadMaterialResources(MaterialMap& material, const std::string& dire
     else
     {
         GHITexture *defaultRoughnessMap = nullptr;
-        //if(defaultRoughnessMap == nullptr)
-        //    defaultRoughnessMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultRoughness.dds");
+        if(defaultRoughnessMap == nullptr)
+            defaultRoughnessMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultRoughness.dds");
         material.RoughnessMap = defaultRoughnessMap;
     }
 
@@ -1023,8 +1029,8 @@ void Model::LoadMaterialResources(MaterialMap& material, const std::string& dire
     else
     {
         GHITexture *defaultMetallicMap = nullptr;
-        //if(defaultMetallicMap == nullptr)
-        //    defaultMetallicMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultBlack.dds");
+        if(defaultMetallicMap == nullptr)
+            defaultMetallicMap = commandcontext->CreateTexture("..\\Content\\Textures\\DefaultBlack.dds");
         material.MetallicMap = defaultMetallicMap;
     }
 }

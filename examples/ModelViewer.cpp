@@ -57,14 +57,14 @@ protected:
 
 	virtual void Initialize() override
 	{
-        shaderProgram = &depthOnly;
-        //shaderProgram = &noLighting;
+        //shaderProgram = &depthOnly;
+        shaderProgram = &noLighting;
 		shaderProgram->Init(commandContext);
 
 		model3d.CreateWithAssimp(commandContext, modelPath.c_str()); // load model 
 		const GHI::Mesh& mesh = const_cast<const GHI::Mesh&>(model3d.Meshes()[0]);
 
-		GHI::Float3 pos = mesh.boundingbox.Centroid() + mesh.boundingbox.DiagnalLen() * GHI::Float3(0, 0, -1);
+		GHI::Float3 pos = mesh.boundingbox.Centroid() + mesh.boundingbox.DiagnalLen() * GHI::Float3(0, 0.5, -3);
         camera.SetPosition(pos);
 	}
 

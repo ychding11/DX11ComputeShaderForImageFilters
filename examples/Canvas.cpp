@@ -116,7 +116,7 @@ private:
 	int	Height = 0;
     int curItem = 0;
     bool mytest;
-	bool compileShader = false;
+	bool compileShader = true;
 
 	GHI::GHIBuffer *mConstBuffer = nullptr;
 };

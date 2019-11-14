@@ -258,4 +258,72 @@ namespace GHI
             }
         }
     };
+
+
+    struct  SurfaceShaderParam :public UniformParam
+    {
+        struct alignas(16) BufferStruct
+        {
+            Float4x4 WorldViewProjection;
+        };
+
+        virtual void Init(IGHIComputeCommandCotext *commandcontext, GHIBuffer **constBuffer) override
+        {
+            *constBuffer = commandcontext->CreateConstBuffer(sizeof(BufferStruct), nullptr);
+        }
+
+        virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext, GHIBuffer *constBuffer) override
+        {
+            BufferStruct vsParam;
+            vsParam.WorldViewProjection = Float4x4::Transpose(data.camera->ViewProjectionMatrix());
+            commandcontext->UpdateBuffer(constBuffer, &vsParam, sizeof(vsParam));
+        }
+    };
+
+
+    class SurfaceShader : public GHIShaderProgram
+    {
+        UniformParam *paramStruct = nullptr;
+        GHIBuffer    *paramBuffer = nullptr;
+
+    public:
+        SurfaceShader(std::string file = "..\\data\\rawDepth.hlsl")
+            : GHIShaderProgram(file)
+        {
+
+        }
+
+        ~SurfaceShader()
+        {
+            delete paramStruct;
+            delete paramBuffer;
+        }
+
+        virtual void Init(IGHIComputeCommandCotext *commandcontext) override
+        {
+            GHIShaderProgram::Init(commandcontext);
+            paramStruct = new SurfaceShaderParam;
+            paramStruct->Init(commandcontext, &paramBuffer);
+        }
+
+        virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext) override
+        {
+            paramStruct->Update(data, commandcontext, paramBuffer);
+            commandcontext->SetConstBuffer(paramBuffer, 0, vs);
+        }
+
+        virtual void Apply(const Mesh &mesh, IGHIComputeCommandCotext *commandcontext) override
+        {
+            if (vertexLayout == nullptr)
+            {
+                vertexLayout = commandcontext->CreateVertextLayout(mesh.VertexElements(), vs);
+            }
+            commandcontext->SetVertexLayout(vertexLayout);
+            commandcontext->SetShader(vs);
+            commandcontext->SetShader(ps);
+            {
+                mesh.Render(commandcontext);
+            }
+        }
+    };
 }

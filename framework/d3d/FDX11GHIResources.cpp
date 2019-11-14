@@ -12,6 +12,7 @@
 #include "Exceptions.h" 
 #include "Utility.h" 
 #include "WICTextureLoader.h"
+#include "DDSTextureLoader.h"
 
 using namespace DirectX;
 
@@ -20,19 +21,21 @@ namespace GHI
 
 	void FDX11GHITexture::LoadFromFile(std::string filename)
 	{
+		std::wstring wName = StrToWstr(filename.c_str());
+
         if (ExtractExtension(filename) == "dds")
         {
-            width = height = textureSizeInBytes = 0;
-            aspect = 0.;
-            ELOG("Currently NOT Support 'DDS' format Texture.");
-            return;
+            DXCall(CreateDDSTextureFromFile(DX11::Device(), wName.c_str(), (ID3D11Resource **)&rawTexture, &rawSRV));
         }
-		std::wstring wName = StrToWstr(filename.c_str());
-		DXCall(CreateWICTextureFromFile(DX11::Device(), wName.c_str(), (ID3D11Resource **)&rawTexture, &rawSRV));
+        else
+        {
+		    DXCall(CreateWICTextureFromFile(DX11::Device(), wName.c_str(), (ID3D11Resource **)&rawTexture, &rawSRV));
+        }
+
 		D3D11_TEXTURE2D_DESC desc;
 		rawTexture->GetDesc(&desc);
 		//AssertMsg_((desc.Format == DXGI_FORMAT_R8G8B8A8_UNORM), "Texutre format != DXGI_FORMAT_R8G8B8A8_UNORM");
-        if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM)
+        if (desc.Format != DXGI_FORMAT_R8G8B8A8_UNORM && desc.Format != DXGI_FORMAT_B8G8R8X8_UNORM)
         {
             width = height = textureSizeInBytes = 0;
             aspect = 0.;

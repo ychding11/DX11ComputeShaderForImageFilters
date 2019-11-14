@@ -110,7 +110,7 @@ private:
 	bool animateSphere = 0;
 	bool animateLight = 1;
 	float lightColor[3] = {1., 1, 1};
-    bool compileShader = false;
+    bool compileShader = true;
 	GHI::GHIBuffer *mConstBuffer = nullptr;
 };
 
