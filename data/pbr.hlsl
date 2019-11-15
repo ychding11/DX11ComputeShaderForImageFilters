@@ -26,7 +26,7 @@ Texture2D specularBRDF_LUT : register(t6);
 SamplerState defaultSampler : register(s0);
 SamplerState spBRDF_Sampler : register(s1);
 
-
+static const float PI = 3.14159265359;
 
 // GGX/Towbridge-Reitz normal distribution function.
 // Uses Disney's reparametrization of alpha = roughness^2.
@@ -72,24 +72,18 @@ uint querySpecularTextureLevels()
 // ================================================================================================
 struct VSInput
 {
-    float4 PositionOS 		: POSITION;
-	float3 Normal           : NORMAL;
-	float2 TextCoord        : TEXCOORD;
-	float3 Tagent           : TANGENT;
-	float3 Bitagent         : BITANGENT;
-};
-
-struct VSOutput
-{
-    float4 PositionCS 		: SV_Position;
-	float4 color            : Color;
+    float3 position 		: POSITION;
+	float3 normal           : NORMAL;
+	float2 texcoord        : TEXCOORD;
+	float3 tangent           : TANGENT;
+	float3 bitangent         : BITANGENT;
 };
 
 struct PixelShaderInput
 {
 	float4 pixelPosition : SV_POSITION;
-	float3 position : POSITION;
-	float2 texcoord : TEXCOORD;
+	float3 position      : POSITION;
+	float2 texcoord       : TEXCOORD;
 	float3x3 tangentBasis : TBASIS;
 };
 
@@ -117,7 +111,7 @@ PixelShaderInput VS(VSInput vin)
 static const float3 Fdielectric = 0.04;
 
 // Pixel shader
-float4 main_ps(PixelShaderInput pin) : SV_Target
+float4 PS(PixelShaderInput pin) : SV_Target
 {
 	// Sample input textures to get shading model params.
 	float3 albedo   = albedoTexture.Sample(defaultSampler, pin.texcoord).rgb;
@@ -180,6 +174,7 @@ float4 main_ps(PixelShaderInput pin) : SV_Target
 
 	// Ambient lighting (IBL).
 	float3 ambientLighting;
+	if (0)
 	{
 		// Sample diffuse irradiance at normal direction.
 		float3 irradiance = irradianceTexture.Sample(defaultSampler, N).rgb;
@@ -213,11 +208,4 @@ float4 main_ps(PixelShaderInput pin) : SV_Target
 	// Final fragment color.
 	return float4(directLighting + ambientLighting, 1.0);
 
-
-// ================================================================================================
-// Pixel Shader
-// ================================================================================================
-float4 PS(in VSOutput input) : SV_Target
-{
-    return input.color;
 }
