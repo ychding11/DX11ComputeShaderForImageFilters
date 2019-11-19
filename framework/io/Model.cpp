@@ -781,16 +781,31 @@ void Mesh::Render(IGHIComputeCommandCotext* commandcontext) const
     commandcontext->setPrimitiveTopology(TOPOLOGY_TRIANGLELIST);
 
     // Draw each MeshPart
-    std::vector<MaterialMap>& textures = model->Materials();
-    for(size_t i = 0; i < meshParts.size(); ++i)
-    {
-        const MeshPart& part = meshParts[i];
-        commandcontext->SetShaderResource(textures[part.MaterialIdx].DiffuseMap, 0, GHISRVParam(), EShaderStage::PS);
-        commandcontext->SetShaderResource(textures[part.MaterialIdx].NormalMap,  1, GHISRVParam(), EShaderStage::PS);
-        commandcontext->SetShaderResource(textures[part.MaterialIdx].RoughnessMap, 2, GHISRVParam(), EShaderStage::PS);
-        commandcontext->SetShaderResource(textures[part.MaterialIdx].MetallicMap,  3, GHISRVParam(), EShaderStage::PS);
-        commandcontext->DrawIndexed(meshParts[i].IndexCount, meshParts[i].IndexStart, 0);
-    }
+	if (model)
+	{
+
+		std::vector<MaterialMap>& textures = model->Materials();
+		for (size_t i = 0; i < meshParts.size(); ++i)
+		{
+			const MeshPart& part = meshParts[i];
+			if (textures.size() > 0) // do not check subscript
+			{
+				commandcontext->SetShaderResource(textures[part.MaterialIdx].DiffuseMap, 0, GHISRVParam(), EShaderStage::PS);
+				commandcontext->SetShaderResource(textures[part.MaterialIdx].NormalMap, 1, GHISRVParam(), EShaderStage::PS);
+				commandcontext->SetShaderResource(textures[part.MaterialIdx].RoughnessMap, 2, GHISRVParam(), EShaderStage::PS);
+				commandcontext->SetShaderResource(textures[part.MaterialIdx].MetallicMap, 3, GHISRVParam(), EShaderStage::PS);
+			}
+			commandcontext->DrawIndexed(meshParts[i].IndexCount, meshParts[i].IndexStart, 0);
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < meshParts.size(); ++i)
+		{
+			const MeshPart& part = meshParts[i];
+			commandcontext->DrawIndexed(meshParts[i].IndexCount, meshParts[i].IndexStart, 0);
+		}
+	}
 }
 
 void Mesh::RenderInstanced(IGHIComputeCommandCotext* commandcontext, GHIBuffer *instanceBuffer, int instanceStride, int instanceOffset, int instanceCount) const

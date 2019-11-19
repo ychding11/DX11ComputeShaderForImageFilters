@@ -72,8 +72,6 @@ protected:
 
 	virtual void Render(const GHI::Timer& timer) override
 	{
-        //GHI::GHIViewport viewport = {0, 0, Height, Height, 0, 1};
-
 		if (compileShader)
 		{
 			compileShader = false;
