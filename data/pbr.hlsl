@@ -2,31 +2,56 @@
 // PS PS
 
 
+static const float PI = 3.14159265359;
+static const float Epsilon = 0.00001;
+static const uint  NumLights = 3;
+
+// Constant normal incidence Fresnel factor for all dielectrics.
+static const float3 Fdielectric = 0.04;
+
+struct DirectionalLight
+{
+	float3 direction;
+	float3 radiance;
+	uint   enabled;
+};
+
 // ================================================================================================
 // Constant buffers
 // ================================================================================================
 cbuffer VSConstants : register(b0)
 {
     float4x4 WorldMatrix;
-    float4x4 ViewProjMatrix;
-	float3   eyePosition;
+    float4x4 ViewProjectionMatrix;
 }
 
+cbuffer PSConstants : register(b0)
+{
+	DirectionalLight lights[NumLights];
+	float3 eyePosition;
+	uint    cShadingFlag;
+}
 
+#define ENABLE_IBL_AMBIENT   (0x1 << 0)
+#define ENABLE_IBL_SPECULAR  (0x1 << 1)
+
+// ================================================================================================
+// Textures
+// ================================================================================================
 
 Texture2D albedoTexture : register(t0);
 Texture2D normalTexture : register(t1);
 Texture2D roughnessTexture : register(t2);
 Texture2D metalnessTexture : register(t3);
 
-TextureCube specularTexture : register(t4);
+TextureCube specularTexture   : register(t4);
 TextureCube irradianceTexture : register(t5);
-Texture2D specularBRDF_LUT : register(t6);
+Texture2D   specularBRDF_LUT  : register(t6);
 
 SamplerState defaultSampler : register(s0);
 SamplerState spBRDF_Sampler : register(s1);
 
-static const float PI = 3.14159265359;
+
 
 // GGX/Towbridge-Reitz normal distribution function.
 // Uses Disney's reparametrization of alpha = roughness^2.
@@ -53,7 +78,11 @@ float gaSchlickGGX(float cosLi, float cosLo, float roughness)
 	return gaSchlickG1(cosLi, k) * gaSchlickG1(cosLo, k);
 }
 
-// Shlick's approximation of the Fresnel factor.
+// The Fresnel reflectance tells us much how much of the light is reflected.
+// As angle increases, the Fresnel reflectance stays almost the same, 
+// But for very glancing angles it goes to 100% at all wavelengths.
+// F(0) is the surface’s characteristic specular color: Cspec 
+// Shlick's approximation of the Fresnel reflectance.
 float3 fresnelSchlick(float3 F0, float cosTheta)
 {
 	return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
@@ -74,15 +103,15 @@ struct VSInput
 {
     float3 position 		: POSITION;
 	float3 normal           : NORMAL;
-	float2 texcoord        : TEXCOORD;
-	float3 tangent           : TANGENT;
-	float3 bitangent         : BITANGENT;
+	float2 texcoord         : TEXCOORD;
+	float3 tangent          : TANGENT;
+	float3 bitangent        : BITANGENT;
 };
 
 struct PixelShaderInput
 {
-	float4 pixelPosition : SV_POSITION;
-	float3 position      : POSITION;
+	float4 pixelPosition  : SV_POSITION;
+	float3 position       : POSITION;
 	float2 texcoord       : TEXCOORD;
 	float3x3 tangentBasis : TBASIS;
 };
@@ -102,15 +131,17 @@ PixelShaderInput VS(VSInput vin)
 	float3x3 TBN = float3x3(vin.tangent, vin.bitangent, vin.normal);
 	vout.tangentBasis = mul((float3x3)WorldMatrix, transpose(TBN));
 
-	float4x4 mvpMatrix = mul(WorldMatrix, viewProjectionMatrix);
+	float4x4 mvpMatrix = mul(WorldMatrix, ViewProjectionMatrix);
 	vout.pixelPosition = mul(float4(vin.position, 1.0), mvpMatrix);
 	return vout;
 }
 
-// Constant normal incidence Fresnel factor for all dielectrics.
-static const float3 Fdielectric = 0.04;
 
+
+// ================================================================================================
 // Pixel shader
+// ================================================================================================
+
 float4 PS(PixelShaderInput pin) : SV_Target
 {
 	// Sample input textures to get shading model params.
@@ -118,13 +149,13 @@ float4 PS(PixelShaderInput pin) : SV_Target
 	float metalness = metalnessTexture.Sample(defaultSampler, pin.texcoord).r;
 	float roughness = roughnessTexture.Sample(defaultSampler, pin.texcoord).r;
 
-	// Outgoing light direction (vector from world-space fragment position to the "eye").
-	float3 Lo = normalize(eyePosition - pin.position);
-
-	// Get current fragment's normal and transform to world space.
+    // Get current fragment's normal and transform to world space.
 	float3 N = normalize(2.0 * normalTexture.Sample(defaultSampler, pin.texcoord).rgb - 1.0);
 	N = normalize(mul( N, pin.tangentBasis));
 	
+	// Outgoing light direction (vector from world-space fragment position to the "eye").
+	float3 Lo = normalize(eyePosition - pin.position);
+
 	// Angle between surface normal and outgoing light direction.
 	float cosLo = max(0.0, dot(N, Lo));
 		
@@ -134,9 +165,9 @@ float4 PS(PixelShaderInput pin) : SV_Target
 	// Fresnel reflectance at normal incidence (for metals use albedo color).
 	float3 F0 = lerp(Fdielectric, albedo, metalness);
 
-	// Direct lighting calculation for analytical lights.
+	// Direct lighting calculation for directional lights.
 	float3 directLighting = 0.0;
-	for(uint i=0; i<NumLights; ++i)
+	for(uint i=0; i<NumLights && lights[i].enabled; ++i)
 	{
 		float3 Li = -lights[i].direction;
 		float3 Lradiance = lights[i].radiance;
@@ -150,14 +181,21 @@ float4 PS(PixelShaderInput pin) : SV_Target
 
 		// Calculate Fresnel term for direct lighting. 
 		float3 F  = fresnelSchlick(F0, max(0.0, dot(Lh, Lo)));
+		
 		// Calculate normal distribution for specular BRDF.
 		float D = ndfGGX(cosLh, roughness);
+		
 		// Calculate geometric attenuation for specular BRDF.
 		float G = gaSchlickGGX(cosLi, cosLo, roughness);
 
-		// Diffuse scattering happens due to light being refracted multiple times by a dielectric medium.
-		// Metals on the other hand either reflect or absorb energy, so diffuse contribution is always zero.
-		// To be energy conserving we must scale diffuse BRDF contribution based on Fresnel factor & metalness.
+        // There are two very different light-material interactions: 
+		// 	 - surface reflection == reflection term
+		//   - refraction-absorption-scattering == diffuse term
+		// Diffuse is always subsurface scattering, the difference is the scale("pixel size" compared to "entry-exit distances")
+		// Non-metals cause various degrees of absorption and scattering, it is refraction-absorption-scattering.
+		// Metals immediately absorb all refracted light. So Metals either reflect or absorb energy.
+		// Thus metal's diffuse contribution is zero.
+		// To be energy conserving, diffuse BRDF contribution is based on Fresnel factor & metalness.
 		float3 kd = lerp(float3(1, 1, 1) - F, float3(0, 0, 0), metalness);
 
 		// Lambert diffuse BRDF.
@@ -173,14 +211,14 @@ float4 PS(PixelShaderInput pin) : SV_Target
 	}
 
 	// Ambient lighting (IBL).
-	float3 ambientLighting;
-	if (0)
+	float3 ambientLighting = float3(0,0,0);
+	if (cShadingFlag & ENABLE_IBL_AMBIENT)
 	{
-		// Sample diffuse irradiance at normal direction.
+		// Sample diffuse irradiance at normal direction from a cube map
 		float3 irradiance = irradianceTexture.Sample(defaultSampler, N).rgb;
 
 		// Calculate Fresnel term for ambient lighting.
-		// Since we use pre-filtered cubemap(s) and irradiance is coming from many directions
+		// Since using pre-filtered cubemap(s) and irradiance is from many directions
 		// use cosLo instead of angle with light's half-vector (cosLh above).
 		// See: https://seblagarde.wordpress.com/2011/08/17/hello-world/
 		float3 F = fresnelSchlick(F0, cosLo);
@@ -190,7 +228,10 @@ float4 PS(PixelShaderInput pin) : SV_Target
 
 		// Irradiance map contains exitant radiance assuming Lambertian BRDF, no need to scale by 1/PI here either.
 		float3 diffuseIBL = kd * albedo * irradiance;
-
+		ambientLighting += diffuseIBL;
+	}
+	if (cShadingFlag & ENABLE_IBL_AMBIENT)
+	{
 		// Sample pre-filtered specular reflection environment at correct mipmap level.
 		uint specularTextureLevels = querySpecularTextureLevels();
 		float3 specularIrradiance = specularTexture.SampleLevel(defaultSampler, Lr, roughness * specularTextureLevels).rgb;
@@ -201,11 +242,9 @@ float4 PS(PixelShaderInput pin) : SV_Target
 		// Total specular IBL contribution.
 		float3 specularIBL = (F0 * specularBRDF.x + specularBRDF.y) * specularIrradiance;
 
-		// Total ambient lighting contribution.
-		ambientLighting = diffuseIBL + specularIBL;
+		ambientLighting += specularIBL;
 	}
 
 	// Final fragment color.
 	return float4(directLighting + ambientLighting, 1.0);
-
 }
