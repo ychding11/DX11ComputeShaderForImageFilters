@@ -27,9 +27,13 @@ cbuffer VSConstants : register(b0)
 
 cbuffer PSConstants : register(b0)
 {
-	DirectionalLight lights[NumLights];
 	float3 eyePosition;
 	uint    cShadingFlag;
+}
+
+cbuffer PSConstants : register(b1)
+{
+	DirectionalLight lights[NumLights];
 }
 
 #define ENABLE_IBL_AMBIENT   (0x1 << 0)

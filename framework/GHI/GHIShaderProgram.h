@@ -260,56 +260,155 @@ namespace GHI
     };
 
 
-    struct  SurfaceShaderParam :public UniformParam
+
+
+
+
+
+
+    struct  UniformBufferParam
     {
-        struct alignas(16) BufferStruct
-        {
-            Float4x4 WorldViewProjection;
-        };
-
-        virtual void Init(IGHIComputeCommandCotext *commandcontext, GHIBuffer **constBuffer) override
-        {
-            *constBuffer = commandcontext->CreateConstBuffer(sizeof(BufferStruct), nullptr);
-        }
-
-        virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext, GHIBuffer *constBuffer) override
-        {
-            BufferStruct vsParam;
-            vsParam.WorldViewProjection = Float4x4::Transpose(data.camera->ViewProjectionMatrix());
-            commandcontext->UpdateBuffer(constBuffer, &vsParam, sizeof(vsParam));
-        }
+        virtual void Init(IGHIComputeCommandCotext *commandcontext ) = 0;
+        virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext) = 0;
+        virtual int  ConstBufferCountVS() const = 0;
+        virtual int  ConstBufferCountPS() const = 0;
+        virtual GHIBuffer* ConstBufferVS(int i) const = 0;
+        virtual GHIBuffer* ConstBufferPS(int i) const = 0;
     };
 
 
-    class SurfaceShader : public GHIShaderProgram
+    struct  DirectionalLightUniformBufferParam :public UniformBufferParam
     {
-        UniformParam *paramStruct = nullptr;
-        GHIBuffer    *paramBuffer = nullptr;
-
-    public:
-        SurfaceShader(std::string file = "..\\data\\rawDepth.hlsl")
-            : GHIShaderProgram(file)
+        struct alignas(16) DirectionalLight
         {
+            Float3     direction;
+            Float3     radiance;
+            uint32_t   enabled;
+        };
 
+        struct alignas(16) PSConstBuffer
+        {
+            DirectionalLight lights[3];
+        };
+
+        virtual int  ConstBufferCountVS() const override { return 0; }
+        virtual int  ConstBufferCountPS() const override { return 1; }
+        virtual GHIBuffer* ConstBufferVS(int i)const override 
+        {
+            return nullptr;
+        }
+        virtual GHIBuffer* ConstBufferPS(int i) const override 
+        {
+            if (i != 0)
+            {
+                return nullptr;
+            }
+            return psCBuffer;
         }
 
-        ~SurfaceShader()
+        virtual void Init(IGHIComputeCommandCotext *commandcontext) override
         {
-            delete paramStruct;
-            delete paramBuffer;
+            psCBuffer = commandcontext->CreateConstBuffer(sizeof(PSConstBuffer), nullptr);
+        }
+
+        virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext ) override
+        {
+            PSConstBuffer psParam;
+            commandcontext->UpdateBuffer(psCBuffer, &psParam, sizeof(psParam));
+        }
+
+    private:
+        GHIBuffer * psCBuffer = nullptr;
+    };
+
+    struct  PBRShaderUniformBufferParam :public UniformBufferParam
+    {
+        struct alignas(16) VSConstBuffer
+        {
+            Float4x4 World;
+            Float4x4 ViewProjection;
+        };
+
+        struct alignas(16) PSConstBuffer
+        {
+            Float3      eyePosition;
+            uint32_t    cShadingFlag;
+        };
+
+        virtual int  ConstBufferCountVS() const override { return 1; }
+        virtual int  ConstBufferCountPS() const override { return 1; }
+        virtual GHIBuffer* ConstBufferVS(int i)const override 
+        {
+            if (i != 0)
+            {
+                return nullptr;
+            }
+            return vsCBuffer;
+        }
+        virtual GHIBuffer* ConstBufferPS(int i) const override 
+        {
+            if (i != 0)
+            {
+                return nullptr;
+            }
+            return psCBuffer;
+        }
+
+        virtual void Init(IGHIComputeCommandCotext *commandcontext) override
+        {
+            vsCBuffer = commandcontext->CreateConstBuffer(sizeof(VSConstBuffer), nullptr);
+            psCBuffer = commandcontext->CreateConstBuffer(sizeof(PSConstBuffer), nullptr);
+        }
+
+        virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext ) override
+        {
+            VSConstBuffer vsParam;
+            vsParam.World = Float4x4();
+            vsParam.ViewProjection = Float4x4::Transpose(data.camera->ViewProjectionMatrix());
+            commandcontext->UpdateBuffer(vsCBuffer, &vsParam, sizeof(vsParam));
+
+            PSConstBuffer psParam;
+            commandcontext->UpdateBuffer(psCBuffer, &psParam, sizeof(psParam));
+        }
+
+    private:
+        GHIBuffer * vsCBuffer = nullptr;
+        GHIBuffer * psCBuffer = nullptr;
+
+        //std::vector<GHIBuffer*> vsBuffers;
+        //std::vector<GHIBuffer*> psBuffers;
+    };
+
+
+    class PBRShader : public GHIShaderProgram
+    {
+        UniformBufferParam *uniformParam = nullptr;
+        UniformBufferParam *lightParam = nullptr;
+    public:
+        PBRShader(std::string file = "..\\data\\pbr.hlsl")
+            : GHIShaderProgram(file)
+        {
+        }
+
+        ~PBRShader()
+        {
+            delete uniformParam ;
+            delete lightParam ;
         }
 
         virtual void Init(IGHIComputeCommandCotext *commandcontext) override
         {
             GHIShaderProgram::Init(commandcontext);
-            paramStruct = new SurfaceShaderParam;
-            paramStruct->Init(commandcontext, &paramBuffer);
+            uniformParam = new PBRShaderUniformBufferParam;
+            uniformParam->Init(commandcontext);
+            lightParam = new DirectionalLightUniformBufferParam;
+            lightParam->Init(commandcontext);
         }
 
         virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext) override
         {
-            paramStruct->Update(data, commandcontext, paramBuffer);
-            commandcontext->SetConstBuffer(paramBuffer, 0, vs);
+            uniformParam->Update(data, commandcontext);
+            lightParam->Update(data, commandcontext);
         }
 
         virtual void Apply(const Mesh &mesh, IGHIComputeCommandCotext *commandcontext) override
@@ -321,6 +420,20 @@ namespace GHI
             commandcontext->SetVertexLayout(vertexLayout);
             commandcontext->SetShader(vs);
             commandcontext->SetShader(ps);
+            for (int i = 0; i < uniformParam->ConstBufferCountVS(); ++i)
+            {
+                commandcontext->SetConstBuffer(uniformParam->ConstBufferVS(i), 0, vs);
+            }
+            for (int i = 0; i < uniformParam->ConstBufferCountPS(); ++i)
+            {
+                commandcontext->SetConstBuffer(uniformParam->ConstBufferPS(i), 0, ps);
+            }
+
+            for (int i = 0; i < lightParam->ConstBufferCountPS(); ++i)
+            {
+                commandcontext->SetConstBuffer(lightParam->ConstBufferPS(i), 1, ps);
+            }
+
             {
                 mesh.Render(commandcontext);
             }
