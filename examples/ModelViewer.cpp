@@ -43,6 +43,7 @@ private:
     GHI::GHIShaderProgram *shaderProgram = nullptr;
 	GHI::DepthOnlyShader  depthOnly;
 	GHI::NoLightingShader noLighting;
+	GHI::PBRShader  pbr;
 
 public:
 
@@ -58,7 +59,8 @@ protected:
 	virtual void Initialize() override
 	{
         //shaderProgram = &depthOnly;
-        shaderProgram = &noLighting;
+        //shaderProgram = &noLighting;
+        shaderProgram = &pbr;
 		shaderProgram->Init(commandContext);
 
 		model3d.CreateWithAssimp(commandContext, modelPath.c_str()); // load model 

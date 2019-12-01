@@ -314,6 +314,9 @@ namespace GHI
         virtual void Update(const UserData &data, IGHIComputeCommandCotext *commandcontext ) override
         {
             PSConstBuffer psParam;
+			psParam.lights[0] = { Float3::Normalize(Float3(-1,1,0)), Float3 (1,1,1), 1};
+			psParam.lights[1] = { Float3(), Float3 (), 0};
+			psParam.lights[2] = { Float3(), Float3 (), 0};
             commandcontext->UpdateBuffer(psCBuffer, &psParam, sizeof(psParam));
         }
 
@@ -368,6 +371,8 @@ namespace GHI
             commandcontext->UpdateBuffer(vsCBuffer, &vsParam, sizeof(vsParam));
 
             PSConstBuffer psParam;
+			psParam.cShadingFlag = 0;
+			psParam.eyePosition = data.camera->Position();
             commandcontext->UpdateBuffer(psCBuffer, &psParam, sizeof(psParam));
         }
 
@@ -420,6 +425,7 @@ namespace GHI
             commandcontext->SetVertexLayout(vertexLayout);
             commandcontext->SetShader(vs);
             commandcontext->SetShader(ps);
+			//commandcontext->SetSampler(linearSampler, 0, EShaderStage::PS);
             for (int i = 0; i < uniformParam->ConstBufferCountVS(); ++i)
             {
                 commandcontext->SetConstBuffer(uniformParam->ConstBufferVS(i), 0, vs);

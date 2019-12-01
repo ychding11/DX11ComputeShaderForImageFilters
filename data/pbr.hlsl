@@ -11,7 +11,7 @@ static const float3 Fdielectric = 0.04;
 
 struct DirectionalLight
 {
-	float3 direction;
+	float3 direction; // should be normalized
 	float3 radiance;
 	uint   enabled;
 };
