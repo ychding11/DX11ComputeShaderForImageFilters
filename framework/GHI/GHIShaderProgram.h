@@ -425,7 +425,7 @@ namespace GHI
             commandcontext->SetVertexLayout(vertexLayout);
             commandcontext->SetShader(vs);
             commandcontext->SetShader(ps);
-			//commandcontext->SetSampler(linearSampler, 0, EShaderStage::PS);
+			commandcontext->SetSampler(TextureSamplerManager::GetSampler(TextureSamplerType::Linear), 0, EShaderStage::PS);
             for (int i = 0; i < uniformParam->ConstBufferCountVS(); ++i)
             {
                 commandcontext->SetConstBuffer(uniformParam->ConstBufferVS(i), 0, vs);

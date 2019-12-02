@@ -261,4 +261,14 @@ namespace GHI
 		void TargetCount(int c) { count = c; }
 	};
 
+    enum TextureSamplerType
+    {
+        Linear = 0,
+    };
+
+    struct TextureSamplerManager
+    {
+        static GHISampler* GetSampler(TextureSamplerType type);
+    };
+
  }

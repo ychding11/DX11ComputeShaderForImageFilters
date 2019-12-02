@@ -131,6 +131,12 @@ namespace GHI
 		}
 	} // namespace
 
+    static GHISampler* sLinearSampler = nullptr;
+    GHISampler* TextureSamplerManager::GetSampler(TextureSamplerType type)
+    {
+        return sLinearSampler;
+    }
+
 	App* GlobalApp = nullptr;
 
 	extern ShaderCache *gShaderCache;
@@ -200,7 +206,7 @@ namespace GHI
 
         /* default samplers */
 		GHISamplerDesc desc;
-		linearSampler = (commandContext->CreateSampler(desc));
+        sLinearSampler = linearSampler = (commandContext->CreateSampler(desc));
 
         /* default shader programs */
         LoadShaderProgram("../data/fullQuad.fx");
@@ -466,5 +472,6 @@ namespace GHI
         RisingEdge(false),
         FallingEdge(false)
     { }
+
 
 }
