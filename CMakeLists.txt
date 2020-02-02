@@ -7,6 +7,18 @@ set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "Confi
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 
+## Check compiler flag
+#######################################################################################
+if (MSVC_VERSION GREATER_EQUAL "1900")
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("/std:c++17" _cpp_17_flag_supported)
+    if (_cpp_17_flag_supported)
+		message(STATUS "C++ 17 is suppoted in VS")
+        add_compile_options("/std:c++17")
+    endif()
+endif()
+
+
 file(GLOB SRC_FILES
     ${CMAKE_SOURCE_DIR}/Source/*.h
     ${CMAKE_SOURCE_DIR}/Source/*.cpp
@@ -53,56 +65,43 @@ get_property(includes DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIR
 foreach(dir ${includes})
     message(STATUS "include dir='${dir}'")
 endforeach()
-#######################################################################################
 
 
 #######################################################################################
+## macro definition
+#######################################################################################
+macro(group_src_files src_files target)
+	foreach(f ${src_files})
+		#message(STATUS "check parameters original source file :${f}")
+	endforeach()
+	#message(STATUS "check parameters new group name :${target}")
+    
+    foreach(f ${src_files})
+		# Get the path of the file relative to ${DIRECTORY},
+		# then alter it (not compulsory)
+		file(RELATIVE_PATH SRCGR ${CMAKE_SOURCE_DIR} ${f})
+		set(SRCGR "${target}/${SRCGR}")
+		
+		# Extract the folder, ie remove the filename part
+		string(REGEX REPLACE "(.*)(/[^/]*)$" "\\1" SRCGR ${SRCGR})
 
-foreach(f ${SRC_FILES})
-    # Get the path of the file relative to ${DIRECTORY},
-    # then alter it (not compulsory)
-    file(RELATIVE_PATH SRCGR ${CMAKE_SOURCE_DIR} ${f})
-    set(SRCGR "Sources/${SRCGR}")
+		# Source_group expects \\ (double antislash), not / (slash)
+		string(REPLACE / \\ SRCGR ${SRCGR})
+		source_group("${SRCGR}" FILES ${f})
+		#message(STATUS "New group name :${SRCGR}")
+	endforeach()
+endmacro()
 
-    # Extract the folder, ie remove the filename part
-    string(REGEX REPLACE "(.*)(/[^/]*)$" "\\1" SRCGR ${SRCGR})
+group_src_files("${SRC_FILES}" "ImageEffects")
+group_src_files("${EXT_FILES}" "External")
+group_src_files("${FRAMEWORK_FILES}" "UGS")
+#######################################################################################
 
-    # Source_group expects \\ (double antislash), not / (slash)
-    string(REPLACE / \\ SRCGR ${SRCGR})
-    source_group("${SRCGR}" FILES ${f})
-endforeach()
 
-foreach(f ${EXT_FILES})
-    # Get the path of the file relative to ${DIRECTORY},
-    # then alter it (not compulsory)
-    file(RELATIVE_PATH SRCGR ${CMAKE_SOURCE_DIR} ${f})
-    set(SRCGR "External/${SRCGR}")
 
-    # Extract the folder, ie remove the filename part
-    string(REGEX REPLACE "(.*)(/[^/]*)$" "\\1" SRCGR ${SRCGR})
-
-    # Source_group expects \\ (double antislash), not / (slash)
-    string(REPLACE / \\ SRCGR ${SRCGR})
-    source_group("${SRCGR}" FILES ${f})
-endforeach()
-
-foreach(f ${FRAMEWORK_FILES})
-    # Get the path of the file relative to ${DIRECTORY},
-    # then alter it (not compulsory)
-    file(RELATIVE_PATH SRCGR ${CMAKE_SOURCE_DIR} ${f})
-    set(SRCGR "Framework/${SRCGR}")
-
-    # Extract the folder, ie remove the filename part
-    string(REGEX REPLACE "(.*)(/[^/]*)$" "\\1" SRCGR ${SRCGR})
-
-    # Source_group expects \\ (double antislash), not / (slash)
-    string(REPLACE / \\ SRCGR ${SRCGR})
-    source_group("${SRCGR}" FILES ${f})
-endforeach()
-
-#--------------------------------------------------------------------
-# preproc
-#--------------------------------------------------------------------
+#######################################################################################
+## preprocess macro definition
+#######################################################################################
 add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 add_definitions(-D__STDC_FORMAT_MACROS)
 add_definitions(-DBX_CONFIG_ENABLE_MSVC_LEVEL4_WARNINGS=1)
@@ -112,21 +111,14 @@ add_definitions(-DIMGUI_DISABLE_OBSOLETE_FUNCTIONS)
 add_definitions(-DUSE_DL_PREFIX)
 
 if(MSVC)
-add_definitions(-DWIN32)
-add_definitions(-D_WIN32)
-add_definitions(-DUNICODE)
-add_definitions(-D_UNICODE)
-#add_definitions(-DNOMINMAX)
-endif()
+	add_definitions(-DWIN32)
+	add_definitions(-D_WIN32)
+	add_definitions(-DUNICODE)
+	add_definitions(-D_UNICODE)
+	#add_definitions(-DNOMINMAX)
+endif(MSVC)
 
-if (MSVC_VERSION GREATER_EQUAL "1900")
-    include(CheckCXXCompilerFlag)
-    CHECK_CXX_COMPILER_FLAG("/std:c++17" _cpp_17_flag_supported)
-    if (_cpp_17_flag_supported)
-		message(STATUS "C++ 17 is suppoted in VS")
-        add_compile_options("/std:c++17")
-    endif()
-endif()
+
 
 if(WINDOWS)
   set(GUI_TYPE WIN32)
@@ -135,7 +127,7 @@ elseif(MACOSX)
 endif()
 
 if(MSVC)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
 
 ############################################################################
@@ -150,14 +142,11 @@ link_directories(
 )
 
 set(LINK_OPTIONS " ")
-
+message(STATUS "LINK_OPTIONS='${LINK_OPTIONS}' ")
 ###########################################################################
 # ugs libraries and executables
 
-ADD_LIBRARY ( ugs STATIC
-  ${FRAMEWORK_FILES} 
-  ${EXT_FILES}
-  )
+ADD_LIBRARY ( ugs STATIC  ${FRAMEWORK_FILES}  ${EXT_FILES} )
 
 if (WIN32)
   # Avoid a name clash when building on Visual Studio
@@ -169,7 +158,7 @@ set(ALL_UGS_LIBS
   ${DirectX_D3D11_LIBRARY} 
   ${DirectX_D3D11_COMPILER} 
   assimp.lib
-)
+  )
 
 ###########################################################################
 # custom-defined function
@@ -177,12 +166,14 @@ set(ALL_UGS_LIBS
 # reference https://cmake.org/cmake/help/v3.0/manual/cmake-properties.7.html 
 ###########################################################################
 function(my_default_target_property target_name)
-  foreach(f ${ARGN})
-    # do something interesting with 'f' -> other optional arg list
-    message(STATUS "Print ARGN=${ARGN} f='${f}' target_name='${target_name}' ")
-  endforeach()
-  message(STATUS "f='${f}' target_name='${target_name}' ")  
-  message(STATUS "ARGV0='${ARGV0}' ARGV1='${ARGV1}' ARGV2='${ARGV2}'")
+  #message(STATUS "ARGC=${ARGC} target_name='${target_name}' ")
+  if (NOT ${ARGC} EQUAL 1)
+    message(STATUS "ARGC is NOT expected.") 
+  endif()
+  if (NOT ${ARGV0} STREQUAL ${target_name})
+    message(STATUS "ARGV0 is NOT expected. ARGV0='${ARGV0}' target_name='${target_name}'") 
+  endif()  
+ 
   set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin )
   set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin )
   set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/bin )
@@ -192,7 +183,8 @@ function(my_default_target_property target_name)
 endfunction()
 
 
-# Main demo
+# Demos based on ugs
+###########################################################################
 set(EXE_NAME "ImageEffects")
 ADD_EXECUTABLE ( ${EXE_NAME} ${SRC_FILES})
 TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )

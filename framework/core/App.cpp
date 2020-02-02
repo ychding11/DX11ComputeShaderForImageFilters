@@ -221,7 +221,7 @@ namespace GHI
 	{
 		for (auto it = GHIResource::list.begin(); it != GHIResource::list.end(); ++it)
 		{
-			(*it)->release();
+			if (*it) (*it)->release();
 		}
 		imgui::Shutdown();
 		swapchain->Shutdown();
