@@ -1,12 +1,26 @@
 cmake_minimum_required (VERSION 3.6)
 project (ImageEffects)
 
-SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON) 
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+if(WINDOWS)
+  set(GUI_TYPE WIN32)
+elseif(MACOSX)
+  set(GUI_TYPE MACOSX_BUNDLE)
+endif()
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "Configuration types" FORCE)
-
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 
+############################################################################
+# Custom Lib & Link directory
+############################################################################
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/")
+link_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/framework/thirdparty/Assimp-3.1.1/lib
+)
+
+#######################################################################################
 ## Check compiler flag
 #######################################################################################
 if (MSVC_VERSION GREATER_EQUAL "1900")
@@ -59,6 +73,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/framework/core
 )
 
+#######################################################################################
 ## Print include directory for debug
 #######################################################################################
 get_property(includes DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
@@ -66,6 +81,27 @@ foreach(dir ${includes})
     message(STATUS "include dir='${dir}'")
 endforeach()
 
+###########################################################################
+# custom-defined function
+# set target property
+# reference https://cmake.org/cmake/help/v3.0/manual/cmake-properties.7.html 
+###########################################################################
+function(my_default_target_property target_name)
+  #message(STATUS "ARGC=${ARGC} target_name='${target_name}' ")
+  if (NOT ${ARGC} EQUAL 1)
+    message(STATUS "ARGC is NOT expected.") 
+  endif()
+  if (NOT ${ARGV0} STREQUAL ${target_name})
+    message(STATUS "ARGV0 is NOT expected. ARGV0='${ARGV0}' target_name='${target_name}'") 
+  endif()  
+ 
+  set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin )
+  set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin )
+  set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/bin )
+  set_target_properties(${target_name} PROPERTIES DEBUG_POSTFIX "_d")
+  set_target_properties(${target_name} PROPERTIES RELWITHDEBINFO_POSTFIX "RelWithDebInfo")
+  set_target_properties(${target_name} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
+endfunction()
 
 #######################################################################################
 ## macro definition
@@ -120,32 +156,19 @@ endif(MSVC)
 
 
 
-if(WINDOWS)
-  set(GUI_TYPE WIN32)
-elseif(MACOSX)
-  set(GUI_TYPE MACOSX_BUNDLE)
-endif()
-
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
 
-############################################################################
-# Custom Lib
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/")
 find_package(DirectX)
 
-############################################################################
-# Custom link directory
-link_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/framework/thirdparty/Assimp-3.1.1/lib
-)
-
-set(LINK_OPTIONS " ")
+#set(LINK_OPTIONS " ")
 message(STATUS "LINK_OPTIONS='${LINK_OPTIONS}' ")
+message(STATUS "CMAKE_CXX_FLAGS='${CMAKE_CXX_FLAGS}' ")
+
 ###########################################################################
 # ugs libraries and executables
-
+###########################################################################
 ADD_LIBRARY ( ugs STATIC  ${FRAMEWORK_FILES}  ${EXT_FILES} )
 
 if (WIN32)
@@ -160,28 +183,6 @@ set(ALL_UGS_LIBS
   assimp.lib
   )
 
-###########################################################################
-# custom-defined function
-# set target property
-# reference https://cmake.org/cmake/help/v3.0/manual/cmake-properties.7.html 
-###########################################################################
-function(my_default_target_property target_name)
-  #message(STATUS "ARGC=${ARGC} target_name='${target_name}' ")
-  if (NOT ${ARGC} EQUAL 1)
-    message(STATUS "ARGC is NOT expected.") 
-  endif()
-  if (NOT ${ARGV0} STREQUAL ${target_name})
-    message(STATUS "ARGV0 is NOT expected. ARGV0='${ARGV0}' target_name='${target_name}'") 
-  endif()  
- 
-  set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin )
-  set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin )
-  set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/bin )
-  set_target_properties(${target_name} PROPERTIES DEBUG_POSTFIX "_d")
-  set_target_properties(${target_name} PROPERTIES RELWITHDEBINFO_POSTFIX "RelWithDebInfo")
-  set_target_properties(${target_name} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-endfunction()
-
 
 # Demos based on ugs
 ###########################################################################
@@ -190,58 +191,25 @@ ADD_EXECUTABLE ( ${EXE_NAME} ${SRC_FILES})
 TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
 my_default_target_property(${EXE_NAME})
 
-set(EXE_NAME "SimpleInstanceDraw")
-ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/SimpleInstanceDraw.cpp)
-TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
-my_default_target_property(${EXE_NAME})
-
-set(EXE_NAME "TranslateAnimation")
-ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/TranslateAnimation.cpp)
-TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
-my_default_target_property(${EXE_NAME})
-
-
-set(EXE_NAME "ModelViewer")
-ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/ModelViewer.cpp)
-TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
-my_default_target_property(${EXE_NAME})
-
-
-set(EXE_NAME "Canvas")
-ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/Canvas.cpp)
-TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
-my_default_target_property(${EXE_NAME})
-
-set(EXE_NAME "Sphere")
-ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/Sphere.cpp)
-TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
-my_default_target_property(${EXE_NAME})
-
-
-set(EXE_NAME "Fractal")
-ADD_EXECUTABLE ( ${EXE_NAME} ${CMAKE_SOURCE_DIR}/examples/Fractal.cpp)
-TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
-my_default_target_property(${EXE_NAME})
-
 #--------------------------------------------------------------------
 # Hide the console window in visual studio projects
 #--------------------------------------------------------------------
-set(ENABLE_HIDECONSOLE_BUILD TRUE CACHE BOOL "TRUE to hide console for Windows sys")
+set(ENABLE_HIDECONSOLE_BUILD TRUE CACHE BOOL "TRUE to hide console on Windows.")
 if(ENABLE_HIDECONSOLE_BUILD)
-if(MSVC)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
-    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
-endif()
+	if(MSVC)
+		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
+		set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
+	endif()
 endif()
 
 if(WINDOWS)
-set_target_properties(${EXE_NAME} PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:WINDOWS")
-set_target_properties(${EXE_NAME} PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
+	set_target_properties(${EXE_NAME} PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:WINDOWS")
+	set_target_properties(${EXE_NAME} PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
 endif()
 
 if(ENABLE_HIDECONSOLE_BUILD)
-MESSAGE(STATUS "Console is hidden")
+	message(STATUS "Console is hidden")
 else()
-MESSAGE(STATUS "Console is visible")
+	message(STATUS "Console is visible")
 endif()
 
