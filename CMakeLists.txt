@@ -16,6 +16,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
 # Custom Lib & Link directory
 ############################################################################
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/")
+
 link_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/framework/thirdparty/Assimp-3.1.1/lib
 )
@@ -106,31 +107,37 @@ endfunction()
 #######################################################################################
 ## macro definition
 #######################################################################################
-macro(group_src_files src_files target)
-	foreach(f ${src_files})
-		#message(STATUS "check parameters original source file :${f}")
-	endforeach()
-	#message(STATUS "check parameters new group name :${target}")
-    
+macro(group_src_files src_files)
     foreach(f ${src_files})
-		# Get the path of the file relative to ${DIRECTORY},
-		# then alter it (not compulsory)
-		file(RELATIVE_PATH SRCGR ${CMAKE_SOURCE_DIR} ${f})
-		set(SRCGR "${target}/${SRCGR}")
-		
+        # replace a/b/c to a\\b\\c
+		string(REPLACE / \\\\ f ${f})
+		# Get the path of the file relative to ${CMAKE_SOURCE_DIR}
+		file(RELATIVE_PATH relative_path ${CMAKE_SOURCE_DIR} ${f})
 		# Extract the folder, ie remove the filename part
-		string(REGEX REPLACE "(.*)(/[^/]*)$" "\\1" SRCGR ${SRCGR})
+		string(REGEX REPLACE "(.*)(/[^/]*)$" "\\1" relative_path ${relative_path})
 
+		set(SRCGR "${relative_path}")
 		# Source_group expects \\ (double antislash), not / (slash)
-		string(REPLACE / \\ SRCGR ${SRCGR})
-		source_group("${SRCGR}" FILES ${f})
-		#message(STATUS "New group name :${SRCGR}")
+		string(REPLACE / \\\\ SRCGR ${SRCGR})
+		#message(STATUS "1. group name=${SRCGR}, file=${f}")
+
+        # regular expression https://cmake.org/cmake/help/latest/command/string.html#regex-specification
+	    if ("${f}" MATCHES ".*\\.cpp$")
+		   set(SRCGR "${SRCGR}\\\\cpp")
+        elseif("${f}" MATCHES ".*\\.h$")
+		   set(SRCGR "${SRCGR}\\\\header")
+        endif()	
+
+		message(STATUS "2. group name=${SRCGR}, file=${f}")
+		source_group(${SRCGR} FILES ${f})
 	endforeach()
 endmacro()
 
-group_src_files("${SRC_FILES}" "ImageEffects")
-group_src_files("${EXT_FILES}" "External")
-group_src_files("${FRAMEWORK_FILES}" "UGS")
+group_src_files("${SRC_FILES}")
+group_src_files("${EXT_FILES}")
+group_src_files("${FRAMEWORK_FILES}")
+
+
 #######################################################################################
 
 
