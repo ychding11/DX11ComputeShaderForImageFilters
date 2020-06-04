@@ -1,0 +1,4 @@
+[submodule "UGS"]
+	path = UGS
+	url = https://github.com/ychding11/UGS.git
+	branch = dev

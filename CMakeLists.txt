@@ -1,5 +1,8 @@
 cmake_minimum_required (VERSION 3.6)
-project (ImageEffects)
+
+set(PROJECT_NAME ImageLab)
+
+project (${PROJECT_NAME})
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -10,137 +13,84 @@ elseif(MACOSX)
 endif()
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "Configuration types" FORCE)
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake")
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 
-############################################################################
-# Custom Lib & Link directory
-############################################################################
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/")
+set(ENABLE_HIDECONSOLE_BUILD TRUE CACHE BOOL "TRUE to hide console on Windows.")
 
-link_directories(
-  ${CMAKE_CURRENT_SOURCE_DIR}/framework/thirdparty/Assimp-3.1.1/lib
-)
+set(VERBOSE_MODE FALSE CACHE BOOL "TRUE to output verbose info.")
 
-#######################################################################################
-## Check compiler flag
-#######################################################################################
-if (MSVC_VERSION GREATER_EQUAL "1900")
-    include(CheckCXXCompilerFlag)
-    CHECK_CXX_COMPILER_FLAG("/std:c++17" _cpp_17_flag_supported)
-    if (_cpp_17_flag_supported)
-		message(STATUS "C++ 17 is suppoted in VS")
-        add_compile_options("/std:c++17")
-    endif()
-endif()
+set(_IMAGE_LOCATION_ ${CMAKE_CURRENT_SOURCE_DIR}/images/ CACHE STRING "Image Location" FORCE)
+
+set(_IMAGE_EFFECT_LOCATION_ ${CMAKE_CURRENT_SOURCE_DIR}/effects/ CACHE STRING "Image Effect Location" FORCE)
+
+# Add UGS to build 
+set(UGS_BUILD_SAMPLES OFF CACHE BOOL "Build UGS Samples")
+add_subdirectory(UGS)
+message(STATUS "####################################### Build 'UGS' done #######################################")
+
+add_compile_definitions(UGS_LOCATION="${_UGS_LOCATION_}")
+add_compile_definitions(UGS_SHADER_LOCATION="${_UGS_SHADER_LOCATION_}")
+
+add_compile_definitions(IMAGE_LOCATION="${_IMAGE_LOCATION_}")
+add_compile_definitions(IMAGE_EFFECT_LOCATION="${_IMAGE_EFFECT_LOCATION_}")
 
 
 file(GLOB SRC_FILES
-    ${CMAKE_SOURCE_DIR}/Source/*.h
-    ${CMAKE_SOURCE_DIR}/Source/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
 
 file(GLOB EXT_FILES
 )
 
-file(GLOB FRAMEWORK_FILES
-    ${CMAKE_SOURCE_DIR}/framework/*.h
-	${CMAKE_SOURCE_DIR}/framework/*.cpp
-	${CMAKE_SOURCE_DIR}/framework/d3d/*.h
-	${CMAKE_SOURCE_DIR}/framework/d3d/*.cpp
-	${CMAKE_SOURCE_DIR}/framework/camera/*.h
-	${CMAKE_SOURCE_DIR}/framework/camera/*.cpp
-	${CMAKE_SOURCE_DIR}/framework/core/*.h
-	${CMAKE_SOURCE_DIR}/framework/core/*.cpp
-	${CMAKE_SOURCE_DIR}/framework/io/*.h
-	${CMAKE_SOURCE_DIR}/framework/io/*.cpp
-	${CMAKE_SOURCE_DIR}/framework/utils/*.h
-	${CMAKE_SOURCE_DIR}/framework/utils/*.cpp
-	${CMAKE_SOURCE_DIR}/framework/GHI/*.h
-	${CMAKE_SOURCE_DIR}/framework/GHI/*.cpp 
-	${CMAKE_SOURCE_DIR}/framework/thirdparty/*.h
-	${CMAKE_SOURCE_DIR}/framework/thirdparty/imgui/*.h
-	${CMAKE_SOURCE_DIR}/framework/thirdparty/imgui/*.cpp
+file(GLOB IMAGE_SHADER_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/effects/*.hlsl
 )
+
+# group_files defined in UGS cmakelists.txt
+group_files("${SRC_FILES}")
+group_files("${EXT_FILES}")
+group_files("${IMAGE_SHADER_FILES}")
 
 include_directories(
-  ${CMAKE_SOURCE_DIR}/Source/
-  ${CMAKE_SOURCE_DIR}/framework/thirdparty/
-  ${CMAKE_SOURCE_DIR}/framework/thirdparty/imgui/
-  ${CMAKE_SOURCE_DIR}/framework/thirdparty/Assimp-3.1.1/include
-  ${CMAKE_SOURCE_DIR}/framework/
-  ${CMAKE_SOURCE_DIR}/framework/d3d
-  ${CMAKE_SOURCE_DIR}/framework/GHI
-  ${CMAKE_SOURCE_DIR}/framework/utils
-  ${CMAKE_SOURCE_DIR}/framework/core
+  ${CMAKE_CURRENT_SOURCE_DIR}/UGS/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/UGS/framework/thirdparty/imgui/
 )
 
-#######################################################################################
-## Print include directory for debug
-#######################################################################################
-get_property(includes DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-foreach(dir ${includes})
-    message(STATUS "include dir='${dir}'")
-endforeach()
+link_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/bin
+)
 
-###########################################################################
-# custom-defined function
-# set target property
-# reference https://cmake.org/cmake/help/v3.0/manual/cmake-properties.7.html 
-###########################################################################
-function(my_default_target_property target_name)
-  #message(STATUS "ARGC=${ARGC} target_name='${target_name}' ")
-  if (NOT ${ARGC} EQUAL 1)
-    message(STATUS "ARGC is NOT expected.") 
-  endif()
-  if (NOT ${ARGV0} STREQUAL ${target_name})
-    message(STATUS "ARGV0 is NOT expected. ARGV0='${ARGV0}' target_name='${target_name}'") 
-  endif()  
- 
-  set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/bin )
-  set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_SOURCE_DIR}/bin )
-  set_target_properties(${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_SOURCE_DIR}/bin )
-  set_target_properties(${target_name} PROPERTIES DEBUG_POSTFIX "_d")
-  set_target_properties(${target_name} PROPERTIES RELWITHDEBINFO_POSTFIX "RelWithDebInfo")
-  set_target_properties(${target_name} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
-endfunction()
+add_compile_definitions(UGS_LOCATION="${_UGS_LOCATION_}")
+add_compile_definitions(UGS_SHADER_LOCATION="${_UGS_SHADER_LOCATION_}")
+add_compile_definitions(IMAGE_SHADER_LOCATION="${_IMAGE_SHADER_LOCATION_}")
 
-#######################################################################################
-## macro definition
-#######################################################################################
-macro(group_src_files src_files)
-    foreach(f ${src_files})
-        # replace a/b/c to a\\b\\c
-		string(REPLACE / \\\\ f ${f})
-		# Get the path of the file relative to ${CMAKE_SOURCE_DIR}
-		file(RELATIVE_PATH relative_path ${CMAKE_SOURCE_DIR} ${f})
-		# Extract the folder, ie remove the filename part
-		string(REGEX REPLACE "(.*)(/[^/]*)$" "\\1" relative_path ${relative_path})
-
-		set(SRCGR "${relative_path}")
-		# Source_group expects \\ (double antislash), not / (slash)
-		string(REPLACE / \\\\ SRCGR ${SRCGR})
-		#message(STATUS "1. group name=${SRCGR}, file=${f}")
-
-        # regular expression https://cmake.org/cmake/help/latest/command/string.html#regex-specification
-	    if ("${f}" MATCHES ".*\\.cpp$")
-		   set(SRCGR "${SRCGR}\\\\cpp")
-        elseif("${f}" MATCHES ".*\\.h$")
-		   set(SRCGR "${SRCGR}\\\\header")
-        endif()	
-
-		message(STATUS "2. group name=${SRCGR}, file=${f}")
-		source_group(${SRCGR} FILES ${f})
+if (VERBOSE_MODE)
+	# list include directory for debug
+	get_property(includes DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+	foreach(dir ${includes})
+		message(STATUS "${PROJECT_NAME} include dir='${dir}'")
 	endforeach()
-endmacro()
 
-group_src_files("${SRC_FILES}")
-group_src_files("${EXT_FILES}")
-group_src_files("${FRAMEWORK_FILES}")
+	# list cmake module path 
+	message(STATUS "CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
+endif(VERBOSE_MODE)
 
+function(compile_effect shaderfile dependencies)
+	file(RELATIVE_PATH name ${CMAKE_CURRENT_SOURCE_DIR}/shaders ${shaderfile})
+	set(tempfile ${UGS_BINARY_DIR}/temp/${name}.temp)
+	#message(STATUS "shaderfile='${shaderfile}' tempfile='${tempfile}' ")
+	add_custom_command(
+		OUTPUT ${tempfile}
+		COMMAND ${FXC} /T cs_5_0 /E CSMain /Fo ${tempfile}  ${shaderfile}
+		MAIN_DEPENDENCY ${shaderfile}
+		DEPENDS ${dependencies}
+	)
+endfunction(compile_effect)
 
-#######################################################################################
-
-
+foreach(shaderfile ${IMAGE_SHADER_FILES})
+	compile_effect(${shaderfile} "${shaderDependencies}")
+endforeach()
 
 #######################################################################################
 ## preprocess macro definition
@@ -161,62 +111,47 @@ if(MSVC)
 	#add_definitions(-DNOMINMAX)
 endif(MSVC)
 
+# Check compiler flag
+if (MSVC_VERSION GREATER_EQUAL "1900")
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("/std:c++17" _cpp_17_flag_supported)
+    if (_cpp_17_flag_supported)
+		message(STATUS "C++ 17 is suppoted in VS")
+        add_compile_options("/std:c++17")
+    endif()
+endif()
 
 
 if(MSVC)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
 endif()
 
-find_package(DirectX)
+#find_package(DirectX)
 
-#set(LINK_OPTIONS " ")
-message(STATUS "LINK_OPTIONS='${LINK_OPTIONS}' ")
-message(STATUS "CMAKE_CXX_FLAGS='${CMAKE_CXX_FLAGS}' ")
+if(VERBOSE_MODE)
+	message(STATUS "CMAKE_CXX_FLAGS='${CMAKE_CXX_FLAGS}' ")
+	message(STATUS "LINK_OPTIONS='${LINK_OPTIONS}' ")
+	message(STATUS "UGS_SHADER_LOCATION='${UGS_SHADER_LOCATION}' ")
+	message(STATUS "ALL_UGS_LIBS='${ALL_UGS_LIBS}' ")
+endif(VERBOSE_MODE)
 
-###########################################################################
-# ugs libraries and executables
-###########################################################################
-ADD_LIBRARY ( ugs STATIC  ${FRAMEWORK_FILES}  ${EXT_FILES} )
+# Image Effects based on ugs
+set(target_name "ImageEffects")
+add_executable (${target_name} ${SRC_FILES} ${IMAGE_SHADER_FILES})
+target_link_libraries( ${target_name} ${ALL_UGS_LIBS} )
+set_target_properties( ${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/bin )
+set_target_properties( ${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/bin )
+set_target_properties( ${target_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO ${CMAKE_CURRENT_SOURCE_DIR}/bin )
+set_target_properties( ${target_name} PROPERTIES DEBUG_POSTFIX "_d")
+set_target_properties( ${target_name} PROPERTIES RELWITHDEBINFO_POSTFIX "RelWithDebInfo")
+set_target_properties( ${target_name} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/bin")
 
-if (WIN32)
-  # Avoid a name clash when building on Visual Studio
-  set_target_properties ( ugs PROPERTIES OUTPUT_NAME libugs )
-endif()
-
-set(ALL_UGS_LIBS
-  ugs
-  ${DirectX_D3D11_LIBRARY} 
-  ${DirectX_D3D11_COMPILER} 
-  assimp.lib
-  )
-
-
-# Demos based on ugs
-###########################################################################
-set(EXE_NAME "ImageEffects")
-ADD_EXECUTABLE ( ${EXE_NAME} ${SRC_FILES})
-TARGET_LINK_LIBRARIES ( ${EXE_NAME} ${ALL_UGS_LIBS} )
-my_default_target_property(${EXE_NAME})
-
-#--------------------------------------------------------------------
 # Hide the console window in visual studio projects
-#--------------------------------------------------------------------
-set(ENABLE_HIDECONSOLE_BUILD TRUE CACHE BOOL "TRUE to hide console on Windows.")
 if(ENABLE_HIDECONSOLE_BUILD)
 	if(MSVC)
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
 		set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS")
+		set_target_properties(${EXE_NAME} PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:WINDOWS")
+		set_target_properties(${EXE_NAME} PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
 	endif()
 endif()
-
-if(WINDOWS)
-	set_target_properties(${EXE_NAME} PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:WINDOWS")
-	set_target_properties(${EXE_NAME} PROPERTIES LINK_FLAGS_RELEASE "/SUBSYSTEM:WINDOWS")
-endif()
-
-if(ENABLE_HIDECONSOLE_BUILD)
-	message(STATUS "Console is hidden")
-else()
-	message(STATUS "Console is visible")
-endif()
-

@@ -71,13 +71,14 @@ class OutputParam : public FilterParam
 
 class Filter
 {
+public:
+	std::string mShaderFile;
+	std::string mDescription = "an image filter";
 protected:
 	std::vector<FilterParam*> mInputs;
 	std::vector<FilterParam*> mOutputs;
 	GHI::GHISampler *sampler = nullptr;
 	GHI::GHIShader* computeShader = nullptr;
-	std::string mShaderFile;
-	std::string mDescription = "an image filter";
 
 public:
 
@@ -195,17 +196,18 @@ public:
 
 	virtual void UpdateUI(GHI::IGHIComputeCommandCotext *commandContext) override
 	{
-        Filter::UpdateUI(commandContext);
+       // Filter::UpdateUI(commandContext);
 
-        ImGui::Begin("Bilaterial UI");
-        ImGui::Text("Parameter tweak."); // Display some text (you can use a format strings too)
-        ImGui::SameLine();
-        if (ImGui::SliderInt("Filter Window",&windowWdith, 3, 17))
-        {
-            windowWdith & 0x1 ? windowWdith : windowWdith += 1;
-			DEBUG("Filter Size:%d", windowWdith);
-        }
-        ImGui::End();
+		ImGui::BeginChild("Bilaterial UI", {300,100}, true);
+		if (ImGui::CollapsingHeader("Bilaterial tweak"))
+		{
+			if (ImGui::SliderInt("Filter width",&windowWdith, 3, 17))
+			{
+				windowWdith & 0x1 ? windowWdith : windowWdith += 1;
+				DEBUG("Filter Size:%d", windowWdith);
+			}
+		}
+		ImGui::EndChild();
 	}
 
 	virtual void Active(GHI::IGHIComputeCommandCotext *commandContext) override
