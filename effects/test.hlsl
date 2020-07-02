@@ -69,3 +69,105 @@ void CSMain( uint3 dispatchThreadID : SV_DispatchThreadID )
 	}
     OutputMap[dispatchThreadID.xy] = float4(final_colour/Z, 1.0);
 }
+
+struct HS_PATCH_DATA
+{
+    float edges[3] : SV_TessFactor;
+    float inside : SV_InsideTessFactor;
+    float center[3] : CENTER;
+};
+
+struct HS_CONTROL_POINT
+{
+    float pos1[3] : POSITION1;
+    float pos2[3] : POSITION2;
+    float pos3[3] : POSITION3;
+    float3 nor1 : NORMAL0;
+    float3 nor2 : NORMAL1;
+    float3 tex : TEXCOORD0;
+};
+
+[domain("tri")]
+[outputtopology("triangle_cw")]
+[outputcontrolpoints(3)]
+[partitioning("fractional_odd")]
+[patchconstantfunc("HullShaderPatchConstant")]
+HS_CONTROL_POINT HullShaderControlPointPhase(InputPatch<HS_DATA_INPUT, 3> inputPatch,
+    uint tid : SV_OutputControlPointID, uint pid : SV_PrimitiveID)
+{
+
+    int next = (1 << tid) & 3; // (tid + 1) % 3
+    float3 p1 = inputPatch[tid].position;
+    float3 p2 = inputPatch[next].position;
+    float3 n1 = inputPatch[tid].normal;
+    float3 n2 = inputPatch[next].normal;
+    HS_CONTROL_POINT output;
+    //control points positions
+    output.pos1 = (float[3])p1;
+    output.pos2 = (float[3])(2 * p1 + p2 - dot(p2 - p1, n1) * n1);
+    output.pos3 = (float[3])(2 * p2 + p1 - dot(p1 - p2, n2) * n2);
+    //control points normals
+    float3 v12 = 4 * dot(p2 - p1, n1 + n2) / dot(p2 - p1, p2 - p1);
+    output.nor1 = n1;
+    output.nor2 = n1 + n2 - v12 * (p2 - p1);
+    output.tex = inputPatch[tid].texcoord;
+    return output;
+}
+
+//patch constant data
+HS_PATCH_DATA HullShaderPatchConstant(OutputPatch<HS_CONTROL_POINT, 3> controlPoints)
+{
+    HS_PATCH_DATA patch = (HS_PATCH_DATA)0;
+    //calculate Tessellation factors
+    HullShaderCalcTessFactor(patch, controlPoints, 0);
+    HullShaderCalcTessFactor(patch, controlPoints, 1);
+    HullShaderCalcTessFactor(patch, controlPoints, 2);
+    patch.inside = max(max(patch.edges[0], patch.edges[1]), patch.edges[2]);
+    //calculate center
+    float3 center = ((float3)controlPoints[0].pos2 + (float3)controlPoints[0].pos3) * 0.5 -
+        (float3)controlPoints[0].pos1 +
+        ((float3)controlPoints[1].pos2 + (float3)controlPoints[1].pos3) * 0.5 –
+        (float3)controlPoints[1].pos1 +
+        ((float3)controlPoints[2].pos2 + (float3)controlPoints[2].pos3) * 0.5 –
+        (float3)controlPoints[2].pos1;
+    patch.center = (float[3])center;
+    return patch;
+}
+
+//helper functions
+float edgeLod(float3 pos1, float3 pos2) { return dot(pos1, pos2); }
+
+void HullShaderCalcTessFactor(inout HS_PATCH_DATA patch,
+    OutputPatch<HS_CONTROL_POINT, 3> controlPoints, uint tid : SV_InstanceID)
+{
+    int next = (1 << tid) & 3; // (tid + 1) % 3
+    patch.edges[tid] = edgeLod((float3)controlPoints[tid].pos1, (float3)controlPoints[next].pos1);
+    return;
+}
+
+// { Tessellated samples, Control points } ==> Evalated vertex
+[domain("triangle")]
+DS_DATA_OUTPUT DomainShaderPN(HS_PATCH_DATA patchData,
+    const OutputPatch<HS_CONTROL_POINT, 3> input, float3 uvw : SV_DomainLocation)
+{
+    DS_DATA_OUTPUT output;
+    float u = uvw.x;
+    float v = uvw.y;
+    float w = uvw.z;
+    //output position is weighted combination of all 10 position control points
+    float3 pos =
+        (float3)input[0].pos1 * w*w*w + (float3)input[1].pos1 * u*u*u + (float3)input[2].pos1 * v*v*v +
+        (float3)input[0].pos2 * w*w*u + (float3)input[0].pos3 * w*u*u + (float3)input[1].pos2 * u*u*v +
+        (float3)input[1].pos3 * u*v*v + (float3)input[2].pos2 * v*v*w + float3)input[2].pos3 * v*w*w +
+        (float3)patchData.center * u*v*w;
+    //output normal is weighted combination of all 10 position control points
+    float3 nor =
+        input[0].nor1 * w*w + input[1].nor1 * u*u + input[2].nor1 * v*v +
+        input[0].nor2* w*u + input[1].nor2 * u*v + input[2].nor2 * v*w;
+    //transform and output data
+    output.position = mul(float4(pos, 1), g_mViewProjection);
+    output.view = mul(float4(pos, 1), g_mView).xyz;
+    output.normal = mul(float4(normalize(nor), 1), g_mNormal).xyz;
+    output.vUV = input[0].tex * w + input[1].tex * u + input[2].tex * v;
+    return output;
+}

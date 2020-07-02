@@ -13,6 +13,7 @@ elseif(MACOSX)
 endif()
 
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "Configuration types" FORCE)
+
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 
 set(ENABLE_HIDECONSOLE_BUILD TRUE CACHE BOOL "TRUE to hide console on Windows.")
@@ -24,7 +25,7 @@ set(_IMAGE_LOCATION_ ${CMAKE_CURRENT_SOURCE_DIR}/images/ CACHE STRING "Image Loc
 set(_IMAGE_EFFECT_LOCATION_ ${CMAKE_CURRENT_SOURCE_DIR}/effects/ CACHE STRING "Image Effect Location" FORCE)
 
 # Add UGS to build 
-set(UGS_BUILD_SAMPLES OFF CACHE BOOL "Build UGS Samples")
+set(UGS_BUILD_SAMPLES OFF CACHE BOOL "Set to ON to Build UGS Samples")
 add_subdirectory(UGS)
 message(STATUS "####################################### Build 'UGS' done #######################################")
 
@@ -34,6 +35,7 @@ add_compile_definitions(UGS_SHADER_LOCATION="${_UGS_SHADER_LOCATION_}")
 add_compile_definitions(IMAGE_LOCATION="${_IMAGE_LOCATION_}")
 add_compile_definitions(IMAGE_EFFECT_LOCATION="${_IMAGE_EFFECT_LOCATION_}")
 
+add_compile_definitions(IMAGE_SHADER_LOCATION="${_IMAGE_SHADER_LOCATION_}")
 
 file(GLOB SRC_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
@@ -61,9 +63,6 @@ link_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/bin
 )
 
-add_compile_definitions(UGS_LOCATION="${_UGS_LOCATION_}")
-add_compile_definitions(UGS_SHADER_LOCATION="${_UGS_SHADER_LOCATION_}")
-add_compile_definitions(IMAGE_SHADER_LOCATION="${_IMAGE_SHADER_LOCATION_}")
 
 if (VERBOSE_MODE)
 	# list include directory for debug
